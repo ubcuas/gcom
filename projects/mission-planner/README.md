@@ -70,7 +70,7 @@ mavproxy --master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14550 --out=udp:127.0.0
 > If using WSL2, get the IP of host machine using `ip route show default`
 > If using Windows, make sure to run mavproxy as an Administrator.
 
-When running mavproxy, point master to the SITL instance connection and specify 2 outputs, one for connecting with Mission Planner for visualization and one to interface with pymavlink.
+When running mavproxy, point master to the SITL instance connection and specify 2 outputs, one to interface with pymavlink and one for connecting with Mission Planner for visualization. Optionally, omit the second output if Mission Planner visualization is not needed.
 
 ### Using MPS
 
@@ -104,6 +104,11 @@ When running mavproxy, point master to the SITL instance connection and specify 
 | `--status-host=localhost` | Hostname for the status socket to connect to.                             |
 | `--status-port=1323`      | Port for the status socket to connect to.                                 |
 | `--disable-status`        | If present, disables the status socket.                                   |
+
+> [!TIP]
+> `main.py` usually cannot be stopped via CTRL+C. CTRL+BREAK sometimes works, depending on the system.
+> If those two methods do not work then the program can be terminated by closing the terminal instance
+> that it was originally invoked from.
 
 ### Visualization (Optional)
 
