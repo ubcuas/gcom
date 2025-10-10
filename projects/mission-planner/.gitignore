@@ -8,3 +8,7 @@ diversion_tests/
 node_modules/
 package-lock.json
 generated.txt
+
+mav.parm
+mav.tlog.raw
+mav.tlog
