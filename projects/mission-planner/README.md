@@ -17,9 +17,21 @@ This project provides a HTTP server that interfaces with drone autopilot systems
 3. [Endpoints](#endpoints)
 4. [Sockets](#sockets)
 
-## Instructions
+## Instructions (Pymavlink System)
 
 The current system uses pymavlink to communicate directly with autopilot systems via the MAVLink protocol. This approach works cross-platform and operates completely independently - Mission Planner desktop application is only needed for optional visualization and monitoring.
+
+### Getting Started
+
+To run the mission planner project with the STIL simulated environment, you'll want to run the following components concurrently:
+
+- SITL - via docker
+- Mavproxy
+- Mission planner python script
+
+See the following sections for instructions on setting up each.
+
+For an overview of how the pymavlink architecture fits together - see [pymavlink-system-architecture](./technical-documentation/pymavlink-system-architecture.md)
 
 ### SITL
 
