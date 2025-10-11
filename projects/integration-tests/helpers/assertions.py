@@ -4,7 +4,10 @@ These functions provide clear, reusable validation logic for common
 test assertions related to waypoints, status, and drone state.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .api_client import APIClient
 
 
 def assert_status_valid(status: Dict[str, Any]) -> None:
@@ -179,3 +182,75 @@ def assert_queue_not_empty(queue: List[Dict[str, Any]]) -> None:
         AssertionError: If queue is empty
     """
     assert len(queue) > 0, "Expected non-empty queue but found 0 waypoints"
+
+
+def assert_field_values_match(
+    actual: Dict[str, Any],
+    expected: Dict[str, Any],
+    fields: List[str],
+    tolerance: float = 0.001,
+) -> None:
+    """Assert that specified fields match between two dictionaries.
+
+    For numeric fields, uses tolerance-based comparison.
+    For other types, uses exact equality.
+
+    Args:
+        actual: Actual dictionary from API
+        expected: Expected dictionary values
+        fields: List of field names to compare
+        tolerance: Tolerance for floating point comparison
+
+    Raises:
+        AssertionError: If any field values don't match
+    """
+    for field in fields:
+        if field in expected and field in actual:
+            actual_value = actual[field]
+            expected_value = expected[field]
+
+            if isinstance(actual_value, (int, float)) and isinstance(
+                expected_value, (int, float)
+            ):
+                assert (
+                    abs(actual_value - expected_value) < tolerance
+                ), f"Field {field} mismatch: {actual_value} != {expected_value} (tolerance: {tolerance})"
+            else:
+                assert (
+                    actual_value == expected_value
+                ), f"Field {field} mismatch: {actual_value} != {expected_value}"
+
+
+def assert_queue_upload_successful(
+    api_client: "APIClient",
+    waypoints: List[Dict[str, Any]],
+    check_response: bool = True,
+) -> List[Dict[str, Any]]:
+    """Upload waypoints and verify they are correctly stored.
+
+    This helper consolidates the common pattern of:
+    1. Uploading waypoints to the queue
+    2. Checking response status
+    3. Retrieving and validating the queue contents
+
+    Args:
+        api_client: API client instance
+        waypoints: List of waypoints to upload
+        check_response: Whether to assert response status code is 200
+
+    Returns:
+        The queue retrieved after upload
+
+    Raises:
+        AssertionError: If upload fails or waypoints don't match
+    """
+    response = api_client.post_queue(waypoints)
+
+    if check_response:
+        assert (
+            response.status_code == 200
+        ), f"Failed to upload waypoints: {response.status_code} - {response.text}"
+
+    queue = api_client.get_queue()
+    assert_waypoints_match(queue, waypoints)
+    return queue

@@ -16,6 +16,8 @@ from .assertions import (
     assert_altitude_near,
     assert_queue_empty,
     assert_queue_not_empty,
+    assert_field_values_match,
+    assert_queue_upload_successful,
 )
 
 __all__ = [
@@ -32,4 +34,6 @@ __all__ = [
     "assert_altitude_near",
     "assert_queue_empty",
     "assert_queue_not_empty",
+    "assert_field_values_match",
+    "assert_queue_upload_successful",
 ]
