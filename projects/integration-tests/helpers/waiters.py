@@ -13,7 +13,7 @@ def wait_for_condition(
     condition_fn: Callable[[], bool],
     timeout: float = 60.0,
     poll_interval: float = 1.0,
-    error_message: str = "Condition not met within timeout"
+    error_message: str = "Condition not met within timeout",
 ) -> None:
     """Generic wait function that polls until condition is met.
 
@@ -39,7 +39,7 @@ def wait_for_altitude(
     api_client: APIClient,
     target_altitude: float,
     timeout: float = 60.0,
-    tolerance: float = 5.0
+    tolerance: float = 5.0,
 ) -> None:
     """Wait for drone to reach target altitude.
 
@@ -52,6 +52,7 @@ def wait_for_altitude(
     Raises:
         TimeoutError: If altitude not reached within timeout
     """
+
     def check_altitude() -> bool:
         try:
             status = api_client.get_status()
@@ -64,14 +65,12 @@ def wait_for_altitude(
         check_altitude,
         timeout=timeout,
         poll_interval=1.0,
-        error_message=f"Drone did not reach altitude {target_altitude}m (±{tolerance}m)"
+        error_message=f"Drone did not reach altitude {target_altitude}m (±{tolerance}m)",
     )
 
 
 def wait_for_waypoint_count(
-    api_client: APIClient,
-    expected_count: int,
-    timeout: float = 30.0
+    api_client: APIClient, expected_count: int, timeout: float = 30.0
 ) -> None:
     """Wait for waypoint queue to have expected number of waypoints.
 
@@ -83,6 +82,7 @@ def wait_for_waypoint_count(
     Raises:
         TimeoutError: If count not reached within timeout
     """
+
     def check_count() -> bool:
         try:
             queue = api_client.get_queue()
@@ -94,14 +94,12 @@ def wait_for_waypoint_count(
         check_count,
         timeout=timeout,
         poll_interval=0.5,
-        error_message=f"Waypoint queue does not contain {expected_count} waypoints"
+        error_message=f"Waypoint queue does not contain {expected_count} waypoints",
     )
 
 
 def wait_for_drone_armed(
-    api_client: APIClient,
-    armed: bool = True,
-    timeout: float = 30.0
+    api_client: APIClient, armed: bool = True, timeout: float = 30.0
 ) -> None:
     """Wait for drone to be armed or disarmed.
 
@@ -113,6 +111,7 @@ def wait_for_drone_armed(
     Raises:
         TimeoutError: If state not reached within timeout
     """
+
     def check_armed() -> bool:
         try:
             status = api_client.get_status()
@@ -127,7 +126,7 @@ def wait_for_drone_armed(
         check_armed,
         timeout=timeout,
         poll_interval=1.0,
-        error_message=f"Drone did not become {state_str}"
+        error_message=f"Drone did not become {state_str}",
     )
 
 
@@ -136,7 +135,7 @@ def wait_for_status_field(
     field_name: str,
     expected_value: Any,
     timeout: float = 30.0,
-    tolerance: Optional[float] = None
+    tolerance: Optional[float] = None,
 ) -> None:
     """Wait for a specific status field to reach expected value.
 
@@ -150,6 +149,7 @@ def wait_for_status_field(
     Raises:
         TimeoutError: If value not reached within timeout
     """
+
     def check_field() -> bool:
         try:
             status = api_client.get_status()
@@ -169,5 +169,5 @@ def wait_for_status_field(
         check_field,
         timeout=timeout,
         poll_interval=1.0,
-        error_message=f"Status field '{field_name}' did not reach value {expected_value}"
+        error_message=f"Status field '{field_name}' did not reach value {expected_value}",
     )

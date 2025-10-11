@@ -25,14 +25,16 @@ def assert_status_valid(status: Dict[str, Any]) -> None:
 
     # Validate numeric ranges
     assert -90 <= status["latitude"] <= 90, f"Invalid latitude: {status['latitude']}"
-    assert -180 <= status["longitude"] <= 180, f"Invalid longitude: {status['longitude']}"
+    assert (
+        -180 <= status["longitude"] <= 180
+    ), f"Invalid longitude: {status['longitude']}"
     assert 0 <= status["heading"] <= 360, f"Invalid heading: {status['heading']}"
 
 
 def assert_waypoint_match(
     actual: Dict[str, Any],
     expected: Dict[str, Any],
-    check_fields: Optional[List[str]] = None
+    check_fields: Optional[List[str]] = None,
 ) -> None:
     """Assert that actual waypoint matches expected waypoint.
 
@@ -54,19 +56,23 @@ def assert_waypoint_match(
             expected_value = expected[field]
 
             # For floating point coordinates, allow small tolerance
-            if field in ["latitude", "longitude", "altitude"] and isinstance(expected_value, (int, float)):
+            if field in ["latitude", "longitude", "altitude"] and isinstance(
+                expected_value, (int, float)
+            ):
                 tolerance = 0.0001  # ~11 meters for lat/lon
-                assert abs(actual_value - expected_value) < tolerance, \
-                    f"Waypoint {field} mismatch: {actual_value} != {expected_value}"
+                assert (
+                    abs(actual_value - expected_value) < tolerance
+                ), f"Waypoint {field} mismatch: {actual_value} != {expected_value}"
             else:
-                assert actual_value == expected_value, \
-                    f"Waypoint {field} mismatch: {actual_value} != {expected_value}"
+                assert (
+                    actual_value == expected_value
+                ), f"Waypoint {field} mismatch: {actual_value} != {expected_value}"
 
 
 def assert_waypoints_match(
     actual_list: List[Dict[str, Any]],
     expected_list: List[Dict[str, Any]],
-    check_fields: Optional[List[str]] = None
+    check_fields: Optional[List[str]] = None,
 ) -> None:
     """Assert that list of waypoints matches expected list.
 
@@ -78,8 +84,9 @@ def assert_waypoints_match(
     Raises:
         AssertionError: If lists don't match
     """
-    assert len(actual_list) == len(expected_list), \
-        f"Waypoint count mismatch: {len(actual_list)} != {len(expected_list)}"
+    assert len(actual_list) == len(
+        expected_list
+    ), f"Waypoint count mismatch: {len(actual_list)} != {len(expected_list)}"
 
     for i, (actual, expected) in enumerate(zip(actual_list, expected_list)):
         try:
@@ -89,9 +96,7 @@ def assert_waypoints_match(
 
 
 def assert_position_near(
-    pos1: Dict[str, Any],
-    pos2: Dict[str, Any],
-    tolerance_meters: float = 10.0
+    pos1: Dict[str, Any], pos2: Dict[str, Any], tolerance_meters: float = 10.0
 ) -> None:
     """Assert that two positions are within tolerance of each other.
 
@@ -114,14 +119,13 @@ def assert_position_near(
 
     distance = (lat_diff_m**2 + lon_diff_m**2) ** 0.5
 
-    assert distance <= tolerance_meters, \
-        f"Positions too far apart: {distance:.2f}m > {tolerance_meters}m"
+    assert (
+        distance <= tolerance_meters
+    ), f"Positions too far apart: {distance:.2f}m > {tolerance_meters}m"
 
 
 def assert_altitude_near(
-    actual_altitude: float,
-    expected_altitude: float,
-    tolerance: float = 5.0
+    actual_altitude: float, expected_altitude: float, tolerance: float = 5.0
 ) -> None:
     """Assert that actual altitude is within tolerance of expected.
 
@@ -134,8 +138,9 @@ def assert_altitude_near(
         AssertionError: If altitude difference exceeds tolerance
     """
     diff = abs(actual_altitude - expected_altitude)
-    assert diff <= tolerance, \
-        f"Altitude mismatch: {actual_altitude}m != {expected_altitude}m (±{tolerance}m)"
+    assert (
+        diff <= tolerance
+    ), f"Altitude mismatch: {actual_altitude}m != {expected_altitude}m (±{tolerance}m)"
 
 
 def assert_queue_empty(queue: List[Dict[str, Any]]) -> None:

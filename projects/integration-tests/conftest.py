@@ -50,10 +50,14 @@ def api_client(web_backend_url, mission_planner_url):
 
     # Verify services are running before starting tests
     if not client.web_backend_health_check():
-        pytest.exit("Web-backend is not responding. Please start the service.", returncode=1)
+        pytest.exit(
+            "Web-backend is not responding. Please start the service.", returncode=1
+        )
 
     if not client.mission_planner_health_check():
-        pytest.exit("Mission-planner is not responding. Please start the service.", returncode=1)
+        pytest.exit(
+            "Mission-planner is not responding. Please start the service.", returncode=1
+        )
 
     return client
 
@@ -100,7 +104,7 @@ def sample_waypoint():
         "name": "TestWP1",
         "latitude": -35.363261,
         "longitude": 149.165230,
-        "altitude": 50.0
+        "altitude": 50.0,
     }
 
 
@@ -116,18 +120,18 @@ def sample_waypoints():
             "name": "WP1",
             "latitude": -35.363261,
             "longitude": 149.165230,
-            "altitude": 50.0
+            "altitude": 50.0,
         },
         {
             "name": "WP2",
             "latitude": -35.363361,
             "longitude": 149.165330,
-            "altitude": 55.0
+            "altitude": 55.0,
         },
         {
             "name": "WP3",
             "latitude": -35.363461,
             "longitude": 149.165430,
-            "altitude": 60.0
-        }
+            "altitude": 60.0,
+        },
     ]

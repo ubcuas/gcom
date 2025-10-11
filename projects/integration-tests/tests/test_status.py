@@ -28,8 +28,9 @@ def test_get_status_via_web_backend(api_client):
     assert_status_valid(status)
 
     # Additional checks for specific fields
-    assert "timestamp" in status or "current_wpn" in status, \
-        "Status should contain timestamp or current waypoint number"
+    assert (
+        "timestamp" in status or "current_wpn" in status
+    ), "Status should contain timestamp or current waypoint number"
 
 
 def test_status_contains_telemetry_data(api_client):
@@ -42,12 +43,7 @@ def test_status_contains_telemetry_data(api_client):
     status = api_client.get_status()
 
     # Assert: Check for extended telemetry fields
-    expected_fields = [
-        "latitude",
-        "longitude",
-        "altitude",
-        "heading"
-    ]
+    expected_fields = ["latitude", "longitude", "altitude", "heading"]
 
     for field in expected_fields:
         assert field in status, f"Status missing field: {field}"
@@ -88,8 +84,9 @@ def test_status_updates_over_time(api_client):
     # We're mainly verifying that the endpoint responds and returns valid data
     # If timestamp is available, it should be different
     if "timestamp" in status1 and "timestamp" in status2:
-        assert status1["timestamp"] != status2["timestamp"], \
-            "Timestamp should update between calls"
+        assert (
+            status1["timestamp"] != status2["timestamp"]
+        ), "Timestamp should update between calls"
 
 
 @pytest.mark.slow
@@ -115,9 +112,13 @@ def test_status_matches_between_services(api_client):
             mp_value = mission_planner_status[field]
 
             # Allow small floating point differences
-            if isinstance(wb_value, (int, float)) and isinstance(mp_value, (int, float)):
-                assert abs(wb_value - mp_value) < 0.001, \
-                    f"Status field {field} mismatch between services: {wb_value} != {mp_value}"
+            if isinstance(wb_value, (int, float)) and isinstance(
+                mp_value, (int, float)
+            ):
+                assert (
+                    abs(wb_value - mp_value) < 0.001
+                ), f"Status field {field} mismatch between services: {wb_value} != {mp_value}"
             else:
-                assert wb_value == mp_value, \
-                    f"Status field {field} mismatch between services: {wb_value} != {mp_value}"
+                assert (
+                    wb_value == mp_value
+                ), f"Status field {field} mismatch between services: {wb_value} != {mp_value}"
