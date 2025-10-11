@@ -57,11 +57,13 @@ docker run --rm -d -p 5760:5760 --name acom-sitl ubcuas/uasitl:copter-4.5.0
 ### 2. Mavproxy (MAVLink Message Forwarder)
 
 **Linux/Mac:**
+
 ```bash
 mavproxy.py --master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14551
 ```
 
 **Windows:**
+
 ```bash
 mavproxy --master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14551
 ```
@@ -143,6 +145,7 @@ pytest -vv -s
 ```
 
 Options:
+
 - `-v` / `-vv`: Verbose output
 - `-s`: Show print statements
 - `-m critical`: Run only tests marked as critical
@@ -153,6 +156,7 @@ Options:
 ### Test Files
 
 - **`tests/test_status.py`**: Tests for drone status/telemetry endpoints
+
   - Verifies status data flows through full stack
   - Checks data consistency between services
   - Validates telemetry fields
@@ -195,6 +199,7 @@ Tests are marked with categories for selective running:
 **Cause**: Web-backend server is not running or not reachable.
 
 **Solution**:
+
 1. Start web-backend: `cd ../web-backend/src && poetry run python server.py`
 2. Verify it's running: `curl http://localhost:8000/api/drone/status`
 
@@ -203,6 +208,7 @@ Tests are marked with categories for selective running:
 **Cause**: Mission-planner server is not running or not reachable.
 
 **Solution**:
+
 1. Start mission-planner: `cd ../mission-planner && poetry run python src/main.py`
 2. Verify it's running: `curl http://localhost:9000/status`
 
@@ -211,6 +217,7 @@ Tests are marked with categories for selective running:
 **Cause**: Services are running but SITL/Mavproxy connection is broken.
 
 **Solution**:
+
 1. Check SITL is running: `docker ps | grep acom-sitl`
 2. Check Mavproxy is running and connected
 3. Restart mission-planner to re-establish MAVLink connection
@@ -220,6 +227,7 @@ Tests are marked with categories for selective running:
 **Cause**: Operation is taking too long (default timeout: 120s).
 
 **Solution**:
+
 1. Check if SITL is overloaded or stuck
 2. Restart SITL: `docker restart acom-sitl`
 3. Increase timeout in `.env`: `TEST_TIMEOUT=180`
@@ -229,6 +237,7 @@ Tests are marked with categories for selective running:
 **Cause**: Race conditions or state not properly reset between tests.
 
 **Solution**:
+
 1. Run tests sequentially: `pytest -v` (default)
 2. Check `conftest.py` `reset_drone_state` fixture is working
 3. Add delays in test if needed
@@ -295,26 +304,3 @@ When adding new tests:
 5. Test through web-backend (full integration)
 6. Add appropriate test markers (`@pytest.mark.critical`, etc.)
 7. Ensure tests clean up after themselves (or rely on `reset_drone_state`)
-
-## Current Test Coverage
-
-**Status Tests (4 tests):**
-- ✅ Get status via web-backend
-- ✅ Status contains telemetry data
-- ✅ Status updates over time
-- ✅ Status consistency between services
-
-**Waypoint Tests (7 tests):**
-- ✅ Upload single waypoint
-- ✅ Upload multiple waypoints
-- ✅ Clear waypoint queue
-- ✅ Overwrite waypoint queue
-- ✅ Queue persists across requests
-- ✅ Empty queue returns empty list
-- ✅ Queue consistency between services
-
-**Total: 11 integration tests**
-
-## Contact
-
-For questions or issues with integration tests, refer to the main project documentation or contact the development team.
