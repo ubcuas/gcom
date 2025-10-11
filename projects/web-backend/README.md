@@ -4,16 +4,16 @@
 
 **If you are on Windows, you will need to run this whole project in WSL**
 
-1. Install Poetry and Redis
-2. `poetry install` to install all Python dependencies
+1. Install Python and Redis
+2. `pip install - requirements.txt` to install all Python dependencies
 
 ## Running the Server
 
 **If you are on Windows, you will need to run this whole project in WSL**
 
 1. Start Redis Server (if not already running): `redis-server`
-2. Start GCOM: `poetry run python server.py` (in `/src`)
-3. Start Celery Worker: `poetry run python -m celery -A gcom worker` (in `/src`)
+2. Start GCOM: `python server.py` (in `/src`)
+3. Start Celery Worker: `python -m celery -A gcom worker` (in `/src`)
 
 ## Major Dependencies
 
@@ -24,19 +24,6 @@
 - SocketIO: For WebSocket support
 - Celery: for multithreading
 - Redis: Message Broker (you will need to install this seperately)
-
-### Poetry
-
-This project uses `poetry`. To install poetry, follow the guide on the
-website. Then run: `poetry install` to install required dependencies.
-Some relavent commands you may want to know:
-
-- `poetry shell` - Spawns and activates the poetry venv. Run `exit` to
-  exit the venv
-- `poetry add <module>` - Add a dependency
-- `poetry remove <module>` - Remove a dependency
-- `poetry run <command>` - Run a command in the poetry venv without
-  activating it
 
 ### Swagger
 
