@@ -1,6 +1,0 @@
-python-dotenv
-
-pytest>=7.4.0
-pytest-timeout>=2.2.0
-requests>=2.32.0
-python-dotenv>=1.0.0
