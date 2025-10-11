@@ -38,8 +38,8 @@ For an overview of how the pymavlink architecture fits together - see [pymavlink
 1.  In order to run SITL on your local machine, you will need to have Docker installed. For installation instructions, refer to the
     following:
 
-        - [Windows Installation](https://docs.docker.com/desktop/install/windows-install/)
-        - [MacOS Installation](https://docs.docker.com/desktop/install/mac-install/)
+    - [Windows Installation](https://docs.docker.com/desktop/install/windows-install/)
+    - [MacOS Installation](https://docs.docker.com/desktop/install/mac-install/)
 
 2.  Optionally, you can install Mission Planner for flight visualization and monitoring. Refer to installation steps [here](https://ardupilot.org/planner/docs/mission-planner-installation.html). Note: This is not required for the system to function.
 
