@@ -10,7 +10,7 @@ from helpers import (
     assert_waypoints_match,
     assert_queue_empty,
     assert_queue_not_empty,
-    wait_for_waypoint_count
+    wait_for_waypoint_count,
 )
 
 
@@ -33,8 +33,9 @@ def test_upload_single_waypoint_via_web_backend(api_client, sample_waypoint):
     response = api_client.post_queue([sample_waypoint])
 
     # Assert: Request succeeded
-    assert response.status_code == 200, \
-        f"Failed to upload waypoint: {response.status_code} - {response.text}"
+    assert (
+        response.status_code == 200
+    ), f"Failed to upload waypoint: {response.status_code} - {response.text}"
 
     # Verify: Retrieve queue and check waypoint is there
     queue = api_client.get_queue()
@@ -55,14 +56,16 @@ def test_upload_multiple_waypoints_via_web_backend(api_client, sample_waypoints)
     response = api_client.post_queue(sample_waypoints)
 
     # Assert: Request succeeded
-    assert response.status_code == 200, \
-        f"Failed to upload waypoints: {response.status_code} - {response.text}"
+    assert (
+        response.status_code == 200
+    ), f"Failed to upload waypoints: {response.status_code} - {response.text}"
 
     # Verify: Retrieve queue and check all waypoints
     queue = api_client.get_queue()
 
-    assert len(queue) == len(sample_waypoints), \
-        f"Expected {len(sample_waypoints)} waypoints, found {len(queue)}"
+    assert len(queue) == len(
+        sample_waypoints
+    ), f"Expected {len(sample_waypoints)} waypoints, found {len(queue)}"
 
     # Verify each waypoint matches
     assert_waypoints_match(queue, sample_waypoints)
@@ -85,8 +88,9 @@ def test_clear_waypoint_queue(api_client, sample_waypoints):
 
     # Act: Clear the queue
     response = api_client.clear_queue()
-    assert response.status_code == 200, \
-        f"Failed to clear queue: {response.status_code} - {response.text}"
+    assert (
+        response.status_code == 200
+    ), f"Failed to clear queue: {response.status_code} - {response.text}"
 
     # Verify: Queue is now empty
     queue = api_client.get_queue()
@@ -114,8 +118,9 @@ def test_overwrite_waypoint_queue(api_client, sample_waypoint, sample_waypoints)
 
     # Verify: Queue now contains the new waypoints
     queue = api_client.get_queue()
-    assert len(queue) == len(sample_waypoints), \
-        "Queue should be overwritten with new waypoints"
+    assert len(queue) == len(
+        sample_waypoints
+    ), "Queue should be overwritten with new waypoints"
 
     # Verify the new waypoints match
     assert_waypoints_match(queue, sample_waypoints)
@@ -189,14 +194,13 @@ def test_waypoint_consistency_between_services(api_client, sample_waypoints):
     mission_planner_queue = api_client.get_mission_planner_queue()
 
     # Assert: Both queues have same length
-    assert len(web_backend_queue) == len(mission_planner_queue), \
-        "Queue length mismatch between services"
+    assert len(web_backend_queue) == len(
+        mission_planner_queue
+    ), "Queue length mismatch between services"
 
     # Assert: Waypoints match
     for i, (wb_wp, mp_wp) in enumerate(zip(web_backend_queue, mission_planner_queue)):
         try:
             assert_waypoint_match(wb_wp, mp_wp)
         except AssertionError as e:
-            raise AssertionError(
-                f"Waypoint {i} mismatch between services: {e}"
-            ) from e
+            raise AssertionError(f"Waypoint {i} mismatch between services: {e}") from e
