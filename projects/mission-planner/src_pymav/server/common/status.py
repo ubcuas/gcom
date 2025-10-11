@@ -62,7 +62,7 @@ class Status():
             'altitude'      : self._alt,
             'roll'          : self._rol,
             'pitch'         : self._pch,
-            'yaw'           : self._yaw,
+            'heading'       : self._yaw,
             'airspeed'      : self._asp,
             'groundspeed'   : self._gsp,
             'verticalspeed' : self._vsp,
