@@ -27,14 +27,12 @@ def test_get_status_via_web_backend(api_client):
     # Assert: Status contains required fields
     assert_status_valid(status)
 
-    # Additional checks for specific fields
-    assert (
-        "timestamp" in status or "current_wpn" in status
-    ), "Status should contain timestamp or current waypoint number"
-
 
 def test_status_contains_telemetry_data(api_client):
-    """Test that status includes all expected telemetry fields.
+    """Test that status includes all expected telemetry fields with correct types.
+
+    Validates that core telemetry fields have the expected data types.
+    Field presence is validated by assert_status_valid.
 
     Args:
         api_client: API client fixture
@@ -42,18 +40,15 @@ def test_status_contains_telemetry_data(api_client):
     # Act
     status = api_client.get_status()
 
-    # Assert: Check for extended telemetry fields
-    expected_fields = ["latitude", "longitude", "altitude", "heading"]
+    # Assert: Status contains required fields
+    assert_status_valid(status)
 
-    for field in expected_fields:
-        assert field in status, f"Status missing field: {field}"
-        assert status[field] is not None, f"Status field {field} is None"
-
-    # Validate data types
+    # Validate data types for key fields
     assert isinstance(status["latitude"], (int, float)), "Latitude should be numeric"
     assert isinstance(status["longitude"], (int, float)), "Longitude should be numeric"
     assert isinstance(status["altitude"], (int, float)), "Altitude should be numeric"
     assert isinstance(status["heading"], (int, float)), "Heading should be numeric"
+    assert isinstance(status["timestamp"], int), "Timestamp should be integer (milliseconds since epoch)"
 
 
 def test_status_updates_over_time(api_client):
@@ -80,13 +75,10 @@ def test_status_updates_over_time(api_client):
     assert_status_valid(status1)
     assert_status_valid(status2)
 
-    # Note: In SITL with no commands, some values might be static
-    # We're mainly verifying that the endpoint responds and returns valid data
-    # If timestamp is available, it should be different
-    if "timestamp" in status1 and "timestamp" in status2:
-        assert (
-            status1["timestamp"] != status2["timestamp"]
-        ), "Timestamp should update between calls"
+    # Assert: Timestamp should update between calls
+    assert (
+        status1["timestamp"] != status2["timestamp"]
+    ), "Timestamp should update between calls"
 
 
 @pytest.mark.slow
