@@ -15,6 +15,8 @@
 2. Start GCOM: `python server.py` (in `/src`)
 3. Start Celery Worker: `python -m celery -A gcom worker` (in `/src`)
 
+Remember, if you are starting up the project for the first time, or after database changes, you will need to run the database migrations: `poetry run python manage.py migrate`
+
 ## Major Dependencies
 
 ### Overview
