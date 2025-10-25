@@ -341,4 +341,4 @@ class HTTP_Server:
                 return f"Invalid input, missing a parameter.", 400
 
 
-        socketio.run(app, host="0.0.0.0", port=PORT, debug=True, use_reloader=False)
+        socketio.run(app, host="0.0.0.0", port=PORT, debug=(not production), use_reloader=False)

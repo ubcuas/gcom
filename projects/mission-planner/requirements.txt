@@ -1,0 +1,5 @@
+flask
+requests
+pymavlink
+matplotlib
+flask-socketio

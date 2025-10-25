@@ -2,16 +2,18 @@ import sys
 #from multiprocessing import Process
 from threading import Thread
 
-from server.common.sharedobject import SharedObject
-from server.gcomhandler import GCOM_Server
-from server.mps_server import MPS_Server
-from server.status_wsclient import Status_Client
+from server.utilities.connect_to_sysid import connect_to_sysid
+from server.utilities.request_message_streaming import set_message_streaming_rates
+
+from server.httpserver import HTTP_Server
 
 # Process command line args
 production = True
 HOST, PORT, SOCKET_PORT = "localhost", 9000, 9001
 STATUS_HOST, STATUS_PORT = "localhost", 1323
 DISABLE_STATUS = False
+MAVLINK_CONNECTION_STRING = 'udpin:localhost:14551'
+
 if __name__ == "__main__":
     # Extract arguments
     arguments = {}
@@ -43,35 +45,37 @@ if __name__ == "__main__":
 
     if '--disable-status' in arguments.keys():
         DISABLE_STATUS = True
+
+    if '--mavlink-conn' in arguments.keys():
+        MAVLINK_CONNECTION_STRING = arguments['--mavlink-conn'][0]
         
     print(f"Starting... HTTP server listening at {HOST}:{PORT}. " + ("" if DISABLE_STATUS else f"Status WS connecting to {STATUS_HOST}:{STATUS_PORT}."))
 
-    # Instantiate shared object
-    so = SharedObject()
+    mav_connection = connect_to_sysid(MAVLINK_CONNECTION_STRING, 1)
+    if mav_connection == None:
+        print(f"MAV connection failed")
+    else:
+        print(f"MAV connection successful")
+    
+    # set_message_streaming_rates(mav_connection) # optional - set update rate (applies to both MissionPlanner and this server)
 
     # Create server
-    mpss = MPS_Server(so)
-    gcmh = GCOM_Server(so)
-    skth = Status_Client(so)
-
-    # mpss thread
-    mpss_thread = Thread(target=mpss.serve_forever)
+    gcmh = HTTP_Server(mav_connection)
+    #skth = Status_Client(so)
 
     # gcmh thread
     gcmh_thread = Thread(target=gcmh.serve_forever, args=[production, HOST, PORT])
 
-    #status websocket client thread
-    if not DISABLE_STATUS:
-        skth_thread = Thread(target=skth.connect_to, args=[production, STATUS_HOST, STATUS_PORT])
+    # #status websocket client thread
+    # if not DISABLE_STATUS:
+    #     skth_thread = Thread(target=skth.connect_to, args=[production, STATUS_HOST, STATUS_PORT])
 
     print("\nStarting threads...\n")
 
-    mpss_thread.start()
     gcmh_thread.start()
-    if not DISABLE_STATUS:
-        skth_thread.start()
+    # if not DISABLE_STATUS:
+    #     skth_thread.start()
 
-    mpss_thread.join()
     gcmh_thread.join()
-    if not DISABLE_STATUS:
-        skth_thread.join()
+    # if not DISABLE_STATUS:
+    #     skth_thread.join()
