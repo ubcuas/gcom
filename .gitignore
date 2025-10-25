@@ -4,3 +4,6 @@
 **/.claude/**
 .mcp.json
 .serena
+
+.DS_Store
+*.env
