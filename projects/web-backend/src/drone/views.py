@@ -86,9 +86,25 @@ def queue(request):
         try:
             waypoints = json.loads(request.body)
             response = DroneApiClient.post_queue(waypoints)
+
+            if response.status_code >= 400:
+                print(f"[ERROR] Queue POST failed with status {response.status_code}")
+                print(f"[ERROR] Mission-planner response: {response.text}")
+                return JsonResponse(
+                    {"error": "Mission-planner error", "details": response.text},
+                    status=response.status_code
+                )
+
             return HttpResponse(status=response.status_code)
-        except (KeyError, ValueError, TypeError):
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"[ERROR] Invalid input for queue POST: {type(e).__name__}: {str(e)}")
             return JsonResponse({"error": "Invalid input"}, status=400)
+        except Exception as e:
+            print(f"[ERROR] Unexpected error in queue POST: {type(e).__name__}: {str(e)}")
+            return JsonResponse(
+                {"error": "Internal server error", "details": str(e)},
+                status=500
+            )
     return HttpResponse(status=405)
 
 
