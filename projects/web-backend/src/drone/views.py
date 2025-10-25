@@ -77,21 +77,19 @@ def unlock(request):
     return HttpResponse(status=response.status_code)
 
 
-@require_http_methods(["GET"])
-def get_queue(request):
-    response = DroneApiClient.get_queue()
-    return JsonResponse(response.json(), safe=False, status=response.status_code)
-
-
 @csrf_exempt
-@require_http_methods(["POST"])
-def post_queue(request):
-    try:
-        queue = json.loads(request.body)
-        response = DroneApiClient.post_queue(queue)
-        return HttpResponse(status=response.status_code)
-    except (KeyError, ValueError, TypeError):
-        return JsonResponse({"error": "Invalid input"}, status=400)
+def queue(request):
+    if request.method == "GET":
+        response = DroneApiClient.get_queue()
+        return JsonResponse(response.json(), safe=False, status=response.status_code)
+    elif request.method == "POST":
+        try:
+            waypoints = json.loads(request.body)
+            response = DroneApiClient.post_queue(waypoints)
+            return HttpResponse(status=response.status_code)
+        except (KeyError, ValueError, TypeError):
+            return JsonResponse({"error": "Invalid input"}, status=400)
+    return HttpResponse(status=405)
 
 
 @csrf_exempt
