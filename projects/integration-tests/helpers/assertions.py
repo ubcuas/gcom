@@ -13,10 +13,13 @@ if TYPE_CHECKING:
 def assert_status_valid(status: Dict[str, Any]) -> None:
     """Assert that status dictionary contains required fields with valid values.
 
-    Based on api_spec.yml Status schema, required fields are:
-    - timestamp, current_wpn, latitude, longitude, altitude
-    - roll, pitch, yaw, airspeed, groundspeed, heading
-    - batteryvoltage, winddirection, windvelocity
+    Validates core telemetry fields that must be present in status responses.
+    Required fields validated:
+    - timestamp: Status timestamp
+    - current_wpn: Current waypoint number
+    - latitude, longitude, altitude: Position data
+    - heading, groundspeed: Navigation data
+    - batteryvoltage: Power status
 
     Args:
         status: Status dictionary from API
@@ -32,7 +35,7 @@ def assert_status_valid(status: Dict[str, Any]) -> None:
         "altitude",
         "heading",
         "groundspeed",
-        "batteryvoltage"
+        "batteryvoltage",
     ]
 
     for field in required_fields:

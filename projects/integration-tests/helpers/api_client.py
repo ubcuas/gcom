@@ -210,9 +210,6 @@ class APIClient:
             response = requests.get(
                 f"{self.web_backend_url}/api/drone/status", timeout=5
             )
-            return response.status_code in [
-                200,
-                500,
-            ]  # 500 may occur if mission-planner down
-        except:
+            return response.status_code == 200
+        except (requests.RequestException, ConnectionError, TimeoutError):
             return False

@@ -77,20 +77,30 @@ def reset_drone_state(api_client):
     """
     # Setup: Clear state before test
     try:
-        api_client.clear_queue()
-    except Exception as e:
-        # If clear fails, it's okay - queue might already be empty
-        print(f"Warning: Failed to clear queue during setup: {e}")
+        response = api_client.clear_queue()
+        # Only acceptable failures are queue already empty or endpoint quirks
+        if response.status_code not in [200, 204]:
+            print(
+                f"Warning: Clear queue returned {response.status_code} during setup"
+            )
+    except (ConnectionError, TimeoutError) as e:
+        # Connection failures should fail the test setup
+        pytest.fail(f"Failed to connect to services during test setup: {e}")
 
     # Run the test
     yield
 
     # Teardown: Clean up after test
     try:
-        api_client.clear_queue()
-    except Exception as e:
-        # If clear fails during teardown, log but don't fail the test
-        print(f"Warning: Failed to clear queue during teardown: {e}")
+        response = api_client.clear_queue()
+        if response.status_code not in [200, 204]:
+            print(
+                f"Warning: Clear queue returned {response.status_code} during teardown"
+            )
+    except (ConnectionError, TimeoutError):
+        # Connection failures during teardown are logged but don't fail the test
+        # as the test itself may have already completed successfully
+        print("Warning: Failed to connect to services during teardown")
 
 
 @pytest.fixture
