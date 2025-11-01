@@ -68,7 +68,7 @@ def get_status(mav_connection: mavutil.mavfile) -> Status:
 
         math.degrees(status_att.roll),
         math.degrees(status_att.pitch),
-        math.degrees(status_att.yaw),
+        math.degrees(status_att.yaw) % 360,
 
         status_vfr.airspeed,
         status_vfr.groundspeed,

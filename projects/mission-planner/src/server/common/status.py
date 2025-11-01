@@ -62,7 +62,7 @@ class Status():
             'altitude'      : self._alt,
             'roll'          : self._rol,
             'pitch'         : self._pch,
-            'heading'       : self._yaw % 360,
+            'heading'       : self._yaw,
             'airspeed'      : self._asp,
             'groundspeed'   : self._gsp,
             'verticalspeed' : self._vsp,
@@ -79,7 +79,7 @@ class Status():
             'altitude' : self._alt,
             'vertical_velocity': self._vsp,
             'velocity': self._gsp,
-            'heading': self._yaw % 360,
+            'heading': self._yaw,
             'battery_voltage' : self._btv
         }
     
