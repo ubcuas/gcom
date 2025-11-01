@@ -2,7 +2,8 @@ from pymavlink import mavutil
 from pymavlink.mavutil import mavfile
 import time
 
-def connect_to_sysid(connection_str : str, sysid : int, timeout: float = 3) -> mavfile:
+
+def connect_to_sysid(connection_str: str, sysid: int, timeout: float = 3) -> mavfile:
     """
     connect_to_sysid connects to a mavlink stream with a specific sysid
 
@@ -12,22 +13,26 @@ def connect_to_sysid(connection_str : str, sysid : int, timeout: float = 3) -> m
         timeout (float, optional): Maximum time to wait for the connection in seconds. Defaults to 3.
 
     Returns:
-        mavutil.mavlink_connection: Returns the connection object if connection is successful, 
+        mavutil.mavlink_connection: Returns the connection object if connection is successful,
         else returns None after the timeout
-    """    
+    """
     the_connection = mavutil.mavlink_connection(connection_str)
     time_start = time.time()
 
     while time.time() - time_start < timeout:
         try:
-            the_connection.wait_heartbeat()
-            print(f"Heartbeat from system {the_connection.target_system} component {the_connection.target_component}")
+            the_connection.wait_heartbeat(timeout=1)
+            print(
+                f"Heartbeat from system {the_connection.target_system} component {the_connection.target_component}"
+            )
             if the_connection.target_system == sysid:
                 print(f"Now connected to SYSID {sysid}")
                 return the_connection
         except Exception as e:
-            print(f"Error while waiting for heartbeat: {e}")
-            return None
+            elapsed = time.time() - time_start
+            print(f"Waiting for heartbeat... ({elapsed:.1f}s elapsed)")
+            if elapsed >= timeout:
+                break
 
     print(f"Connection timeout after {timeout} seconds")
     return None
