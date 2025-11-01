@@ -111,6 +111,7 @@ def sample_waypoint():
         dict: Waypoint dictionary with valid test data
     """
     return {
+        "id": 0,
         "name": "TestWP1",
         "latitude": -35.363261,
         "longitude": 149.165230,
@@ -127,18 +128,21 @@ def sample_waypoints():
     """
     return [
         {
+            "id": 0,
             "name": "WP1",
             "latitude": -35.363261,
             "longitude": 149.165230,
             "altitude": 50.0,
         },
         {
+            "id": 1,
             "name": "WP2",
             "latitude": -35.363361,
             "longitude": 149.165330,
             "altitude": 55.0,
         },
         {
+            "id": 2,
             "name": "WP3",
             "latitude": -35.363461,
             "longitude": 149.165430,
