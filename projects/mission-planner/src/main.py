@@ -61,8 +61,8 @@ if __name__ == "__main__":
 
     # Create MPS server
     gcmh = HTTP_Server(mav_connection)
-
-    skth = Status_Client(so)
+    # Create websocket status client
+    wsc = Status_Client(mav_connection)
 
     # gcmh thread
     gcmh_thread = Thread(target=gcmh.serve_forever, args=[production, HOST, PORT])

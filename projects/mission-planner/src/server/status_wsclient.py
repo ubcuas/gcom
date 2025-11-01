@@ -2,13 +2,14 @@ import time
 import socketio
 
 from server.common.status import Status
+from server.operations.get_info import get_status
 
 DELAY = 0.1
 RECONNECT = 15
 
 class Status_Client():
-    def __init__(self, status: Status):
-        self._status: Status = status
+    def __init__(self, mav_connection):
+        self.mav_connection: mavfile = mav_connection
         self._url: str = ""
     
     def handle_error(self, data):
@@ -31,7 +32,7 @@ class Status_Client():
 
         while True:
             try:
-                self.sio.emit('drone_update', self._status.get_status().as_reduced_status())
+                self.sio.emit('drone_update', self.get_status(mav_connection).as_reduced_status())
                 time.sleep(DELAY)
             except:
                 #A BadNamespaceError will occur when GCOM disconnects suddenly - leverage this for a reconnect?
