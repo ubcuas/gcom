@@ -90,7 +90,10 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
         mavutil.mavlink.MAV_MISSION_TYPE_MISSION
     )
 
-    msg = mav_connection.recv_match(type=['MISSION_COUNT'], blocking=True)
+    msg = mav_connection.recv_match(type=['MISSION_COUNT'], blocking=True, timeout=3)
+    if not msg:
+        print('No MISSION_COUNT received within timeout period')
+        return ret
     if msg and msg.get_type() != "BAD_DATA":
         print(f"Recieved {msg}")
 
@@ -104,7 +107,7 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
         )
 
         # receive MISSION_ITEM_INT
-        msg = mav_connection.recv_match(type=['MISSION_ITEM_INT'], blocking=True)
+        msg = mav_connection.recv_match(type=['MISSION_ITEM_INT'], blocking=True, timeout=3)
         if msg and msg.get_type() != "BAD_DATA":
             # print(f"Recieved the {current}th Mission Item: {msg}")
         
