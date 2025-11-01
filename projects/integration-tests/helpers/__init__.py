@@ -18,6 +18,9 @@ from .assertions import (
     assert_queue_not_empty,
     assert_field_values_match,
     assert_queue_upload_successful,
+    assert_waypoint_db_match,
+    assert_route_contains_waypoints,
+    assert_waypoints_ordered,
 )
 
 __all__ = [
@@ -36,4 +39,7 @@ __all__ = [
     "assert_queue_not_empty",
     "assert_field_values_match",
     "assert_queue_upload_successful",
+    "assert_waypoint_db_match",
+    "assert_route_contains_waypoints",
+    "assert_waypoints_ordered",
 ]
