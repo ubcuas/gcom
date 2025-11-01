@@ -111,10 +111,16 @@ def sample_waypoint():
         dict: Waypoint dictionary with valid test data
     """
     return {
-        "name": "TestWP1",
+        "id": 0,
+        "name": "Test Waypoint",
         "latitude": -35.363261,
         "longitude": 149.165230,
         "altitude": 50.0,
+        "command": "WAYPOINT",
+        "param1": 0,
+        "param2": 0,
+        "param3": 0,
+        "param4": 0
     }
 
 
