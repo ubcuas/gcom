@@ -9,11 +9,21 @@ class DroneApiClient:
     def _fetch_from_mission_planner(endpoint, method="GET", data=None):
         url = f"{DroneApiClient._mission_planner_api_url}/{endpoint}"
         headers = {"Content-Type": "application/json"}
-        if method == "GET":
-            response = requests.get(url)
-        elif method == "POST":
-            response = requests.post(url, headers=headers, data=json.dumps(data))
-        return response
+        try:
+            if method == "GET":
+                response = requests.get(url)
+            elif method == "POST":
+                response = requests.post(url, headers=headers, data=json.dumps(data))
+
+            if response.status_code >= 400:
+                print(f"[ERROR] Mission-planner {method} {endpoint} returned {response.status_code}")
+                print(f"[ERROR] Response body: {response.text}")
+
+            return response
+        except requests.exceptions.RequestException as e:
+            print(f"[ERROR] Failed to connect to mission-planner at {url}")
+            print(f"[ERROR] Exception: {type(e).__name__}: {str(e)}")
+            raise
 
     @staticmethod
     def get_current_status():
