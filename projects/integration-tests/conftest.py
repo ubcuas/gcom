@@ -111,7 +111,7 @@ def sample_waypoint():
     and param1-4 are omitted to test default behavior.
 
     Returns:
-        dict: Waypoint dictionary with minimal required fields
+        dict: Waypoint dictionary with valid required fields
     """
     return {
         "id": 1,
@@ -130,7 +130,7 @@ def sample_waypoints():
     work without specifying command or param fields.
 
     Returns:
-        list: List of waypoint dictionaries with minimal fields
+        list: List of waypoint dictionaries with valid required fields
     """
     return [
         {
