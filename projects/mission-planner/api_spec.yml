@@ -432,9 +432,6 @@ components:
         pitch:
           type: number
           format: float64
-        yaw:
-          type: number
-          format: float64
         airspeed:
           type: number
           format: float64

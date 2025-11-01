@@ -122,10 +122,9 @@ This system operates on **two distinct control modes**:
   "altitude": 50,
   "roll": 0.5,
   "pitch": -1.2,
-  "yaw": 180,
   "airspeed": 12,
   "groundspeed": 11.5,
-  "heading": 175,
+  "heading": 180,
   "batteryvoltage": 12.6,
   "winddirection": 90,
   "windvelocity": 3.5
@@ -136,10 +135,10 @@ This system operates on **two distinct control modes**:
 - `current_wpn`: Current waypoint number in the mission (0 if no mission)
 - `latitude/longitude`: GPS coordinates in degrees
 - `altitude`: Relative to sea level in meters
-- `roll/pitch/yaw`: Attitude in degrees
+- `roll/pitch`: Attitude in degrees
 - `airspeed`: Speed relative to air in m/s
 - `groundspeed`: Speed relative to ground in m/s
-- `heading`: Direction of travel in degrees (0-360)
+- `heading`: Aircraft nose direction in degrees (0-360)
 - `batteryvoltage`: Battery voltage in volts
 - `winddirection/windvelocity`: Estimated wind in degrees and m/s
 
