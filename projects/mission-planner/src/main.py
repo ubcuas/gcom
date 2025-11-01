@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # Create MPS server
     gcmh = HTTP_Server(mav_connection)
-    
+
     skth = Status_Client(so)
 
     # gcmh thread

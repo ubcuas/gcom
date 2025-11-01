@@ -1,16 +1,14 @@
 import time
 import socketio
 
-# find a replacement for sharedobject import
-# from server.common.sharedobject import SharedObject
 from server.common.status import Status
 
 DELAY = 0.1
 RECONNECT = 15
 
 class Status_Client():
-    def __init__(self, shared_obj: SharedObject):
-        self._so: SharedObject = shared_obj
+    def __init__(self, status: Status):
+        self._status: Status = status
         self._url: str = ""
     
     def handle_error(self, data):
@@ -33,7 +31,7 @@ class Status_Client():
 
         while True:
             try:
-                self.sio.emit('drone_update', self._so.get_status().as_reduced_status())
+                self.sio.emit('drone_update', self._status.get_status().as_reduced_status())
                 time.sleep(DELAY)
             except:
                 #A BadNamespaceError will occur when GCOM disconnects suddenly - leverage this for a reconnect?
