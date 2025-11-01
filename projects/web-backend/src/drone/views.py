@@ -78,6 +78,7 @@ def unlock(request):
 
 
 @csrf_exempt
+@require_http_methods(["GET", "POST"])
 def queue(request):
     if request.method == "GET":
         response = DroneApiClient.get_queue()
@@ -105,7 +106,6 @@ def queue(request):
                 {"error": "Internal server error", "details": str(e)},
                 status=500
             )
-    return HttpResponse(status=405)
 
 
 @csrf_exempt
