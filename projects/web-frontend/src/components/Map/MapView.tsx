@@ -18,6 +18,7 @@ export default function MapView() {
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const coords = useAppSelector(selectMapCenterCoords);
     const dispatch = useAppDispatch();
+    const KEY = import.meta.env.VITE_MAPTILER_KEY as string;
 
     useEffect(() => {
         dispatch(initializeMpsWaypointMapState(mpsWaypoints.length));
@@ -51,7 +52,7 @@ export default function MapView() {
                 }}
                 mapStyle={
                     window.navigator.onLine
-                        ? "https://api.maptiler.com/maps/basic-v2/style.json?key=ioE7W2lCif3DO9oj1YJh"
+                        ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${KEY}`
                         : "http://localhost:8000/api/map-tiles/osmbright"
                 }
                 doubleClickZoom={false}
