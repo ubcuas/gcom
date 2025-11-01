@@ -107,20 +107,18 @@ def reset_drone_state(api_client):
 def sample_waypoint():
     """Provide a sample waypoint for testing.
 
+    Uses minimal required fields. Optional fields like altitude, command,
+    and param1-4 are omitted to test default behavior.
+
     Returns:
-        dict: Waypoint dictionary with valid test data
+        dict: Waypoint dictionary with minimal required fields
     """
     return {
-        "id": 0,
+        "id": 1,
         "name": "Test Waypoint",
         "latitude": -35.363261,
         "longitude": 149.165230,
         "altitude": 50.0,
-        "command": "WAYPOINT",
-        "param1": 0,
-        "param2": 0,
-        "param3": 0,
-        "param4": 0
     }
 
 
@@ -128,23 +126,29 @@ def sample_waypoint():
 def sample_waypoints():
     """Provide a list of sample waypoints for testing.
 
+    Uses minimal required fields plus altitude. Tests that waypoints
+    work without specifying command or param fields.
+
     Returns:
-        list: List of waypoint dictionaries with valid test data
+        list: List of waypoint dictionaries with minimal fields
     """
     return [
         {
+            "id": 1,
             "name": "WP1",
             "latitude": -35.363261,
             "longitude": 149.165230,
             "altitude": 50.0,
         },
         {
+            "id": 2,
             "name": "WP2",
             "latitude": -35.363361,
             "longitude": 149.165330,
             "altitude": 55.0,
         },
         {
+            "id": 3,
             "name": "WP3",
             "latitude": -35.363461,
             "longitude": 149.165430,
