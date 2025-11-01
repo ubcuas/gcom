@@ -63,6 +63,7 @@ async def drone_update(sid: str, data: dict) -> None:
     print(f"[SOCKET] Drone Update from {sid}: {data}")
 
     await sync_to_async(process_drone_update)(data)
+    await sio.emit("drone_update", data)
 
 
 def process_drone_update(data: dict) -> None:
