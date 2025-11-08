@@ -21,6 +21,7 @@ from .assertions import (
     assert_waypoint_db_match,
     assert_route_contains_waypoints,
     assert_waypoints_ordered,
+    filter_home_waypoint,
 )
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "assert_waypoint_db_match",
     "assert_route_contains_waypoints",
     "assert_waypoints_ordered",
+    "filter_home_waypoint",
 ]

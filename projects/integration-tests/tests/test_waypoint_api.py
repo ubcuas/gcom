@@ -10,6 +10,7 @@ from helpers import (
     assert_route_contains_waypoints,
     assert_waypoints_ordered,
     assert_waypoints_match,
+    filter_home_waypoint,
 )
 
 
@@ -414,9 +415,10 @@ def test_load_saved_route_to_drone(api_client, sample_route_data):
     upload_response = api_client.post_queue(drone_waypoints)
     assert upload_response.status_code == 200, f"Failed to upload to drone: {upload_response.text}"
 
-    # Step 5: Verify drone queue
+    # Step 5: Verify drone queue (filter out home waypoint)
     drone_queue = api_client.get_queue()
-    assert_waypoints_match(drone_queue, drone_waypoints)
+    filtered_queue = filter_home_waypoint(drone_queue)
+    assert_waypoints_match(filtered_queue, drone_waypoints)
 
 
 def test_load_empty_route_to_drone(api_client, sample_route_data):
@@ -441,9 +443,10 @@ def test_load_empty_route_to_drone(api_client, sample_route_data):
     # Should accept empty queue (clearing the queue)
     assert upload_response.status_code == 200, "Should accept empty waypoint list"
 
-    # Verify drone queue is empty
+    # Verify drone queue is empty (excluding home waypoint)
     drone_queue = api_client.get_queue()
-    assert len(drone_queue) == 1, "Drone queue should be empty - except for home point"
+    filtered_queue = filter_home_waypoint(drone_queue)
+    assert len(filtered_queue) == 0, "Drone queue should be empty (excluding home waypoint)"
 
 
 def test_waypoint_not_found_error(api_client):

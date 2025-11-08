@@ -104,6 +104,7 @@ def assert_waypoints_match(
     Raises:
         AssertionError: If lists don't match
     """
+    # print(f"Comparing {json.dumps(actual_list, indent=2)} actual waypoints to {json.dumps(expected_list, indent=2)} expected waypoints")
     assert len(actual_list) == len(
         expected_list
     ), f"Waypoint count mismatch: {len(actual_list)} != {len(expected_list)}"
@@ -163,8 +164,25 @@ def assert_altitude_near(
     ), f"Altitude mismatch: {actual_altitude}m != {expected_altitude}m (±{tolerance}m)"
 
 
+def filter_home_waypoint(queue: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Filter out the home waypoint from a queue.
+
+    The home waypoint is identified by having id == 0 and "home" in the name.
+
+    Args:
+        queue: Waypoint queue from API
+
+    Returns:
+        Queue with home waypoint removed
+    """
+    return [
+        wp for wp in queue
+        if not (wp.get("id") == 0 and "home" in wp.get("name", "").lower())
+    ]
+
+
 def assert_queue_empty(queue: List[Dict[str, Any]]) -> None:
-    """Assert that waypoint queue is empty.
+    """Assert that waypoint queue is empty (excluding home waypoint).
 
     Args:
         queue: Waypoint queue from API
@@ -172,11 +190,12 @@ def assert_queue_empty(queue: List[Dict[str, Any]]) -> None:
     Raises:
         AssertionError: If queue is not empty
     """
-    assert len(queue) == 0, f"Expected empty queue but found {len(queue)} waypoints"
+    filtered = filter_home_waypoint(queue)
+    assert len(filtered) == 0, f"Expected empty queue but found {len(filtered)} waypoints"
 
 
 def assert_queue_not_empty(queue: List[Dict[str, Any]]) -> None:
-    """Assert that waypoint queue is not empty.
+    """Assert that waypoint queue is not empty (excluding home waypoint).
 
     Args:
         queue: Waypoint queue from API
@@ -184,7 +203,8 @@ def assert_queue_not_empty(queue: List[Dict[str, Any]]) -> None:
     Raises:
         AssertionError: If queue is empty
     """
-    assert len(queue) > 0, "Expected non-empty queue but found 0 waypoints"
+    filtered = filter_home_waypoint(queue)
+    assert len(filtered) > 0, "Expected non-empty queue but found 0 waypoints"
 
 
 def assert_field_values_match(
@@ -234,7 +254,7 @@ def assert_queue_upload_successful(
     This helper consolidates the common pattern of:
     1. Uploading waypoints to the queue
     2. Checking response status
-    3. Retrieving and validating the queue contents
+    3. Retrieving and validating the queue contents (excluding home waypoint)
 
     Args:
         api_client: API client instance
@@ -242,7 +262,7 @@ def assert_queue_upload_successful(
         check_response: Whether to assert response status code is 200
 
     Returns:
-        The queue retrieved after upload
+        The queue retrieved after upload (with home waypoint filtered out)
 
     Raises:
         AssertionError: If upload fails or waypoints don't match
@@ -255,8 +275,9 @@ def assert_queue_upload_successful(
         ), f"Failed to upload waypoints: {response.status_code} - {response.text}"
 
     queue = api_client.get_queue()
-    assert_waypoints_match(queue, waypoints)
-    return queue
+    filtered_queue = filter_home_waypoint(queue)
+    assert_waypoints_match(filtered_queue, waypoints)
+    return filtered_queue
 
 
 def assert_waypoint_db_match(
