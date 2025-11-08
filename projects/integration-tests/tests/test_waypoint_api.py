@@ -443,7 +443,7 @@ def test_load_empty_route_to_drone(api_client, sample_route_data):
 
     # Verify drone queue is empty
     drone_queue = api_client.get_queue()
-    assert len(drone_queue) == 0, "Drone queue should be empty"
+    assert len(drone_queue) == 1, "Drone queue should be empty - except for home point"
 
 
 def test_waypoint_not_found_error(api_client):
