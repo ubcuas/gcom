@@ -104,7 +104,6 @@ def assert_waypoints_match(
     Raises:
         AssertionError: If lists don't match
     """
-    # print(f"Comparing {json.dumps(actual_list, indent=2)} actual waypoints to {json.dumps(expected_list, indent=2)} expected waypoints")
     assert len(actual_list) == len(
         expected_list
     ), f"Waypoint count mismatch: {len(actual_list)} != {len(expected_list)}"
