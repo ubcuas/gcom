@@ -11,3 +11,4 @@ uvicorn~=0.30.6
 asgiref~=3.8.1
 daphne~=4.2.1
 django-cors-headers~=4.9.0
+redis~=7.0.1
