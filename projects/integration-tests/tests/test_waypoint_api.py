@@ -416,9 +416,10 @@ def test_load_saved_route_to_drone(api_client, sample_route_data):
     assert upload_response.status_code == 200, f"Failed to upload to drone: {upload_response.text}"
 
     # Step 5: Verify drone queue (filter out home waypoint)
+    # Note: Don't check names as /api/drone/queue doesn't preserve them
     drone_queue = api_client.get_queue()
     filtered_queue = filter_home_waypoint(drone_queue)
-    assert_waypoints_match(filtered_queue, drone_waypoints)
+    assert_waypoints_match(filtered_queue, drone_waypoints, check_fields=["latitude", "longitude", "altitude"])
 
 
 def test_load_empty_route_to_drone(api_client, sample_route_data):
