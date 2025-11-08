@@ -18,13 +18,13 @@ export default function Settings() {
     const settings = useAppSelector(selectAppSlice);
 
     const [coords, setCoords] = useState<StringCoords>({
-        lat: settings.mapCenterCoords.lat.toString(),
-        long: settings.mapCenterCoords.long.toString(),
+        latitude: settings.mapCenterCoords.latitude.toString(),
+        longitude: settings.mapCenterCoords.longitude.toString(),
     });
 
     const getCoordError = (coords: StringCoords) => ({
-        lat: !checkLat(parseFloat(coords.lat)),
-        long: !checkLong(parseFloat(coords.long)),
+        latitude: !checkLat(parseFloat(coords.latitude)),
+        longitude: !checkLong(parseFloat(coords.longitude)),
     });
 
     const handleThemeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,11 +47,11 @@ export default function Settings() {
         // allow changes to input even if its not a valid coordinate
         const newCoords =
             event.target.id === "longitude"
-                ? { ...coords, long: event.target.value }
-                : { ...coords, lat: event.target.value };
+                ? { ...coords, longitude: event.target.value }
+                : { ...coords, latitude: event.target.value };
         setCoords(newCoords);
         // ONLY update store coords if the input is a valid coordinate.
-        const parsedCoords = { lat: parseFloat(newCoords.lat), long: parseFloat(newCoords.long) };
+        const parsedCoords = { latitude: parseFloat(newCoords.latitude), longitude: parseFloat(newCoords.longitude) };
         if (validCoords(parsedCoords)) {
             dispatch(setMapCenterCoords(parsedCoords));
         }
@@ -111,17 +111,17 @@ export default function Settings() {
                         id="longitude"
                         type="text"
                         name="Map Default Center Longitude"
-                        value={coords.long}
+                        value={coords.longitude}
                         onChange={handleDefaultCoordChange}
-                        error={getCoordError(coords).long}
+                        error={getCoordError(coords).longitude}
                     />
                     <SettingItem
                         id="latitude"
                         type="text"
                         name="Map Default Center Latitude"
-                        value={coords.lat}
+                        value={coords.latitude}
                         onChange={handleDefaultCoordChange}
-                        error={getCoordError(coords).lat}
+                        error={getCoordError(coords).latitude}
                     />
                 </Stack>
             </Paper>

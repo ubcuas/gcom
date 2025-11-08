@@ -26,7 +26,7 @@ export default function MapView() {
 
     const routeData: GeoJSON.GeoJSON = {
         type: "LineString",
-        coordinates: mpsWaypoints.map((waypoint) => [waypoint.long, waypoint.lat]),
+        coordinates: mpsWaypoints.map((waypoint) => [waypoint.longitude, waypoint.latitude]),
     };
     const routeStyle: LayerProps = {
         id: "mps-route",
@@ -46,8 +46,8 @@ export default function MapView() {
         >
             <Map
                 initialViewState={{
-                    longitude: coords.long,
-                    latitude: coords.lat,
+                    longitude: coords.longitude,
+                    latitude: coords.latitude,
                     zoom: 10,
                 }}
                 mapStyle={
@@ -60,8 +60,8 @@ export default function MapView() {
                 {mpsWaypoints.map((waypoint, i) => (
                     <Fragment key={i}>
                         <Marker
-                            latitude={waypoint.lat}
-                            longitude={waypoint.long}
+                            latitude={waypoint.latitude}
+                            longitude={waypoint.longitude}
                             onClick={() => dispatch(toggleMpsWaypointMapState(i))}
                             style={{
                                 cursor: "pointer",
@@ -93,7 +93,7 @@ export default function MapView() {
                             </Box>
                         </Marker>
                         {mpsWaypointMapState[i] && (
-                            <Marker latitude={waypoint.lat} longitude={waypoint.long}>
+                            <Marker latitude={waypoint.latitude} longitude={waypoint.longitude}>
                                 <WaypointItem
                                     sx={{
                                         position: "absolute",

@@ -3,8 +3,8 @@ import { Waypoint } from "./Waypoint";
 export type FormState = Record<keyof Omit<Waypoint, "id">, string>;
 
 export type FormErrors = {
-    lat: boolean;
-    long: boolean;
+    latitude: boolean;
+    longitude: boolean;
     alt: boolean;
 };
 
