@@ -53,7 +53,8 @@ if __name__ == "__main__":
 
     mav_connection = connect_to_sysid(MAVLINK_CONNECTION_STRING, 1)
     if mav_connection == None:
-        print(f"MAV connection failed")
+        # Often this can be fixed by restarting mavproxy
+        raise ConnectionError(f"MAV connection failed. Is mavproxy running?")
     else:
         print(f"MAV connection successful")
     
