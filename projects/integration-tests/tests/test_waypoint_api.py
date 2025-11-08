@@ -11,6 +11,7 @@ from helpers import (
     assert_waypoints_ordered,
     assert_waypoints_match,
     filter_home_waypoint,
+    transform_db_waypoints_to_drone_format,
 )
 
 
@@ -399,17 +400,9 @@ def test_load_saved_route_to_drone(api_client, sample_route_data):
     assert_route_contains_waypoints(retrieved_route, 3)
 
     # Step 3: Transform database waypoints to drone format
-    # Drone waypoints need: id, name, latitude, longitude, altitude
-    drone_waypoints = [
-        {
-            "id": idx,
-            "name": wp["name"],
-            "latitude": wp["latitude"],
-            "longitude": wp["longitude"],
-            "altitude": wp["altitude"],
-        }
-        for idx, wp in enumerate(retrieved_route["waypoints"])
-    ]
+    drone_waypoints = transform_db_waypoints_to_drone_format(
+        retrieved_route["waypoints"]
+    )
 
     # Step 4: Load to drone queue
     upload_response = api_client.post_queue(drone_waypoints)
