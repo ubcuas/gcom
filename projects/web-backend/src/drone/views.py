@@ -77,21 +77,35 @@ def unlock(request):
     return HttpResponse(status=response.status_code)
 
 
-@require_http_methods(["GET"])
-def get_queue(request):
-    response = DroneApiClient.get_queue()
-    return JsonResponse(response.json(), safe=False, status=response.status_code)
-
-
 @csrf_exempt
-@require_http_methods(["POST"])
-def post_queue(request):
-    try:
-        queue = json.loads(request.body)
-        response = DroneApiClient.post_queue(queue)
-        return HttpResponse(status=response.status_code)
-    except (KeyError, ValueError, TypeError):
-        return JsonResponse({"error": "Invalid input"}, status=400)
+@require_http_methods(["GET", "POST"])
+def queue(request):
+    if request.method == "GET":
+        response = DroneApiClient.get_queue()
+        return JsonResponse(response.json(), safe=False, status=response.status_code)
+    elif request.method == "POST":
+        try:
+            waypoints = json.loads(request.body)
+            response = DroneApiClient.post_queue(waypoints)
+
+            if response.status_code >= 400:
+                print(f"[ERROR] Queue POST failed with status {response.status_code}")
+                print(f"[ERROR] Mission-planner response: {response.text}")
+                return JsonResponse(
+                    {"error": "Mission-planner error", "details": response.text},
+                    status=response.status_code
+                )
+
+            return HttpResponse(status=response.status_code)
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"[ERROR] Invalid input for queue POST: {type(e).__name__}: {str(e)}")
+            return JsonResponse({"error": "Invalid input"}, status=400)
+        except Exception as e:
+            print(f"[ERROR] Unexpected error in queue POST: {type(e).__name__}: {str(e)}")
+            return JsonResponse(
+                {"error": "Internal server error", "details": str(e)},
+                status=500
+            )
 
 
 @csrf_exempt

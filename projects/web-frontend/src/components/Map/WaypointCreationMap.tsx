@@ -14,6 +14,7 @@ import WaypointItem from "../WaypointItem";
 import { roundTo } from "../../utils/routeTo";
 import { Box } from "@mui/material";
 import { WaypointEditState } from "../../types/Waypoint";
+import { MAPTILER_API_KEY } from "../../constants";
 
 type DraggedMarker = {
     long: number;
@@ -76,7 +77,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
             }}
             mapStyle={
                 window.navigator.onLine
-                    ? "https://api.maptiler.com/maps/basic-v2/style.json?key=ioE7W2lCif3DO9oj1YJh"
+                    ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`
                     : "./src/mapStyles/osmbright.json"
             }
             onClick={createNewWaypoint}
