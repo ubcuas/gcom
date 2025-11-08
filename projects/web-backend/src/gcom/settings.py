@@ -26,9 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError(
+        "SECRET_KEY environment variable is not set. "
+        "Please copy .env.example to .env and configure it with your values."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG")
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = "*"

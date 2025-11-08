@@ -14,6 +14,7 @@ import WaypointItem from "../WaypointItem";
 import { roundTo } from "../../utils/routeTo";
 import { Box } from "@mui/material";
 import { WaypointEditState } from "../../types/Waypoint";
+import { MAPTILER_API_KEY } from "../../constants";
 
 type DraggedMarker = {
     long: number;
@@ -33,7 +34,6 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
     const dispatch = useAppDispatch();
     const [selectedWaypoints, setSelectedWaypoints] = useState<boolean[]>(clientWPQueue.map(() => false));
     const [draggedMarkerData, setDraggedMarkerData] = useState<DraggedMarker | null>(null);
-    const KEY = import.meta.env.VITE_MAPTILER_KEY as string;
 
     const routeData: GeoJSON.GeoJSON = {
         type: "LineString",
@@ -77,7 +77,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
             }}
             mapStyle={
                 window.navigator.onLine
-                    ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${KEY}`
+                    ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`
                     : "./src/mapStyles/osmbright.json"
             }
             onClick={createNewWaypoint}
