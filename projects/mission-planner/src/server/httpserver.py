@@ -180,13 +180,21 @@ class HTTP_Server:
 
             try:
                 result = takeoff(self.mav_connection, altitude)
-            except ValueError:
-                result = 1
 
-            if result == 0:
-                return "Takeoff command successful", 200
-            else:
+                if result == 0:
+                    return "Takeoff command successful", 200
+
+                # see https://mavlink.io/en/messages/common.html#MAV_RESULT for MAV_RESULT code interpretation
+                print("[ERROR] Takeoff unsuccessful - MAVLink MAV_RESULT code: ", result)
                 return "Takeoff unsuccessful", 400
+
+            except ValueError:
+                print('[ERROR] Takeoff failed - invalid params')
+                return "Takeoff failed - autopilot not supported for this mavlink connection", 400
+            except Exception as e:
+                print(f"[ERROR] Takeoff failed - {type(e).__name__}: {str(e)}")
+                return "Takeoff failed - unknown error", 500
+
 
         @app.route("/arm", methods=["PUT"])
         def put_arm_disarm_drone():
