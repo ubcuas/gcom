@@ -1,9 +1,9 @@
 export type Coords = {
-    lat: number;
-    long: number;
+    latitude: number;
+    longitude: number;
 };
 
 export type StringCoords = {
-    lat: string;
-    long: string;
+    latitude: string;
+    longitude: string;
 };

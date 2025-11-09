@@ -11,7 +11,6 @@ import {
 import { selectAircraftStatus, selectMPSWaypoints } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
-import { MAPTILER_API_KEY } from "../../constants";
 
 export default function MapView() {
     const mpsWaypoints = useAppSelector(selectMPSWaypoints);
@@ -19,6 +18,7 @@ export default function MapView() {
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const coords = useAppSelector(selectMapCenterCoords);
     const dispatch = useAppDispatch();
+    const KEY = import.meta.env.VITE_MAPTILER_KEY as string;
 
     useEffect(() => {
         dispatch(initializeMpsWaypointMapState(mpsWaypoints.length));
@@ -26,7 +26,7 @@ export default function MapView() {
 
     const routeData: GeoJSON.GeoJSON = {
         type: "LineString",
-        coordinates: mpsWaypoints.map((waypoint) => [waypoint.long, waypoint.lat]),
+        coordinates: mpsWaypoints.map((waypoint) => [waypoint.longitude, waypoint.latitude]),
     };
     const routeStyle: LayerProps = {
         id: "mps-route",
@@ -46,13 +46,13 @@ export default function MapView() {
         >
             <Map
                 initialViewState={{
-                    longitude: coords.long,
-                    latitude: coords.lat,
+                    longitude: coords.longitude,
+                    latitude: coords.latitude,
                     zoom: 10,
                 }}
                 mapStyle={
                     window.navigator.onLine
-                        ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`
+                        ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${KEY}`
                         : "http://localhost:8000/api/map-tiles/osmbright"
                 }
                 doubleClickZoom={false}
@@ -60,8 +60,8 @@ export default function MapView() {
                 {mpsWaypoints.map((waypoint, i) => (
                     <Fragment key={i}>
                         <Marker
-                            latitude={waypoint.lat}
-                            longitude={waypoint.long}
+                            latitude={waypoint.latitude}
+                            longitude={waypoint.longitude}
                             onClick={() => dispatch(toggleMpsWaypointMapState(i))}
                             style={{
                                 cursor: "pointer",
@@ -93,7 +93,7 @@ export default function MapView() {
                             </Box>
                         </Marker>
                         {mpsWaypointMapState[i] && (
-                            <Marker latitude={waypoint.lat} longitude={waypoint.long}>
+                            <Marker latitude={waypoint.latitude} longitude={waypoint.longitude}>
                                 <WaypointItem
                                     sx={{
                                         position: "absolute",

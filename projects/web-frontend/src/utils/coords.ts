@@ -2,12 +2,17 @@ import { Coords } from "../types/Coords";
 
 export const defaultCoords: Coords = {
     // UBC
-    long: -123.246,
-    lat: 49.2606,
+    longitude: -123.246,
+    latitude: 49.2606,
 };
 
 export function validCoords(coords: Coords) {
-    return coords.lat !== null && coords.long !== null && checkLat(coords.lat) && checkLong(coords.long);
+    return (
+        coords.latitude !== null &&
+        coords.longitude !== null &&
+        checkLat(coords.latitude) &&
+        checkLong(coords.longitude)
+    );
 }
 
 export function checkLat(lat: number) {
