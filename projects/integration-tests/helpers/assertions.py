@@ -164,15 +164,18 @@ def assert_altitude_near(
 
 
 def assert_queue_empty(queue: List[Dict[str, Any]]) -> None:
-    """Assert that waypoint queue is empty.
+    """Assert that waypoint queue is empty (only home waypoint present).
+
+    Note: MAVLink missions always include a home waypoint at seq=0.
+    An "empty" queue means only the home waypoint is present.
 
     Args:
         queue: Waypoint queue from API
 
     Raises:
-        AssertionError: If queue is not empty
+        AssertionError: If queue has more than just home waypoint
     """
-    assert len(queue) == 0, f"Expected empty queue but found {len(queue)} waypoints"
+    assert len(queue) <= 1, f"Expected empty queue (home only) but found {len(queue)} waypoints"
 
 
 def assert_queue_not_empty(queue: List[Dict[str, Any]]) -> None:
@@ -236,13 +239,17 @@ def assert_queue_upload_successful(
     2. Checking response status
     3. Retrieving and validating the queue contents
 
+    Note: MAVLink missions always include a home waypoint at seq=0.
+    This function accounts for that by comparing only the uploaded waypoints
+    (skipping the home waypoint in the returned queue).
+
     Args:
         api_client: API client instance
         waypoints: List of waypoints to upload
         check_response: Whether to assert response status code is 200
 
     Returns:
-        The queue retrieved after upload
+        The queue retrieved after upload (includes home waypoint)
 
     Raises:
         AssertionError: If upload fails or waypoints don't match
@@ -255,5 +262,18 @@ def assert_queue_upload_successful(
         ), f"Failed to upload waypoints: {response.status_code} - {response.text}"
 
     queue = api_client.get_queue()
-    assert_waypoints_match(queue, waypoints)
+
+    # MAVLink always includes a home waypoint at index 0
+    # Skip it when comparing with uploaded waypoints
+    assert len(queue) >= 1, "Queue should at least contain home waypoint"
+
+    actual_waypoints = queue[1:]  # Skip home waypoint
+
+    # Don't check names - MAVLink doesn't preserve them
+    assert_waypoints_match(
+        actual_waypoints,
+        waypoints,
+        check_fields=["latitude", "longitude", "altitude"]
+    )
+
     return queue
