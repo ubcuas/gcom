@@ -51,7 +51,7 @@ def test_takeoff_and_rtl(api_client):
     # Step 3: Send takeoff command (automatically arms the drone)
     response = api_client.takeoff(relative_altitude)
     assert response.status_code == 200, f"Takeoff command failed: {response.text}"
-    print("Takeoff command response received successfully.")
+    print("Takeoff command response received successfully.", response)
 
     # Step 4: Wait for drone to reach target altitude (baseline + 25m)
     # ArduPilot climbs at ~2.5 m/s, so 25m takes ~10s, we allow 60s timeout
