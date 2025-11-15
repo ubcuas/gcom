@@ -24,9 +24,24 @@ def takeoff(request):
         data = json.loads(request.body)
         altitude = data.get("altitude")
         response = DroneApiClient.takeoff(altitude)
+
+        if response.status_code >= 400:
+            print(f"[ERROR] Mission-planner response: {response.text}")
+            return JsonResponse(
+                {"error": "Mission-planner error", "details": response.text},
+                status=response.status_code,
+            )
+
         return HttpResponse(status=response.status_code)
-    except (KeyError, ValueError, TypeError):
+    except (KeyError, ValueError, TypeError) as e:
+        print(f"[ERROR] Invalid input for takeoff: {type(e).__name__}: {str(e)}")
         return JsonResponse({"error": "Invalid input"}, status=400)
+    except Exception as e:
+        print(f"[ERROR] Unexpected error in takeoff: {type(e).__name__}: {str(e)}")
+        return JsonResponse(
+            {"error": "Internal server error", "details": str(e)},
+            status=500,
+        )
 
 
 @csrf_exempt
@@ -93,7 +108,7 @@ def queue(request):
                 print(f"[ERROR] Mission-planner response: {response.text}")
                 return JsonResponse(
                     {"error": "Mission-planner error", "details": response.text},
-                    status=response.status_code
+                    status=response.status_code,
                 )
 
             return HttpResponse(status=response.status_code)
@@ -101,10 +116,11 @@ def queue(request):
             print(f"[ERROR] Invalid input for queue POST: {type(e).__name__}: {str(e)}")
             return JsonResponse({"error": "Invalid input"}, status=400)
         except Exception as e:
-            print(f"[ERROR] Unexpected error in queue POST: {type(e).__name__}: {str(e)}")
+            print(
+                f"[ERROR] Unexpected error in queue POST: {type(e).__name__}: {str(e)}"
+            )
             return JsonResponse(
-                {"error": "Internal server error", "details": str(e)},
-                status=500
+                {"error": "Internal server error", "details": str(e)}, status=500
             )
 
 
