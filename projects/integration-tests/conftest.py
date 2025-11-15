@@ -92,6 +92,14 @@ def reset_drone_state(api_client):
 
     # Teardown: Clean up after test
     try:
+        # Ensure drone is disarmed (critical for safety between tests)
+        status = api_client.get_status()
+        if status.get("armed", False):
+            response = api_client.arm(False)
+            if response.status_code not in [200, 204]:
+                print(f"Warning: Disarm failed with {response.status_code}")
+
+        # Clear waypoint queue
         response = api_client.clear_queue()
         if response.status_code not in [200, 204]:
             print(
