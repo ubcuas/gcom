@@ -50,7 +50,7 @@ class DroneApiClient:
         return DroneApiClient._fetch_from_mission_planner("land")
 
     @staticmethod
-    def get_rlt():
+    def get_rtl():
         return DroneApiClient._fetch_from_mission_planner("rtl")
 
     @staticmethod
