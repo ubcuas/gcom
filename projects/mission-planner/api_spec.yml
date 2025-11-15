@@ -380,36 +380,55 @@ components:
   schemas:
     Waypoint:
       type: object
+      required:
+        - id
+        - name
+        - latitude
+        - longitude
       properties:
         id:
           type: number
           format: integer
+          description: "Waypoint identifier"
         name:
           type: string
-        longitude:
-          type: number
-          format: float64
+          description: "Waypoint name (note: not preserved through MAVLink protocol, will be regenerated as 'Mission Waypoint N')"
         latitude:
           type: number
           format: float64
+          description: "Latitude in decimal degrees"
+        longitude:
+          type: number
+          format: float64
+          description: "Longitude in decimal degrees"
         altitude:
           type: number
           format: float64
+          description: "Altitude in meters MSL. If omitted, uses previous waypoint's altitude (or 50m for first waypoint)"
         command:
           type: string
-          description: "Put the waypoint command here as in MissionPlanner, i.e., `LOITER_UNLIM` or `DO_CHANGE_SPEED`. Default value: `WAYPOINT`"
+          description: "MAVLink command type (e.g., 'WAYPOINT', 'LOITER_UNLIM', 'DO_CHANGE_SPEED'). Default: 'WAYPOINT'"
+          default: "WAYPOINT"
         param1:
           type: number
-          format: integer
+          format: float
+          description: "Command parameter 1. For WAYPOINT: hold time in seconds (multicopter only). Default: 0"
+          default: 0
         param2:
           type: number
-          format: integer
+          format: float
+          description: "Command parameter 2. For WAYPOINT: acceptance radius in meters (NOTE: ignored by ArduPilot, use WPNAV_RADIUS parameter instead). Default: 0"
+          default: 0
         param3:
           type: number
-          format: integer
+          format: float
+          description: "Command parameter 3. For WAYPOINT: pass-through radius (NOTE: ignored by ArduPilot). Default: 0"
+          default: 0
         param4:
           type: number
-          format: integer
+          format: float
+          description: "Command parameter 4. For WAYPOINT: desired yaw angle (NOTE: ignored by ArduPilot in most cases). Default: 0"
+          default: 0
     Status:
       type: object
       properties:
