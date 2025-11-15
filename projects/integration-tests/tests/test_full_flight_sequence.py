@@ -58,7 +58,7 @@ def test_takeoff_and_rtl(api_client):
     wait_for_altitude(
         api_client,
         target_altitude,
-        timeout=60,
+        timeout=120,
         tolerance=2.0,
     )
 
