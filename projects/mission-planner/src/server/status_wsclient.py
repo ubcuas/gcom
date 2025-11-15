@@ -7,7 +7,7 @@ from server.operations.get_info import get_status
 DELAY = 0.1
 RECONNECT = 15
 
-class Status_Client():
+class Status_Client:
     def __init__(self, mav_connection):
         self.mav_connection: mavfile = mav_connection
         self._url: str = ""

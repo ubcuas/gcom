@@ -6,6 +6,7 @@ from server.utilities.connect_to_sysid import connect_to_sysid
 from server.utilities.request_message_streaming import set_message_streaming_rates
 
 from server.httpserver import HTTP_Server
+from server.status_wsclient import Status_Client
 
 # Process command line args
 production = True
@@ -61,8 +62,10 @@ if __name__ == "__main__":
 
     # Create MPS server
     gcmh = HTTP_Server(mav_connection)
+    gcmh.serve_forever(True, HOST, 9000)
     # Create websocket status client
     wsc = Status_Client(mav_connection)
+    wsc.connect_to(True, STATUS_HOST, STATUS_PORT)
 
     # gcmh thread
     gcmh_thread = Thread(target=gcmh.serve_forever, args=[production, HOST, PORT])

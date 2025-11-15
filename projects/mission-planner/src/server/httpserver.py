@@ -24,7 +24,8 @@ class HTTP_Server:
     def __init__(self, mav_connection):
         self.mav_connection: mavfile = mav_connection
 
-    def serve_forever(self, production=True, HOST="localhost", PORT=9000):
+    # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
+    def serve_forever(self, production : bool, host : str, port : int):
         print("GCOM HTTP Server starting...")
         app = Flask(__name__)
         socketio = SocketIO(app)
@@ -341,4 +342,4 @@ class HTTP_Server:
                 return f"Invalid input, missing a parameter.", 400
 
 
-        socketio.run(app, host="0.0.0.0", port=PORT, debug=(not production), use_reloader=False)
+        socketio.run(app, host=host, port=port, debug=(not production), use_reloader=False)
