@@ -70,8 +70,10 @@ def test_takeoff_and_rtl(api_client):
 
     # Step 6: Trigger RTL (Return-to-Launch)
     # This will make the drone return to home position and auto-land
+    print("Triggering RTL command.")
     response = api_client.rtl()
     assert response.status_code == 200, f"RTL command failed: {response.text}"
+    print("RTL command response received successfully.", response)
 
     # Step 7: Wait for drone to return and land (back to baseline altitude)
     # RTL involves: return flight + descent + landing, allow 120s timeout

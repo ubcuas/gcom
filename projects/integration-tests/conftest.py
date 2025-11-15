@@ -80,9 +80,7 @@ def reset_drone_state(api_client):
         response = api_client.clear_queue()
         # Only acceptable failures are queue already empty or endpoint quirks
         if response.status_code not in [200, 204]:
-            print(
-                f"Warning: Clear queue returned {response.status_code} during setup"
-            )
+            print(f"Warning: Clear queue returned {response.status_code} during setup")
     except (ConnectionError, TimeoutError) as e:
         # Connection failures should fail the test setup
         pytest.fail(f"Failed to connect to services during test setup: {e}")
@@ -94,8 +92,10 @@ def reset_drone_state(api_client):
     try:
         # Ensure drone is disarmed (critical for safety between tests)
         status = api_client.get_status()
+        print("Teardown: Checking drone status.", status)
         if status.get("armed", False):
             response = api_client.arm(False)
+            print("Disarming drone during teardown.")
             if response.status_code not in [200, 204]:
                 print(f"Warning: Disarm failed with {response.status_code}")
 
