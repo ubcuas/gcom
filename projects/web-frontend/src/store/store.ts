@@ -36,5 +36,5 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, Action<string>>;
 
 // https://redux.js.org/usage/usage-with-typescript#define-typed-hooks
-export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppDispatch: () => AppDispatch = useDispatch;
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;

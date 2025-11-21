@@ -1,7 +1,7 @@
 import { Box, Button, Modal, Paper, TextField, Typography } from "@mui/material";
 import { useState } from "react";
-import { armDrone, getRoute, takeoffDrone } from "../../api/endpoints.ts";
-import { manualUpdateMPSQueue } from "../../store/slices/dataSlice.ts";
+import { armDrone, takeoffDrone } from "../../api/endpoints.ts";
+import { updateCurrentRouteWaypoints } from "../../store/slices/dataSlice.ts";
 
 export default function MPSControlSection() {
     const [clientSideState, setClientSideState] = useState({
@@ -109,9 +109,8 @@ export default function MPSControlSection() {
                         variant="outlined"
                         color="success"
                         onClick={() => {
-                            getRoute().then((response) => {
-                                manualUpdateMPSQueue(response);
-                            });
+                            // TODO: Update to work with new route system
+                            console.log("Fetch MPS Data - needs route integration");
                         }}
                     >
                         Fetch MPS Data
