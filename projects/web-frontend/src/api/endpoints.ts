@@ -57,6 +57,18 @@ export const addWaypointToRoute = async (
     return response.data;
 };
 
+export const updateWaypoint = async (
+    waypointId: string,
+    waypoint: Partial<Omit<Waypoint, "id">>,
+): Promise<Waypoint> => {
+    const response = await api.put(`/waypoint/${waypointId}/`, waypoint);
+    return response.data;
+};
+
+export const deleteWaypoint = async (waypointId: string): Promise<void> => {
+    await api.delete(`/waypoint/${waypointId}/`);
+};
+
 export const reorderWaypoints = async (routeId: number, waypointIds: string[]): Promise<void> => {
     await api.post(`/route/${routeId}/reorder-waypoints/`, waypointIds);
 };

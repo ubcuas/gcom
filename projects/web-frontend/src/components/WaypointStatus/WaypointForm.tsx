@@ -2,7 +2,7 @@ import { Button, Grid, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { WaypointEditState } from "../../types/Waypoint";
 import { useAppDispatch } from "../../store/store";
-import { addToQueuedWaypoints, editWaypointAtIndex } from "../../store/slices/appSlice";
+import { addWaypointToCurrentRoute, editWaypointInCurrentRoute } from "../../store/slices/dataSlice";
 import { FormErrors, FormKeys, FormState } from "../../types/WaypointForm";
 import parseWaypointForm from "../../utils/parseWaypointForm";
 
@@ -90,7 +90,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     const handleFormSubmit = () => {
         if (checkReqFields(["lat", "long", "alt"])) {
             const waypoint = parseWaypointForm(formState);
-            dispatch(addToQueuedWaypoints(waypoint));
+            dispatch(addWaypointToCurrentRoute(waypoint));
         }
     };
 
@@ -102,7 +102,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     const handleFinishEditing = () => {
         const waypoint = parseWaypointForm(formState);
         dispatch(
-            editWaypointAtIndex({
+            editWaypointInCurrentRoute({
                 index: editState.index,
                 waypoint,
             }),

@@ -3,12 +3,12 @@
 import { Place } from "@mui/icons-material";
 import { Fragment, useState } from "react";
 import { Layer, LayerProps, Map, MapLayerMouseEvent, Marker, Source } from "react-map-gl/maplibre";
+import { selectMapCenterCoords } from "../../store/slices/appSlice";
 import {
-    addToQueuedWaypoints,
-    editWaypointAtIndex,
-    selectMapCenterCoords,
-    selectQueuedWaypoints,
-} from "../../store/slices/appSlice";
+    addWaypointToCurrentRoute,
+    editWaypointInCurrentRoute,
+    selectCurrentRouteWaypoints,
+} from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
 import { roundTo } from "../../utils/routeTo";
@@ -30,7 +30,7 @@ type CreationMapProps = {
 
 export default function WaypointCreationMap({ handleDelete, handleEdit, editState }: CreationMapProps) {
     const coords = useAppSelector(selectMapCenterCoords);
-    const clientWPQueue = useAppSelector(selectQueuedWaypoints);
+    const clientWPQueue = useAppSelector(selectCurrentRouteWaypoints);
     const dispatch = useAppDispatch();
     const [selectedWaypoints, setSelectedWaypoints] = useState<boolean[]>(clientWPQueue.map(() => false));
     const [draggedMarkerData, setDraggedMarkerData] = useState<DraggedMarker | null>(null);
@@ -51,7 +51,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
     const createNewWaypoint = (event: MapLayerMouseEvent) => {
         if (event.originalEvent.detail !== 2) return;
         dispatch(
-            addToQueuedWaypoints({
+            addWaypointToCurrentRoute({
                 id: "-1",
                 lat: roundTo(event.lngLat.lat, 7),
                 long: roundTo(event.lngLat.lng, 7),
@@ -104,7 +104,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                             }}
                             onDragEnd={() => {
                                 dispatch(
-                                    editWaypointAtIndex({
+                                    editWaypointInCurrentRoute({
                                         index: i,
                                         waypoint: {
                                             ...waypoint,

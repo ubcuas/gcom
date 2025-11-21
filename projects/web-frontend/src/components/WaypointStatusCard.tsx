@@ -1,15 +1,14 @@
 import { Box, Button, Grid, Modal, Paper, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 import { postWaypointsToDrone } from "../api/endpoints";
+import { openSnackbar, selectMapViewOpen, setMapViewOpen } from "../store/slices/appSlice";
 import {
-    clearQueuedWaypoints,
-    openSnackbar,
-    removeOneFromWaypoints,
-    selectAutoClearWaypoints,
-    selectMapViewOpen,
-    selectQueuedWaypoints,
-    setMapViewOpen,
-} from "../store/slices/appSlice";
+    deleteWaypointFromCurrentRoute,
+    selectCurrentRouteWaypoints,
+    updateCurrentRouteWaypoints,
+    selectCurrentRoute,
+} from "../store/slices/dataSlice";
+import { saveCurrentRouteToBackend } from "../store/thunks/dataThunks";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import { WaypointEditState } from "../types/Waypoint";
 import InfoCard from "./InfoCard";
@@ -19,8 +18,8 @@ import WaypointForm from "./WaypointStatus/WaypointForm";
 
 export default function WaypointStatusCard() {
     const dispatch = useAppDispatch();
-    const waypointQueue = useAppSelector(selectQueuedWaypoints);
-    const autoClearWaypoints = useAppSelector(selectAutoClearWaypoints);
+    const waypointQueue = useAppSelector(selectCurrentRouteWaypoints);
+    const currentRoute = useAppSelector(selectCurrentRoute);
     const mapViewOpen = useAppSelector(selectMapViewOpen);
     const [modalOpen, setModalOpen] = useState(false);
     const [editState, setEditState] = useState<WaypointEditState>({
@@ -34,17 +33,25 @@ export default function WaypointStatusCard() {
         }
         try {
             await postWaypointsToDrone(waypointQueue);
-            if (autoClearWaypoints) {
-                dispatch(clearQueuedWaypoints());
-            }
         } catch (error) {
             const message = (error as Error).message;
             dispatch(openSnackbar(message));
         }
     };
 
+    const handleSaveToBackend = async () => {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (dispatch as any)(saveCurrentRouteToBackend()).unwrap();
+            dispatch(openSnackbar("Route saved successfully"));
+        } catch (error: unknown) {
+            const message = (error as Error).message;
+            dispatch(openSnackbar(message));
+        }
+    };
+
     const handleDeleteWaypoint = (index: number) => {
-        dispatch(removeOneFromWaypoints(index));
+        dispatch(deleteWaypointFromCurrentRoute(index));
         clearEditState();
     };
 
@@ -78,7 +85,7 @@ export default function WaypointStatusCard() {
                 {mapViewOpen ? "List View" : "Map View"}
             </Button>
             <Button sx={{ fontSize: 16, fontWeight: "bold", px: 4 }} variant="outlined" onClick={handlePost}>
-                GCOM POST
+                Post Route to Drone
             </Button>
         </Box>
     );
@@ -145,11 +152,24 @@ export default function WaypointStatusCard() {
                                 height: "100%",
                             }}
                             justifyContent={"space-between"}
+                            spacing={2}
                         >
                             <WaypointForm editState={editState} clearEditState={clearEditState} />
-                            <Button color="error" variant="outlined" fullWidth onClick={() => setModalOpen(true)}>
-                                Delete ALL Queued Waypoints
-                            </Button>
+                            <Box>
+                                <Button
+                                    color="primary"
+                                    variant="contained"
+                                    fullWidth
+                                    onClick={handleSaveToBackend}
+                                    disabled={!currentRoute}
+                                    sx={{ mb: 1 }}
+                                >
+                                    Save to Backend
+                                </Button>
+                                <Button color="error" variant="outlined" fullWidth onClick={() => setModalOpen(true)}>
+                                    Delete ALL Queued Waypoints
+                                </Button>
+                            </Box>
                         </Stack>
                     </Grid>
                 </Grid>
@@ -174,7 +194,7 @@ export default function WaypointStatusCard() {
                         variant="contained"
                         color="error"
                         onClick={() => {
-                            dispatch(clearQueuedWaypoints());
+                            dispatch(updateCurrentRouteWaypoints([]));
                             setModalOpen(false);
                         }}
                     >

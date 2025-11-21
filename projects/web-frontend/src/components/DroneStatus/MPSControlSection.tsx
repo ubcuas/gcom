@@ -1,7 +1,6 @@
 import { Box, Button, Modal, Paper, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { armDrone, takeoffDrone } from "../../api/endpoints.ts";
-import { updateCurrentRouteWaypoints } from "../../store/slices/dataSlice.ts";
 
 export default function MPSControlSection() {
     const [clientSideState, setClientSideState] = useState({

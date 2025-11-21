@@ -66,6 +66,33 @@ const dataSlice = createSlice({
                 }
             }
         },
+        addWaypointToCurrentRoute: (state, action: PayloadAction<Waypoint>) => {
+            if (state.currentRoute) {
+                state.currentRoute.waypoints.push(action.payload);
+                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
+                if (routeIndex !== -1) {
+                    state.availableRoutes[routeIndex].waypoints.push(action.payload);
+                }
+            }
+        },
+        editWaypointInCurrentRoute: (state, action: PayloadAction<{ index: number; waypoint: Waypoint }>) => {
+            if (state.currentRoute) {
+                state.currentRoute.waypoints[action.payload.index] = action.payload.waypoint;
+                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
+                if (routeIndex !== -1) {
+                    state.availableRoutes[routeIndex].waypoints[action.payload.index] = action.payload.waypoint;
+                }
+            }
+        },
+        deleteWaypointFromCurrentRoute: (state, action: PayloadAction<number>) => {
+            if (state.currentRoute) {
+                state.currentRoute.waypoints.splice(action.payload, 1);
+                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
+                if (routeIndex !== -1) {
+                    state.availableRoutes[routeIndex].waypoints.splice(action.payload, 1);
+                }
+            }
+        },
     },
 });
 
@@ -77,6 +104,9 @@ export const {
     removeRoute,
     updateCurrentRouteName,
     updateCurrentRouteWaypoints,
+    addWaypointToCurrentRoute,
+    editWaypointInCurrentRoute,
+    deleteWaypointFromCurrentRoute,
 } = dataSlice.actions;
 
 export const selectAircraftStatus = (state: RootState) => state.data.aircraftStatus;
