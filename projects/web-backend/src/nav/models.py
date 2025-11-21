@@ -66,3 +66,7 @@ class OrderedWaypoint(Waypoint):
 
     order = models.IntegerField(null=False)
     route = models.ForeignKey(Route, related_name="waypoints", on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ["order"]
+        unique_together = [["route", "order"]]
