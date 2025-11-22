@@ -77,23 +77,19 @@ export const saveCurrentRouteToBackend = createAsyncThunk(
     async (_, { getState, dispatch, rejectWithValue }) => {
         try {
             const state = getState() as RootState;
-            const currentRoute = state.data.currentRoute;
+            const currentRouteId = state.data.currentRouteId;
 
-            if (!currentRoute) {
+            if (currentRouteId === null) {
                 return rejectWithValue({ message: "No current route to save" });
             }
 
-            const routeId = currentRoute.id;
-            const existingRoute = state.data.availableRoutes.find((r) => r.id === routeId);
+            const currentRoute = state.data.availableRoutes.find((r) => r.id === currentRouteId);
 
-            if (!existingRoute) {
+            if (!currentRoute) {
                 return rejectWithValue({ message: "Current route not found in available routes" });
             }
 
-            // Update route name if changed
-            if (currentRoute.name !== existingRoute.name) {
-                await updateRouteName(routeId, currentRoute.name);
-            }
+            const routeId = currentRoute.id;
 
             // Sync all waypoints in a single atomic operation
             const updatedRoute = await syncRouteWaypoints(routeId, currentRoute.waypoints);

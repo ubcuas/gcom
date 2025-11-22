@@ -8,7 +8,7 @@ import { Waypoint } from "../../types/Waypoint";
 type DataState = {
     aircraftStatus: AircraftStatus;
     availableRoutes: Route[];
-    currentRoute: Route | null;
+    currentRouteId: number | null;
 };
 
 const initialState: DataState = {
@@ -23,7 +23,7 @@ const initialState: DataState = {
         voltage: 9,
     },
     availableRoutes: [],
-    currentRoute: null,
+    currentRouteId: null,
 };
 
 const dataSlice = createSlice({
@@ -37,15 +37,21 @@ const dataSlice = createSlice({
             state.availableRoutes = action.payload;
         },
         setCurrentRoute: (state, action: PayloadAction<Route>) => {
-            state.currentRoute = action.payload;
+            const routeIndex = state.availableRoutes.findIndex((r) => r.id === action.payload.id);
+            if (routeIndex !== -1) {
+                state.availableRoutes[routeIndex] = action.payload;
+            } else {
+                state.availableRoutes.push(action.payload);
+            }
+            state.currentRouteId = action.payload.id;
         },
         addRoute: (state, action: PayloadAction<Route>) => {
             state.availableRoutes.push(action.payload);
         },
         removeRoute: (state, action: PayloadAction<number>) => {
             state.availableRoutes = state.availableRoutes.filter((route) => route.id !== action.payload);
-            if (state.currentRoute?.id === action.payload) {
-                state.currentRoute = null;
+            if (state.currentRouteId === action.payload) {
+                state.currentRouteId = null;
             }
         },
         updateRouteInList: (state, action: PayloadAction<Route>) => {
@@ -55,47 +61,42 @@ const dataSlice = createSlice({
             }
         },
         updateCurrentRouteName: (state, action: PayloadAction<string>) => {
-            if (state.currentRoute) {
-                state.currentRoute.name = action.payload;
-                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
-                if (routeIndex !== -1) {
-                    state.availableRoutes[routeIndex].name = action.payload;
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.name = action.payload;
                 }
             }
         },
         updateCurrentRouteWaypoints: (state, action: PayloadAction<Waypoint[]>) => {
-            if (state.currentRoute) {
-                state.currentRoute.waypoints = action.payload;
-                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
-                if (routeIndex !== -1) {
-                    state.availableRoutes[routeIndex].waypoints = action.payload;
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints = action.payload;
                 }
             }
         },
         addWaypointToCurrentRoute: (state, action: PayloadAction<Waypoint>) => {
-            if (state.currentRoute) {
-                state.currentRoute.waypoints.push(action.payload);
-                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
-                if (routeIndex !== -1) {
-                    state.availableRoutes[routeIndex].waypoints.push(action.payload);
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints.push(action.payload);
                 }
             }
         },
         editWaypointInCurrentRoute: (state, action: PayloadAction<{ index: number; waypoint: Waypoint }>) => {
-            if (state.currentRoute) {
-                state.currentRoute.waypoints[action.payload.index] = action.payload.waypoint;
-                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
-                if (routeIndex !== -1) {
-                    state.availableRoutes[routeIndex].waypoints[action.payload.index] = action.payload.waypoint;
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints[action.payload.index] = action.payload.waypoint;
                 }
             }
         },
         deleteWaypointFromCurrentRoute: (state, action: PayloadAction<number>) => {
-            if (state.currentRoute) {
-                state.currentRoute.waypoints.splice(action.payload, 1);
-                const routeIndex = state.availableRoutes.findIndex((r) => r.id === state.currentRoute!.id);
-                if (routeIndex !== -1) {
-                    state.availableRoutes[routeIndex].waypoints.splice(action.payload, 1);
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints.splice(action.payload, 1);
                 }
             }
         },
@@ -118,8 +119,10 @@ export const {
 
 export const selectAircraftStatus = (state: RootState) => state.data.aircraftStatus;
 export const selectAvailableRoutes = (state: RootState) => state.data.availableRoutes;
-export const selectCurrentRoute = (state: RootState) => state.data.currentRoute;
-export const selectCurrentRouteWaypoints = (state: RootState) => state.data.currentRoute?.waypoints ?? [];
+export const selectCurrentRoute = (state: RootState) =>
+    state.data.availableRoutes.find((r) => r.id === state.data.currentRouteId) ?? null;
+export const selectCurrentRouteWaypoints = (state: RootState) =>
+    state.data.availableRoutes.find((r) => r.id === state.data.currentRouteId)?.waypoints ?? [];
 
 const dataReducer = dataSlice.reducer;
 export default dataReducer;
