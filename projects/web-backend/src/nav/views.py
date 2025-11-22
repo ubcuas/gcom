@@ -89,7 +89,22 @@ class RoutesViewset(viewsets.ModelViewSet):
         with transaction.atomic():
             # Get current waypoints as a dict keyed by ID
             existing_waypoints = {str(wp.id): wp for wp in route.waypoints.all()}
-            updated_waypoint_ids = set()
+
+            # Identify waypoint IDs that should remain (exclude temporary/new IDs)
+            waypoint_ids_in_request = set()
+            for waypoint_data in waypoints_data:
+                waypoint_id = str(waypoint_data.get("id", ""))
+                is_new = waypoint_id == "-1" or (
+                    waypoint_id.lstrip("-").isdigit() and int(waypoint_id) < 0
+                )
+                if not is_new:
+                    waypoint_ids_in_request.add(waypoint_id)
+
+            # Delete waypoints that are no longer in the list FIRST
+            # This prevents UNIQUE constraint violations when updating orders
+            for waypoint_id, waypoint in existing_waypoints.items():
+                if waypoint_id not in waypoint_ids_in_request:
+                    waypoint.delete()
 
             # Process each waypoint in the new list
             for idx, waypoint_data in enumerate(waypoints_data):
@@ -124,12 +139,6 @@ class RoutesViewset(viewsets.ModelViewSet):
                     )
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
-                    updated_waypoint_ids.add(waypoint_id)
-
-            # Delete waypoints that are no longer in the list
-            for waypoint_id, waypoint in existing_waypoints.items():
-                if waypoint_id not in updated_waypoint_ids:
-                    waypoint.delete()
 
         # Refresh and return the updated route
         route.refresh_from_db()
