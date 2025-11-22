@@ -107,6 +107,7 @@ def clear_mission(mavlink_connection: mavutil.mavlink_connection) -> bool:
 
     return verify_ack(mavlink_connection, "")
 
+# TODO ?????
 def insert_wp():
     pass
 

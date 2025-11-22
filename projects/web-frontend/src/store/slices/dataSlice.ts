@@ -24,8 +24,8 @@ const initialState: DataState = {
     route: {
         id: 0,
         waypoints: [
-            { id: "0", name: "a", lat: 10, long: 10 },
-            { id: "1", name: "b", lat: -10, long: -10 },
+            { id: "0", name: "a", latitude: 10, longitude: 10 },
+            { id: "1", name: "b", latitude: -10, longitude: -10 },
         ],
     },
 };

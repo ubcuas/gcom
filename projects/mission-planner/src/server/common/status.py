@@ -8,7 +8,7 @@ class Status():
                  battery_voltage = 0, 
                  wind_direction = 0, wind_velocity = 0):
         
-        self._timestamp: int = timestamp
+        self._timestamp: float = timestamp
         self._wpn: int = waypoint_number
 
         self._lat: float = latitude

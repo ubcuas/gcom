@@ -41,8 +41,8 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
         if (editState.waypoint) {
             // TODO: bit ugly, could be improved in the future.
             setFormState({
-                lat: editState.waypoint.lat ? String(editState.waypoint.lat) : "",
-                long: editState.waypoint.long ? String(editState.waypoint.long) : "",
+                lat: editState.waypoint.latitude ? String(editState.waypoint.latitude) : "",
+                long: editState.waypoint.longitude ? String(editState.waypoint.longitude) : "",
                 alt: editState.waypoint.alt ? String(editState.waypoint.alt) : "",
                 name: editState.waypoint.name ?? "No Name",
                 radius: editState.waypoint.radius ? String(editState.waypoint.radius) : "",

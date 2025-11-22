@@ -39,7 +39,7 @@ export default function WaypointItem({ waypoint, sx, handleDelete, handleEdit }:
                         color: (theme) => theme.palette.primary.main,
                     }}
                 >
-                    {waypoint.lat}
+                    {waypoint.latitude}
                 </Typography>
             </Typography>
             <Typography variant="body1">
@@ -50,7 +50,7 @@ export default function WaypointItem({ waypoint, sx, handleDelete, handleEdit }:
                         color: (theme) => theme.palette.primary.main,
                     }}
                 >
-                    {waypoint.long}
+                    {waypoint.longitude}
                 </Typography>
             </Typography>
             <Typography variant="body1">
