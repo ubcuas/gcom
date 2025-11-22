@@ -5,14 +5,10 @@ import {
     createRoute as apiCreateRoute,
     deleteRoute as apiDeleteRoute,
     updateRouteName,
-    addWaypointToRoute,
-    updateWaypoint,
-    deleteWaypoint as apiDeleteWaypoint,
-    reorderWaypoints,
+    syncRouteWaypoints,
 } from "../../api/endpoints";
-import { loadAvailableRoutes, setCurrentRoute, addRoute, removeRoute } from "../slices/dataSlice";
+import { loadAvailableRoutes, setCurrentRoute, addRoute, removeRoute, updateRouteInList } from "../slices/dataSlice";
 import { RootState } from "../store";
-import { Waypoint } from "../../types/Waypoint";
 import { extractAxiosError } from "../../utils/errorHandling";
 
 export const fetchAllRoutes = createAsyncThunk("data/fetchAllRoutes", async (_, { dispatch, rejectWithValue }) => {
@@ -99,48 +95,10 @@ export const saveCurrentRouteToBackend = createAsyncThunk(
                 await updateRouteName(routeId, currentRoute.name);
             }
 
-            // Sync waypoints
-            const updatedWaypoints: Waypoint[] = [];
-            for (let i = 0; i < currentRoute.waypoints.length; i++) {
-                const waypoint = currentRoute.waypoints[i];
-                let savedWaypoint: Waypoint;
-
-                // Check if waypoint is new (id is "-1" or negative number as string)
-                if (waypoint.id === "-1" || parseInt(waypoint.id) < 0) {
-                    // Create new waypoint
-                    const { id: _id, ...waypointData } = waypoint;
-                    savedWaypoint = await addWaypointToRoute(routeId, waypointData, i);
-                } else {
-                    // Update existing waypoint
-                    const { id: _id, ...waypointData } = waypoint;
-                    savedWaypoint = await updateWaypoint(waypoint.id, {
-                        ...waypointData,
-                        order: i,
-                        route: routeId,
-                    });
-                }
-                updatedWaypoints.push(savedWaypoint);
-            }
-
-            // Handle deleted waypoints by checking what was in the backend vs what's in local state
-            const currentWaypointIds = new Set(currentRoute.waypoints.map((w) => w.id));
-            const deletedWaypoints = existingRoute.waypoints.filter(
-                (w) => w.id !== "-1" && parseInt(w.id) >= 0 && !currentWaypointIds.has(w.id),
-            );
-
-            for (const waypoint of deletedWaypoints) {
-                await apiDeleteWaypoint(waypoint.id);
-            }
-
-            // Reorder waypoints with the new IDs
-            await reorderWaypoints(
-                routeId,
-                updatedWaypoints.map((w) => w.id),
-            );
-
-            // Fetch the updated route from backend to ensure consistency
-            const updatedRoute = await getRouteById(routeId);
+            // Sync all waypoints in a single atomic operation
+            const updatedRoute = await syncRouteWaypoints(routeId, currentRoute.waypoints);
             dispatch(setCurrentRoute(updatedRoute));
+            dispatch(updateRouteInList(updatedRoute));
 
             return updatedRoute;
         } catch (error) {

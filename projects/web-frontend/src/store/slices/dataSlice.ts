@@ -48,6 +48,12 @@ const dataSlice = createSlice({
                 state.currentRoute = null;
             }
         },
+        updateRouteInList: (state, action: PayloadAction<Route>) => {
+            const index = state.availableRoutes.findIndex((r) => r.id === action.payload.id);
+            if (index !== -1) {
+                state.availableRoutes[index] = action.payload;
+            }
+        },
         updateCurrentRouteName: (state, action: PayloadAction<string>) => {
             if (state.currentRoute) {
                 state.currentRoute.name = action.payload;
@@ -102,6 +108,7 @@ export const {
     setCurrentRoute,
     addRoute,
     removeRoute,
+    updateRouteInList,
     updateCurrentRouteName,
     updateCurrentRouteWaypoints,
     addWaypointToCurrentRoute,

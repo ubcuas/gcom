@@ -100,7 +100,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     };
 
     const handleFinishEditing = () => {
-        const waypoint = parseWaypointForm(formState);
+        const waypoint = parseWaypointForm(formState, editState.waypoint);
         dispatch(
             editWaypointInCurrentRoute({
                 index: editState.index,
