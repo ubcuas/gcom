@@ -32,7 +32,7 @@ class Status_Client:
 
         while True:
             try:
-                self.sio.emit('drone_update', self.get_status(mav_connection).as_reduced_status())
+                self.sio.emit('drone_update', get_status(self.mav_connection).as_reduced_status())
                 time.sleep(DELAY)
             except:
                 #A BadNamespaceError will occur when GCOM disconnects suddenly - leverage this for a reconnect?
