@@ -5,6 +5,7 @@ import { useAppDispatch } from "../../store/store";
 import { addWaypointToCurrentRoute, editWaypointInCurrentRoute } from "../../store/slices/dataSlice";
 import { FormErrors, FormKeys, FormState } from "../../types/WaypointForm";
 import parseWaypointForm from "../../utils/parseWaypointForm";
+import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
 
 // TODO: Needs a bit of cleaning up, im sure there are better logical flows for this form.
 
@@ -91,6 +92,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
         if (checkReqFields(["lat", "long", "alt"])) {
             const waypoint = parseWaypointForm(formState);
             dispatch(addWaypointToCurrentRoute(waypoint));
+            dispatch(saveCurrentRouteToBackend() as any);
         }
     };
 
@@ -107,6 +109,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                 waypoint,
             }),
         );
+        dispatch(saveCurrentRouteToBackend() as any);
         cancelEditing();
     };
 

@@ -15,6 +15,7 @@ import { roundTo } from "../../utils/routeTo";
 import { Box } from "@mui/material";
 import { WaypointEditState } from "../../types/Waypoint";
 import { MAPTILER_API_KEY } from "../../constants";
+import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
 
 type DraggedMarker = {
     long: number;
@@ -57,6 +58,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                 long: roundTo(event.lngLat.lng, 7),
             }),
         );
+        dispatch(saveCurrentRouteToBackend() as any);
         setSelectedWaypoints((prev) => [...prev, false]);
     };
 
@@ -113,6 +115,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                                         },
                                     }),
                                 );
+                                dispatch(saveCurrentRouteToBackend() as any);
                                 setDraggedMarkerData(null);
                             }}
                             latitude={

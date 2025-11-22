@@ -40,19 +40,9 @@ export default function WaypointStatusCard() {
         }
     };
 
-    const handleSaveToBackend = async () => {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (dispatch as any)(saveCurrentRouteToBackend()).unwrap();
-            dispatch(openSnackbar("Route saved successfully"));
-        } catch (error: unknown) {
-            const message = createErrorMessage(error);
-            dispatch(openSnackbar(message));
-        }
-    };
-
     const handleDeleteWaypoint = (index: number) => {
         dispatch(deleteWaypointFromCurrentRoute(index));
+        dispatch(saveCurrentRouteToBackend() as any);
         clearEditState();
     };
 
@@ -157,16 +147,6 @@ export default function WaypointStatusCard() {
                         >
                             <WaypointForm editState={editState} clearEditState={clearEditState} />
                             <Box>
-                                <Button
-                                    color="primary"
-                                    variant="contained"
-                                    fullWidth
-                                    onClick={handleSaveToBackend}
-                                    disabled={!currentRoute}
-                                    sx={{ mb: 1 }}
-                                >
-                                    Save to Backend
-                                </Button>
                                 <Button color="error" variant="outlined" fullWidth onClick={() => setModalOpen(true)}>
                                     Delete ALL Queued Waypoints
                                 </Button>
@@ -196,6 +176,7 @@ export default function WaypointStatusCard() {
                         color="error"
                         onClick={() => {
                             dispatch(updateCurrentRouteWaypoints([]));
+                            dispatch(saveCurrentRouteToBackend() as any);
                             setModalOpen(false);
                         }}
                     >
