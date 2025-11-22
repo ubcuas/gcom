@@ -8,13 +8,13 @@ import {
     selectMpsWaypointMapState,
     toggleMpsWaypointMapState,
 } from "../../store/slices/appSlice";
-import { selectAircraftStatus, selectMPSWaypoints } from "../../store/slices/dataSlice";
+import { selectAircraftStatus, selectCurrentRouteWaypoints } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
 import { MAPTILER_API_KEY } from "../../constants";
 
 export default function MapView() {
-    const mpsWaypoints = useAppSelector(selectMPSWaypoints);
+    const mpsWaypoints = useAppSelector(selectCurrentRouteWaypoints);
     const mpsWaypointMapState = useAppSelector(selectMpsWaypointMapState);
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const coords = useAppSelector(selectMapCenterCoords);

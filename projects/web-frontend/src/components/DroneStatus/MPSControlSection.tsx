@@ -1,7 +1,6 @@
 import { Box, Button, Modal, Paper, TextField, Typography } from "@mui/material";
 import { useState } from "react";
-import { armDrone, getRoute, takeoffDrone } from "../../api/endpoints.ts";
-import { manualUpdateMPSQueue } from "../../store/slices/dataSlice.ts";
+import { armDrone, takeoffDrone } from "../../api/endpoints.ts";
 
 export default function MPSControlSection() {
     const [clientSideState, setClientSideState] = useState({
@@ -102,20 +101,19 @@ export default function MPSControlSection() {
                         alignItems: "center",
                     }}
                 >
-                    <Button
+                    {/* Routes already get fetched on load, we don't have a situation where we need to refetch */}
+                    {/* <Button
                         sx={{
                             flexGrow: 1,
                         }}
                         variant="outlined"
                         color="success"
                         onClick={() => {
-                            getRoute().then((response) => {
-                                manualUpdateMPSQueue(response);
-                            });
+                            console.log("Fetch MPS Data - needs route integration");
                         }}
                     >
                         Fetch MPS Data
-                    </Button>
+                    </Button> */}
                     {/* <Box
                         sx={{
                             display: "flex",

@@ -34,13 +34,13 @@ if __name__ == "__main__":
     MAVLINK_CONNECTION_STRING = 'udpin:localhost:14551'
 
     mav_connection = connect_to_sysid(MAVLINK_CONNECTION_STRING, 1)
-    if mav_connection is None:
-        print("MAV connection failed")
-        sys.exit(1)
-    print("MAV connection successful")
-
-    # Setup Ctrl+C handler
-    # signal.signal(signal.SIGINT, signal_handler)
+    if mav_connection == None:
+        # Often this can be fixed by restarting mavproxy
+        raise ConnectionError(f"MAV connection failed. Is mavproxy running?")
+    else:
+        print(f"MAV connection successful")
+    
+    # set_message_streaming_rates(mav_connection) # optional - set update rate (applies to both MissionPlanner and this server)
 
     # Start HTTP server thread
     http_thread = Thread(target=run_http_server, args=(mav_connection, production, HOST, PORT))

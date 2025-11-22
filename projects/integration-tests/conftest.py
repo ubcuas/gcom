@@ -80,9 +80,7 @@ def reset_drone_state(api_client):
         response = api_client.clear_queue()
         # Only acceptable failures are queue already empty or endpoint quirks
         if response.status_code not in [200, 204]:
-            print(
-                f"Warning: Clear queue returned {response.status_code} during setup"
-            )
+            print(f"Warning: Clear queue returned {response.status_code} during setup")
     except (ConnectionError, TimeoutError) as e:
         # Connection failures should fail the test setup
         pytest.fail(f"Failed to connect to services during test setup: {e}")
@@ -92,6 +90,7 @@ def reset_drone_state(api_client):
 
     # Teardown: Clean up after test
     try:
+        # Clear waypoint queue
         response = api_client.clear_queue()
         if response.status_code not in [200, 204]:
             print(
@@ -155,3 +154,82 @@ def sample_waypoints():
             "altitude": 60.0,
         },
     ]
+
+
+@pytest.fixture
+def sample_route_data():
+    """Provide sample route data for testing.
+
+    Returns:
+        dict: Route dictionary with name
+    """
+    return {"name": "Test Route"}
+
+
+@pytest.fixture
+def sample_waypoint_db_data():
+    """Provide a sample waypoint for database testing.
+
+    This includes fields specific to database waypoints (OrderedWaypoint).
+    Note: 'route' field should be added when creating waypoint.
+
+    Returns:
+        dict: Waypoint dictionary with database-specific fields
+    """
+    return {
+        "name": "TestWP1",
+        "latitude": -35.363261,
+        "longitude": 149.165230,
+        "altitude": 50.0,
+        "radius": 5.0,
+        "pass_radius": 5.0,
+        "pass_option": 0,
+        "order": 0,
+    }
+
+
+@pytest.fixture(autouse=True)
+def reset_database_state(api_client):
+    """Reset database state before and after each test.
+
+    This fixture runs automatically before every test to ensure a clean database.
+    It clears all routes (which cascades to waypoints) and individual waypoints.
+
+    Args:
+        api_client: API client from fixture
+
+    Yields:
+        None: Control returns to test after setup
+    """
+    # Setup: Clear database before test
+    try:
+        # Delete all routes (cascades to waypoints)
+        routes = api_client.list_routes()
+        for route in routes:
+            api_client.delete_route(route["id"])
+
+        # Delete any orphaned waypoints
+        waypoints = api_client.list_waypoints()
+        for waypoint in waypoints:
+            api_client.delete_waypoint(waypoint["id"])
+    except Exception as e:
+        # Log but don't fail on cleanup errors
+        print(f"Warning: Database cleanup failed during setup: {e}")
+
+    # Run the test
+    yield
+
+    # Teardown: Clean up after test
+    try:
+        # Delete all routes (cascades to waypoints)
+        routes = api_client.list_routes()
+        for route in routes:
+            api_client.delete_route(route["id"])
+
+        # Delete any orphaned waypoints
+        waypoints = api_client.list_waypoints()
+        for waypoint in waypoints:
+            api_client.delete_waypoint(waypoint["id"])
+    except Exception as e:
+        # Log but don't fail on cleanup errors
+        print(f"Warning: Database cleanup failed during teardown: {e}")

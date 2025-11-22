@@ -1,6 +1,6 @@
 import { Action, Middleware, ThunkAction, configureStore } from "@reduxjs/toolkit";
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
-import { useDispatch, useSelector, TypedUseSelectorHook } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import dataReducer from "./slices/dataSlice";
 import appReducer from "./slices/appSlice";
 
@@ -22,7 +22,7 @@ const store = configureStore({
         app: appReducer,
         // more TBD
     },
-    middleware: (getDefaultMiddleware) => [...getDefaultMiddleware(), localStorageMiddleware],
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(localStorageMiddleware),
 });
 
 export default store;
@@ -36,5 +36,5 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppThunk<ReturnType = void> = ThunkAction<ReturnType, RootState, unknown, Action<string>>;
 
 // https://redux.js.org/usage/usage-with-typescript#define-typed-hooks
-export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
+export const useAppSelector = useSelector.withTypes<RootState>();

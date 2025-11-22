@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 from .models import OrderedWaypoint, Route
 
 
@@ -7,8 +8,14 @@ class OrderedWaypointSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderedWaypoint
-        ordering = ["order"]
         fields = "__all__"
+        validators = [
+            UniqueTogetherValidator(
+                queryset=OrderedWaypoint.objects.all(),
+                fields=["route", "order"],
+                message="A waypoint with this order already exists in this route. Each waypoint must have a unique order within its route.",
+            )
+        ]
 
 
 class RouteSerializer(serializers.ModelSerializer):

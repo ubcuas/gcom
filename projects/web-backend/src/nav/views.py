@@ -63,3 +63,84 @@ class RoutesViewset(viewsets.ModelViewSet):
         return Response(
             {"success": "Waypoints reordered successfully"}, status=status.HTTP_200_OK
         )
+
+    @action(detail=True, methods=["post"], url_path="sync-waypoints")
+    def sync_waypoints(self, request, pk=None):
+        """
+        Synchronize waypoints for a route in a single atomic operation.
+        Handles creating new waypoints, updating existing ones, and deleting removed ones.
+        Args:
+            request: Contains list of waypoints with their data
+            pk: The primary key of the route to sync
+        Returns:
+            The updated route with all waypoints
+        """
+        from django.db import transaction
+
+        route = self.get_object()
+        waypoints_data = request.data
+
+        if not isinstance(waypoints_data, list):
+            return Response(
+                {"error": "Expected a list of waypoints"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            # Get current waypoints as a dict keyed by ID
+            existing_waypoints = {str(wp.id): wp for wp in route.waypoints.all()}
+
+            # Identify waypoint IDs that should remain (exclude temporary/new IDs)
+            waypoint_ids_in_request = set()
+            for waypoint_data in waypoints_data:
+                waypoint_id = str(waypoint_data.get("id", ""))
+                is_new = waypoint_id == "-1" or (
+                    waypoint_id.lstrip("-").isdigit() and int(waypoint_id) < 0
+                )
+                if not is_new:
+                    waypoint_ids_in_request.add(waypoint_id)
+
+            # Delete waypoints that are no longer in the list FIRST
+            # This prevents UNIQUE constraint violations when updating orders
+            for waypoint_id, waypoint in existing_waypoints.items():
+                if waypoint_id not in waypoint_ids_in_request:
+                    waypoint.delete()
+
+            # Process each waypoint in the new list
+            for idx, waypoint_data in enumerate(waypoints_data):
+                waypoint_id = str(waypoint_data.get("id", ""))
+
+                # Check if this is a new waypoint (temporary ID like "-1" or negative number)
+                is_new = waypoint_id == "-1" or (
+                    waypoint_id.lstrip("-").isdigit() and int(waypoint_id) < 0
+                )
+
+                # Set order based on position in array and ensure route is set
+                waypoint_data["order"] = idx
+                waypoint_data["route"] = route.id
+
+                if is_new:
+                    # Create new waypoint - remove temporary ID
+                    waypoint_data.pop("id", None)
+                    serializer = OrderedWaypointSerializer(data=waypoint_data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                else:
+                    # Update existing waypoint
+                    if waypoint_id not in existing_waypoints:
+                        return Response(
+                            {"error": f"Waypoint {waypoint_id} not found in route"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    waypoint = existing_waypoints[waypoint_id]
+                    serializer = OrderedWaypointSerializer(
+                        waypoint, data=waypoint_data, partial=False
+                    )
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+
+        # Refresh and return the updated route
+        route.refresh_from_db()
+        serializer = RouteSerializer(route)
+        return Response(serializer.data, status=status.HTTP_200_OK)

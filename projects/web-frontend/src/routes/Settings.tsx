@@ -3,7 +3,6 @@ import { useState } from "react";
 import SettingItem from "../components/SettingItem";
 import {
     selectAppSlice,
-    setAutoClearWaypoints,
     setBypassStatus,
     setMapCenterCoords,
     setPreferredTheme,
@@ -18,8 +17,8 @@ export default function Settings() {
     const settings = useAppSelector(selectAppSlice);
 
     const [coords, setCoords] = useState<StringCoords>({
-        lat: settings.mapCenterCoords.lat.toString(),
-        long: settings.mapCenterCoords.long.toString(),
+        lat: (settings.mapCenterCoords.lat ?? 0).toString(),
+        long: (settings.mapCenterCoords.long ?? 0).toString(),
     });
 
     const getCoordError = (coords: StringCoords) => ({
@@ -35,9 +34,6 @@ export default function Settings() {
     };
     const handleBypassChange = (event: SelectChangeEvent<string>) => {
         dispatch(setBypassStatus(event.target.value === "Bypassed"));
-    };
-    const handleAutoClearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        dispatch(setAutoClearWaypoints(event.target.checked));
     };
     const handleDefaultCoordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // early return if the input is not a number
@@ -92,12 +88,6 @@ export default function Settings() {
                         name="Socket Telemetry"
                         type="toggle"
                         onChange={handleSocketChange}
-                    />
-                    <SettingItem
-                        type="toggle"
-                        name="Auto-Clear Posted WPs"
-                        checked={settings.autoClearWaypoints}
-                        onChange={handleAutoClearChange}
                     />
                     <SettingItem
                         type="select"

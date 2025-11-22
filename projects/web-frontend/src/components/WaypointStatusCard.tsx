@@ -1,17 +1,17 @@
 import { Box, Button, Grid, Modal, Paper, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 import { postWaypointsToDrone } from "../api/endpoints";
+import { openSnackbar, selectMapViewOpen, setMapViewOpen } from "../store/slices/appSlice";
 import {
-    clearQueuedWaypoints,
-    openSnackbar,
-    removeOneFromWaypoints,
-    selectAutoClearWaypoints,
-    selectMapViewOpen,
-    selectQueuedWaypoints,
-    setMapViewOpen,
-} from "../store/slices/appSlice";
+    deleteWaypointFromCurrentRoute,
+    selectCurrentRouteWaypoints,
+    updateCurrentRouteWaypoints,
+    selectCurrentRoute,
+} from "../store/slices/dataSlice";
+import { saveCurrentRouteToBackend } from "../store/thunks/dataThunks";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import { WaypointEditState } from "../types/Waypoint";
+import { createErrorMessage } from "../utils/errorHandling";
 import InfoCard from "./InfoCard";
 import WaypointCreationMap from "./Map/WaypointCreationMap";
 import WaypointItem from "./WaypointItem";
@@ -19,8 +19,8 @@ import WaypointForm from "./WaypointStatus/WaypointForm";
 
 export default function WaypointStatusCard() {
     const dispatch = useAppDispatch();
-    const waypointQueue = useAppSelector(selectQueuedWaypoints);
-    const autoClearWaypoints = useAppSelector(selectAutoClearWaypoints);
+    const waypointQueue = useAppSelector(selectCurrentRouteWaypoints);
+    const currentRoute = useAppSelector(selectCurrentRoute);
     const mapViewOpen = useAppSelector(selectMapViewOpen);
     const [modalOpen, setModalOpen] = useState(false);
     const [editState, setEditState] = useState<WaypointEditState>({
@@ -34,17 +34,15 @@ export default function WaypointStatusCard() {
         }
         try {
             await postWaypointsToDrone(waypointQueue);
-            if (autoClearWaypoints) {
-                dispatch(clearQueuedWaypoints());
-            }
         } catch (error) {
-            const message = (error as Error).message;
+            const message = createErrorMessage(error);
             dispatch(openSnackbar(message));
         }
     };
 
     const handleDeleteWaypoint = (index: number) => {
-        dispatch(removeOneFromWaypoints(index));
+        dispatch(deleteWaypointFromCurrentRoute(index));
+        dispatch(saveCurrentRouteToBackend());
         clearEditState();
     };
 
@@ -78,7 +76,7 @@ export default function WaypointStatusCard() {
                 {mapViewOpen ? "List View" : "Map View"}
             </Button>
             <Button sx={{ fontSize: 16, fontWeight: "bold", px: 4 }} variant="outlined" onClick={handlePost}>
-                GCOM POST
+                Post Route to Drone
             </Button>
         </Box>
     );
@@ -145,11 +143,14 @@ export default function WaypointStatusCard() {
                                 height: "100%",
                             }}
                             justifyContent={"space-between"}
+                            spacing={2}
                         >
                             <WaypointForm editState={editState} clearEditState={clearEditState} />
-                            <Button color="error" variant="outlined" fullWidth onClick={() => setModalOpen(true)}>
-                                Delete ALL Queued Waypoints
-                            </Button>
+                            <Box>
+                                <Button color="error" variant="outlined" fullWidth onClick={() => setModalOpen(true)}>
+                                    Delete ALL Queued Waypoints
+                                </Button>
+                            </Box>
                         </Stack>
                     </Grid>
                 </Grid>
@@ -174,7 +175,8 @@ export default function WaypointStatusCard() {
                         variant="contained"
                         color="error"
                         onClick={() => {
-                            dispatch(clearQueuedWaypoints());
+                            dispatch(updateCurrentRouteWaypoints([]));
+                            dispatch(saveCurrentRouteToBackend());
                             setModalOpen(false);
                         }}
                     >
