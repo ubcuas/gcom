@@ -1,4 +1,16 @@
 import { useEffect, useState } from "react";
+import {
+    Box,
+    Button,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Modal,
+    Paper,
+    Select,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import { selectAvailableRoutes, selectCurrentRoute } from "../store/slices/dataSlice";
 import { fetchAllRoutes, switchToRoute, createNewRoute, deleteRouteById } from "../store/thunks/dataThunks";
@@ -42,84 +54,146 @@ export const RouteSelector = () => {
     };
 
     return (
-        <div className="route-selector">
-            <div className="route-selector-header">
-                <h3>Routes</h3>
-                <button className="btn-create-route" onClick={() => setShowCreateDialog(true)}>
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+            }}
+        >
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                }}
+            >
+                <Typography variant="h6">Routes</Typography>
+                <Button variant="outlined" onClick={() => setShowCreateDialog(true)} size="small">
                     + New Route
-                </button>
-            </div>
+                </Button>
+            </Box>
 
-            <div className="route-list">
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                }}
+            >
                 {availableRoutes.length === 0 ? (
-                    <p className="no-routes">No routes available. Create one to get started.</p>
+                    <Typography variant="body2" color="text.secondary">
+                        No routes available. Create one to get started.
+                    </Typography>
                 ) : (
-                    <select
-                        value={currentRoute?.id ?? ""}
-                        onChange={(e) => handleRouteChange(Number(e.target.value))}
-                        className="route-dropdown"
-                    >
-                        <option value="" disabled>
-                            Select a route
-                        </option>
-                        {availableRoutes.map((route) => (
-                            <option key={route.id} value={route.id}>
-                                {route.name} ({route.waypoints.length} waypoints)
-                            </option>
-                        ))}
-                    </select>
+                    <FormControl size="small" fullWidth>
+                        <InputLabel id="route-select-label">Select a route</InputLabel>
+                        <Select
+                            labelId="route-select-label"
+                            value={currentRoute?.id ?? ""}
+                            onChange={(e) => handleRouteChange(Number(e.target.value))}
+                            label="Select a route"
+                        >
+                            {availableRoutes.map((route) => (
+                                <MenuItem key={route.id} value={route.id}>
+                                    {route.name} ({route.waypoints.length} waypoints)
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 )}
 
                 {currentRoute && (
-                    <div className="current-route-info">
-                        <span className="current-route-name">Active: {currentRoute.name}</span>
-                        <button className="btn-delete-route" onClick={() => handleDeleteClick(currentRoute.id)}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 2,
+                        }}
+                    >
+                        <Typography variant="body2">Active: {currentRoute.name}</Typography>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => handleDeleteClick(currentRoute.id)}
+                        >
                             Delete
-                        </button>
-                    </div>
+                        </Button>
+                    </Box>
                 )}
-            </div>
+            </Box>
 
-            {showCreateDialog && (
-                <div className="dialog-overlay">
-                    <div className="dialog">
-                        <h4>Create New Route</h4>
-                        <input
-                            type="text"
-                            value={newRouteName}
-                            onChange={(e) => setNewRouteName(e.target.value)}
-                            placeholder="Enter route name"
-                            autoFocus
-                            onKeyPress={(e) => {
-                                if (e.key === "Enter") {
-                                    handleCreateRoute();
-                                }
-                            }}
-                        />
-                        <div className="dialog-actions">
-                            <button onClick={() => setShowCreateDialog(false)}>Cancel</button>
-                            <button onClick={handleCreateRoute} disabled={!newRouteName.trim()}>
-                                Create
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <Modal open={showCreateDialog} onClose={() => setShowCreateDialog(false)}>
+                <Paper
+                    elevation={2}
+                    sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        p: 4,
+                        minWidth: 300,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
+                    <Typography variant="h6">Create New Route</Typography>
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="Route name"
+                        value={newRouteName}
+                        onChange={(e) => setNewRouteName(e.target.value)}
+                        autoFocus
+                        onKeyPress={(e) => {
+                            if (e.key === "Enter" && newRouteName.trim()) {
+                                handleCreateRoute();
+                            }
+                        }}
+                    />
+                    <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                        <Button variant="outlined" onClick={() => setShowCreateDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="contained" onClick={handleCreateRoute} disabled={!newRouteName.trim()}>
+                            Create
+                        </Button>
+                    </Box>
+                </Paper>
+            </Modal>
 
-            {showDeleteConfirm && (
-                <div className="dialog-overlay">
-                    <div className="dialog">
-                        <h4>Confirm Delete</h4>
-                        <p>Are you sure you want to delete this route? This action cannot be undone.</p>
-                        <div className="dialog-actions">
-                            <button onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                            <button onClick={handleConfirmDelete} className="btn-danger">
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+            <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
+                <Paper
+                    elevation={2}
+                    sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        p: 4,
+                        minWidth: 300,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
+                    <Typography variant="h6">Confirm Delete</Typography>
+                    <Typography variant="body2">
+                        Are you sure you want to delete this route? This action cannot be undone.
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                        <Button variant="outlined" onClick={() => setShowDeleteConfirm(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+                            Delete
+                        </Button>
+                    </Box>
+                </Paper>
+            </Modal>
+        </Box>
     );
 };
