@@ -16,6 +16,8 @@ from helpers import (
     assert_route_contains_waypoints,
     assert_waypoints_match,
     filter_home_waypoint,
+    assert_queue_upload_successful,
+    assert_queue_empty,
 )
 
 
@@ -119,9 +121,9 @@ def test_waypoint_queue_persists_across_requests(api_client, sample_waypoints):
     # Upload waypoints
     assert_queue_upload_successful(api_client, sample_waypoints)
 
-    # Wait for waypoints to persist
+    # Wait for waypoints to persist (home + uploaded waypoints)
     from helpers import wait_for_waypoint_count
-    wait_for_waypoint_count(api_client, len(sample_waypoints), timeout=10)
+    wait_for_waypoint_count(api_client, len(sample_waypoints) + 1, timeout=10)
 
     # Retrieve queue multiple times to verify persistence
     queue1 = api_client.get_queue()
