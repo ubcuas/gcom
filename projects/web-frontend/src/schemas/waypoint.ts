@@ -10,10 +10,8 @@ export const FrontendWaypointSchema = z.object({
     radius: z.number().optional(),
     remarks: z.string().optional(),
     command: z.string().optional(),
-    param1: z.number().optional(),
-    param2: z.number().optional(),
-    param3: z.number().optional(),
-    param4: z.number().optional(),
+    ardupilot_param2: z.number().nullish(),
+    ardupilot_param3: z.number().nullish(),
     order: z.number().optional(),
     route: z.number().optional(),
 });
@@ -28,10 +26,8 @@ const BackendWaypointSchema = z.object({
     radius: z.number().optional(),
     remarks: z.string().optional(),
     command: z.string().optional(),
-    param1: z.number().optional(),
-    param2: z.number().optional(),
-    param3: z.number().optional(),
-    param4: z.number().optional(),
+    ardupilot_param2: z.number().nullish(),
+    ardupilot_param3: z.number().nullish(),
     order: z.number(),
     route: z.number(),
 });
@@ -46,10 +42,8 @@ export const serializeWaypoint = FrontendWaypointSchema.transform((data) => ({
     radius: data.radius,
     remarks: data.remarks,
     command: data.command,
-    param1: data.param1,
-    param2: data.param2,
-    param3: data.param3,
-    param4: data.param4,
+    ardupilot_param2: data.ardupilot_param2,
+    ardupilot_param3: data.ardupilot_param3,
     order: data.order,
     route: data.route,
 }));
@@ -64,10 +58,8 @@ export const deserializeWaypoint = BackendWaypointSchema.transform((data) => ({
     radius: data.radius,
     remarks: data.remarks,
     command: data.command,
-    param1: data.param1,
-    param2: data.param2,
-    param3: data.param3,
-    param4: data.param4,
+    ardupilot_param2: data.ardupilot_param2,
+    ardupilot_param3: data.ardupilot_param3,
     order: data.order,
     route: data.route,
 }));
@@ -85,10 +77,8 @@ export const serializePartialWaypoint = PartialFrontendWaypointSchema.transform(
     if (data.radius !== undefined) result.radius = data.radius;
     if (data.remarks !== undefined) result.remarks = data.remarks;
     if (data.command !== undefined) result.command = data.command;
-    if (data.param1 !== undefined) result.param1 = data.param1;
-    if (data.param2 !== undefined) result.param2 = data.param2;
-    if (data.param3 !== undefined) result.param3 = data.param3;
-    if (data.param4 !== undefined) result.param4 = data.param4;
+    if (data.ardupilot_param2 !== undefined) result.ardupilot_param2 = data.ardupilot_param2;
+    if (data.ardupilot_param3 !== undefined) result.ardupilot_param3 = data.ardupilot_param3;
     if (data.order !== undefined) result.order = data.order;
     if (data.route !== undefined) result.route = data.route;
 

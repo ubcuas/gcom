@@ -55,6 +55,8 @@ class Waypoint(models.Model):
     pass_option = models.IntegerField(
         default=PassOptions.PASSTHROUGH, choices=PassOptions
     )
+    ardupilot_param2 = models.FloatField(null=True, blank=True)
+    ardupilot_param3 = models.FloatField(null=True, blank=True)
 
 
 class OrderedWaypoint(Waypoint):
