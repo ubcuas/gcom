@@ -20,6 +20,7 @@ export const takeoffDrone = async (altitude?: number) => {
 
 export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
     const backendWaypoints = waypoints.map((wp) => serializeWaypoint.parse(wp));
+    console.log("Posting waypoints to drone via API", backendWaypoints);
     return await api.post("/drone/queue", backendWaypoints);
 };
 
