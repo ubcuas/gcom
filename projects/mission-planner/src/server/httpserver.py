@@ -208,7 +208,7 @@ class HTTP_Server:
                 else:
                     return (
                         f"Arm/disarm failed - drone is NOT in the requested state",
-                        418,
+                        400,
                     )
             else:
                 return f"Unrecognized arm/disarm command parameter", 400

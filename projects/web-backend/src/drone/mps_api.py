@@ -14,6 +14,8 @@ class DroneApiClient:
                 response = requests.get(url)
             elif method == "POST":
                 response = requests.post(url, headers=headers, data=json.dumps(data))
+            elif method == "PUT":
+                response = requests.put(url, headers=headers, data=json.dumps(data))
 
             if response.status_code >= 400:
                 print(f"[ERROR] Mission-planner {method} {endpoint} returned {response.status_code}")
@@ -42,7 +44,7 @@ class DroneApiClient:
     @staticmethod
     def arm(arm_value):
         return DroneApiClient._fetch_from_mission_planner(
-            "arm", method="POST", data={"arm": arm_value}
+            "arm", method="PUT", data={"arm": arm_value}
         )
 
     @staticmethod
@@ -104,5 +106,5 @@ class DroneApiClient:
     @staticmethod
     def flightmode(mode):
         return DroneApiClient._fetch_from_mission_planner(
-            "flightmode", method="POST", data={"mode": mode}
+            "flightmode", method="PUT", data={"mode": mode}
         )

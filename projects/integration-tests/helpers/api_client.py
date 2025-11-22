@@ -97,7 +97,7 @@ class APIClient:
         Returns:
             Response object
         """
-        response = requests.post(
+        response = requests.put(
             f"{self.web_backend_url}/api/drone/arm",
             json={"arm": arm_value},
             headers={"Content-Type": "application/json"},
