@@ -22,8 +22,8 @@ const defaultFormState: FormState = {
     radius: "",
     remarks: "",
     command: "",
-    ardupilot_param2: "",
-    ardupilot_param3: "",
+    ardupilot_param2: "5",
+    ardupilot_param3: "0",
 };
 
 export default function WaypointForm({ editState, clearEditState }: WaypointFormProps) {
