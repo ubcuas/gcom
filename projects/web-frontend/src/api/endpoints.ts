@@ -72,6 +72,7 @@ export const updateWaypoint = async (
     waypoint: Partial<Omit<Waypoint, "id">>,
 ): Promise<Waypoint> => {
     const backendWaypoint = serializePartialWaypoint.parse(waypoint);
+    console.log("Updating waypoint via API", waypointId, backendWaypoint);
     const response = await api.put(`/waypoint/${waypointId}/`, backendWaypoint);
     return deserializeWaypoint.parse(response.data);
 };

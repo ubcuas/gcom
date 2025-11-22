@@ -14,6 +14,8 @@ export const FrontendWaypointSchema = z.object({
     param2: z.number().optional(),
     param3: z.number().optional(),
     param4: z.number().optional(),
+    order: z.number().optional(),
+    route: z.number().optional(),
 });
 
 // Backend waypoint format (using latitude, longitude, altitude)
@@ -30,6 +32,8 @@ const BackendWaypointSchema = z.object({
     param2: z.number().optional(),
     param3: z.number().optional(),
     param4: z.number().optional(),
+    order: z.number(),
+    route: z.number(),
 });
 
 // Serialize frontend format to backend format
@@ -46,6 +50,8 @@ export const serializeWaypoint = FrontendWaypointSchema.transform((data) => ({
     param2: data.param2,
     param3: data.param3,
     param4: data.param4,
+    order: data.order,
+    route: data.route,
 }));
 
 // Deserialize backend format to frontend format
@@ -62,6 +68,8 @@ export const deserializeWaypoint = BackendWaypointSchema.transform((data) => ({
     param2: data.param2,
     param3: data.param3,
     param4: data.param4,
+    order: data.order,
+    route: data.route,
 }));
 
 // For partial waypoint data (when creating/updating)
@@ -81,6 +89,8 @@ export const serializePartialWaypoint = PartialFrontendWaypointSchema.transform(
     if (data.param2 !== undefined) result.param2 = data.param2;
     if (data.param3 !== undefined) result.param3 = data.param3;
     if (data.param4 !== undefined) result.param4 = data.param4;
+    if (data.order !== undefined) result.order = data.order;
+    if (data.route !== undefined) result.route = data.route;
 
     return result;
 });

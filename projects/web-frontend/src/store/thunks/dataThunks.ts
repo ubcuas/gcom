@@ -113,7 +113,11 @@ export const saveCurrentRouteToBackend = createAsyncThunk(
                 } else {
                     // Update existing waypoint
                     const { id: _id, ...waypointData } = waypoint;
-                    savedWaypoint = await updateWaypoint(waypoint.id, waypointData);
+                    savedWaypoint = await updateWaypoint(waypoint.id, {
+                        ...waypointData,
+                        order: i,
+                        route: routeId,
+                    });
                 }
                 updatedWaypoints.push(savedWaypoint);
             }
