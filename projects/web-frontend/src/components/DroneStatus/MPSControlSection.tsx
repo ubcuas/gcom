@@ -101,19 +101,19 @@ export default function MPSControlSection() {
                         alignItems: "center",
                     }}
                 >
-                    <Button
+                    {/* Routes already get fetched on load, we don't have a situation where we need to refetch */}
+                    {/* <Button
                         sx={{
                             flexGrow: 1,
                         }}
                         variant="outlined"
                         color="success"
                         onClick={() => {
-                            // TODO: Update to work with new route system
                             console.log("Fetch MPS Data - needs route integration");
                         }}
                     >
                         Fetch MPS Data
-                    </Button>
+                    </Button> */}
                     {/* <Box
                         sx={{
                             display: "flex",
