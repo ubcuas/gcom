@@ -42,7 +42,7 @@ export default function WaypointStatusCard() {
 
     const handleDeleteWaypoint = (index: number) => {
         dispatch(deleteWaypointFromCurrentRoute(index));
-        dispatch(saveCurrentRouteToBackend() as any);
+        dispatch(saveCurrentRouteToBackend());
         clearEditState();
     };
 
@@ -176,7 +176,7 @@ export default function WaypointStatusCard() {
                         color="error"
                         onClick={() => {
                             dispatch(updateCurrentRouteWaypoints([]));
-                            dispatch(saveCurrentRouteToBackend() as any);
+                            dispatch(saveCurrentRouteToBackend());
                             setModalOpen(false);
                         }}
                     >

@@ -92,7 +92,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
         if (checkReqFields(["lat", "long", "alt"])) {
             const waypoint = parseWaypointForm(formState);
             dispatch(addWaypointToCurrentRoute(waypoint));
-            dispatch(saveCurrentRouteToBackend() as any);
+            dispatch(saveCurrentRouteToBackend());
         }
     };
 
@@ -109,7 +109,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                 waypoint,
             }),
         );
-        dispatch(saveCurrentRouteToBackend() as any);
+        dispatch(saveCurrentRouteToBackend());
         cancelEditing();
     };
 

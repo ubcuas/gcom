@@ -13,16 +13,16 @@ export const RouteSelector = () => {
     const [routeToDelete, setRouteToDelete] = useState<number | null>(null);
 
     useEffect(() => {
-        void dispatch(fetchAllRoutes() as any);
+        void dispatch(fetchAllRoutes());
     }, [dispatch]);
 
     const handleRouteChange = (routeId: number) => {
-        void dispatch(switchToRoute(routeId) as any);
+        void dispatch(switchToRoute(routeId));
     };
 
     const handleCreateRoute = async () => {
         if (newRouteName.trim()) {
-            await dispatch(createNewRoute(newRouteName.trim()) as any);
+            await dispatch(createNewRoute(newRouteName.trim()));
             setNewRouteName("");
             setShowCreateDialog(false);
         }
@@ -35,7 +35,7 @@ export const RouteSelector = () => {
 
     const handleConfirmDelete = async () => {
         if (routeToDelete !== null) {
-            await dispatch(deleteRouteById(routeToDelete) as any);
+            await dispatch(deleteRouteById(routeToDelete));
             setRouteToDelete(null);
             setShowDeleteConfirm(false);
         }

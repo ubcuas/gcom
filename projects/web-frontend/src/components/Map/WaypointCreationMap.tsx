@@ -58,7 +58,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                 long: roundTo(event.lngLat.lng, 7),
             }),
         );
-        dispatch(saveCurrentRouteToBackend() as any);
+        dispatch(saveCurrentRouteToBackend());
         setSelectedWaypoints((prev) => [...prev, false]);
     };
 
@@ -115,7 +115,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                                         },
                                     }),
                                 );
-                                dispatch(saveCurrentRouteToBackend() as any);
+                                dispatch(saveCurrentRouteToBackend());
                                 setDraggedMarkerData(null);
                             }}
                             latitude={
