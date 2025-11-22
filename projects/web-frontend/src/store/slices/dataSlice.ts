@@ -7,7 +7,8 @@ import { Waypoint } from "../../types/Waypoint";
 // DataState holds actual information that is supposed to be aligned with backend.
 type DataState = {
     aircraftStatus: AircraftStatus;
-    route: Route;
+    availableRoutes: Route[];
+    currentRouteId: number | null;
 };
 
 const initialState: DataState = {
@@ -21,13 +22,8 @@ const initialState: DataState = {
         heading: 90,
         voltage: 9,
     },
-    route: {
-        id: 0,
-        waypoints: [
-            { id: "0", name: "a", lat: 10, long: 10 },
-            { id: "1", name: "b", lat: -10, long: -10 },
-        ],
-    },
+    availableRoutes: [],
+    currentRouteId: null,
 };
 
 const dataSlice = createSlice({
@@ -37,20 +33,96 @@ const dataSlice = createSlice({
         updateAircraftStatus: (state, action: PayloadAction<AircraftStatus>) => {
             state.aircraftStatus = action.payload;
         },
-        updateRoute: (state, action: PayloadAction<Route>) => {
-            state.route = action.payload;
+        loadAvailableRoutes: (state, action: PayloadAction<Route[]>) => {
+            state.availableRoutes = action.payload;
         },
-        manualUpdateMPSQueue: (state, action: PayloadAction<Waypoint[]>) => {
-            state.route.waypoints = action.payload;
+        setCurrentRoute: (state, action: PayloadAction<Route>) => {
+            const routeIndex = state.availableRoutes.findIndex((r) => r.id === action.payload.id);
+            if (routeIndex !== -1) {
+                state.availableRoutes[routeIndex] = action.payload;
+            } else {
+                state.availableRoutes.push(action.payload);
+            }
+            state.currentRouteId = action.payload.id;
+        },
+        addRoute: (state, action: PayloadAction<Route>) => {
+            state.availableRoutes.push(action.payload);
+        },
+        removeRoute: (state, action: PayloadAction<number>) => {
+            state.availableRoutes = state.availableRoutes.filter((route) => route.id !== action.payload);
+            if (state.currentRouteId === action.payload) {
+                state.currentRouteId = null;
+            }
+        },
+        updateRouteInList: (state, action: PayloadAction<Route>) => {
+            const index = state.availableRoutes.findIndex((r) => r.id === action.payload.id);
+            if (index !== -1) {
+                state.availableRoutes[index] = action.payload;
+            }
+        },
+        updateCurrentRouteName: (state, action: PayloadAction<string>) => {
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.name = action.payload;
+                }
+            }
+        },
+        updateCurrentRouteWaypoints: (state, action: PayloadAction<Waypoint[]>) => {
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints = action.payload;
+                }
+            }
+        },
+        addWaypointToCurrentRoute: (state, action: PayloadAction<Waypoint>) => {
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints.push(action.payload);
+                }
+            }
+        },
+        editWaypointInCurrentRoute: (state, action: PayloadAction<{ index: number; waypoint: Waypoint }>) => {
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints[action.payload.index] = action.payload.waypoint;
+                }
+            }
+        },
+        deleteWaypointFromCurrentRoute: (state, action: PayloadAction<number>) => {
+            if (state.currentRouteId !== null) {
+                const route = state.availableRoutes.find((r) => r.id === state.currentRouteId);
+                if (route) {
+                    route.waypoints.splice(action.payload, 1);
+                }
+            }
         },
     },
 });
 
-export const { updateAircraftStatus, updateRoute, manualUpdateMPSQueue } = dataSlice.actions;
+export const {
+    updateAircraftStatus,
+    loadAvailableRoutes,
+    setCurrentRoute,
+    addRoute,
+    removeRoute,
+    updateRouteInList,
+    updateCurrentRouteName,
+    updateCurrentRouteWaypoints,
+    addWaypointToCurrentRoute,
+    editWaypointInCurrentRoute,
+    deleteWaypointFromCurrentRoute,
+} = dataSlice.actions;
 
 export const selectAircraftStatus = (state: RootState) => state.data.aircraftStatus;
-export const selectRoute = (state: RootState) => state.data.route;
-export const selectMPSWaypoints = (state: RootState) => state.data.route.waypoints;
+export const selectAvailableRoutes = (state: RootState) => state.data.availableRoutes;
+export const selectCurrentRoute = (state: RootState) =>
+    state.data.availableRoutes.find((r) => r.id === state.data.currentRouteId) ?? null;
+export const selectCurrentRouteWaypoints = (state: RootState) =>
+    state.data.availableRoutes.find((r) => r.id === state.data.currentRouteId)?.waypoints ?? [];
 
 const dataReducer = dataSlice.reducer;
 export default dataReducer;

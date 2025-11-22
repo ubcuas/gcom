@@ -164,6 +164,165 @@ class APIClient:
         )
         return response
 
+    # ==================== Database Waypoint API Methods ====================
+    # These methods interact with the web-backend's database for mission planning.
+    # Waypoints stored here are for planning and can be loaded to the drone later.
+
+    def create_waypoint(self, waypoint_data: Dict[str, Any]) -> Response:
+        """Create a waypoint in the database.
+
+        Args:
+            waypoint_data: Waypoint dictionary with required fields
+
+        Returns:
+            Response object
+        """
+        response = requests.post(
+            f"{self.web_backend_url}/api/waypoint/",
+            json=waypoint_data,
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
+    def list_waypoints(self) -> List[Dict[str, Any]]:
+        """List all waypoints from the database.
+
+        Returns:
+            List of waypoint dictionaries
+        """
+        response = requests.get(f"{self.web_backend_url}/api/waypoint/")
+        response.raise_for_status()
+        return response.json()
+
+    def get_waypoint(self, waypoint_id: str) -> Dict[str, Any]:
+        """Get a specific waypoint from the database by ID.
+
+        Args:
+            waypoint_id: UUID of the waypoint
+
+        Returns:
+            Waypoint dictionary
+        """
+        response = requests.get(f"{self.web_backend_url}/api/waypoint/{waypoint_id}/")
+        response.raise_for_status()
+        return response.json()
+
+    def update_waypoint(self, waypoint_id: str, data: Dict[str, Any]) -> Response:
+        """Update a waypoint in the database (full update).
+
+        Args:
+            waypoint_id: UUID of the waypoint
+            data: Complete waypoint data
+
+        Returns:
+            Response object
+        """
+        response = requests.put(
+            f"{self.web_backend_url}/api/waypoint/{waypoint_id}/",
+            json=data,
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
+    def partial_update_waypoint(self, waypoint_id: str, data: Dict[str, Any]) -> Response:
+        """Partially update a waypoint in the database.
+
+        Args:
+            waypoint_id: UUID of the waypoint
+            data: Partial waypoint data to update
+
+        Returns:
+            Response object
+        """
+        response = requests.patch(
+            f"{self.web_backend_url}/api/waypoint/{waypoint_id}/",
+            json=data,
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
+    def delete_waypoint(self, waypoint_id: str) -> Response:
+        """Delete a waypoint from the database.
+
+        Args:
+            waypoint_id: UUID of the waypoint
+
+        Returns:
+            Response object
+        """
+        response = requests.delete(f"{self.web_backend_url}/api/waypoint/{waypoint_id}/")
+        return response
+
+    # ==================== Database Route API Methods ====================
+
+    def create_route(self, route_data: Dict[str, Any]) -> Response:
+        """Create a route in the database.
+
+        Args:
+            route_data: Route dictionary (typically just {"name": "Route Name"})
+
+        Returns:
+            Response object
+        """
+        response = requests.post(
+            f"{self.web_backend_url}/api/route/",
+            json=route_data,
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
+    def list_routes(self) -> List[Dict[str, Any]]:
+        """List all routes from the database.
+
+        Returns:
+            List of route dictionaries with nested waypoints
+        """
+        response = requests.get(f"{self.web_backend_url}/api/route/")
+        response.raise_for_status()
+        return response.json()
+
+    def get_route(self, route_id: int) -> Dict[str, Any]:
+        """Get a specific route from the database by ID.
+
+        Args:
+            route_id: Integer ID of the route
+
+        Returns:
+            Route dictionary with nested waypoints
+        """
+        response = requests.get(f"{self.web_backend_url}/api/route/{route_id}/")
+        response.raise_for_status()
+        return response.json()
+
+    def delete_route(self, route_id: int) -> Response:
+        """Delete a route from the database.
+
+        Args:
+            route_id: Integer ID of the route
+
+        Returns:
+            Response object
+        """
+        response = requests.delete(f"{self.web_backend_url}/api/route/{route_id}/")
+        return response
+
+    def reorder_route_waypoints(self, route_id: int, waypoint_ids: List[str]) -> Response:
+        """Reorder waypoints within a route.
+
+        Args:
+            route_id: Integer ID of the route
+            waypoint_ids: List of waypoint UUIDs in desired order
+
+        Returns:
+            Response object
+        """
+        response = requests.post(
+            f"{self.web_backend_url}/api/route/{route_id}/reorder-waypoints/",
+            json=waypoint_ids,
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
     # ==================== Mission-Planner Direct Access ====================
     # These methods bypass web-backend and hit mission-planner directly.
     # Use sparingly - only for verification or debugging, not primary test flow.

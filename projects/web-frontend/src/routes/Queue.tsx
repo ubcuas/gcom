@@ -1,4 +1,5 @@
-import { Box } from "@mui/material";
+import { Box, Stack } from "@mui/material";
+import { RouteSelector } from "../components/RouteSelector";
 import WaypointStatusCard from "../components/WaypointStatusCard";
 
 export default function Queue() {
@@ -9,7 +10,10 @@ export default function Queue() {
                 width: "100%",
             }}
         >
-            <WaypointStatusCard />
+            <Stack spacing={3}>
+                <RouteSelector />
+                <WaypointStatusCard />
+            </Stack>
         </Box>
     );
 }

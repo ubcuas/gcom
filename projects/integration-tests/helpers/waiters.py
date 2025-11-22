@@ -57,6 +57,7 @@ def wait_for_altitude(
         try:
             status = api_client.get_status()
             current_altitude = status.get("altitude", 0)
+            print(f"Current Altitude: {current_altitude}, Target: {target_altitude}m")
             return abs(current_altitude - target_altitude) <= tolerance
         except:
             return False
