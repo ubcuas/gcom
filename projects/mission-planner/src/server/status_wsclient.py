@@ -36,21 +36,19 @@ class Status_Client:
                 break
             except Exception as e:
                 print(f"Connection failed: {e}. Retrying in {RECONNECT} second(s)")
-                for _ in range(RECONNECT):
-                    if not self._running:
-                        return
-                    time.sleep(1)
+                if not self._running:
+                    return
+                time.sleep(RECONNECT)
 
         while self._running:
             try:
                 self.sio.emit('drone_update', get_status(self.mav_connection).as_reduced_status())
-                for _ in range(int(DELAY * 10)):
-                    if not self._running:
-                        return
-                    time.sleep(0.01)
+                if not self._running:
+                    return
+                time.sleep(DELAY)
+
             except Exception as e:
                 print(f"Emit failed: {e}. Waiting {RECONNECT} second(s)")
-                for _ in range(RECONNECT):
-                    if not self._running:
-                        return
-                    time.sleep(1)
+                if not self._running:
+                    return
+                time.sleep(RECONNECT)
