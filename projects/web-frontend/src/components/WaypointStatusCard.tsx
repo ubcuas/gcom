@@ -11,6 +11,7 @@ import {
 import { saveCurrentRouteToBackend } from "../store/thunks/dataThunks";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import { WaypointEditState } from "../types/Waypoint";
+import { createErrorMessage } from "../utils/errorHandling";
 import InfoCard from "./InfoCard";
 import WaypointCreationMap from "./Map/WaypointCreationMap";
 import WaypointItem from "./WaypointItem";
@@ -34,7 +35,7 @@ export default function WaypointStatusCard() {
         try {
             await postWaypointsToDrone(waypointQueue);
         } catch (error) {
-            const message = (error as Error).message;
+            const message = createErrorMessage(error);
             dispatch(openSnackbar(message));
         }
     };
@@ -45,7 +46,7 @@ export default function WaypointStatusCard() {
             await (dispatch as any)(saveCurrentRouteToBackend()).unwrap();
             dispatch(openSnackbar("Route saved successfully"));
         } catch (error: unknown) {
-            const message = (error as Error).message;
+            const message = createErrorMessage(error);
             dispatch(openSnackbar(message));
         }
     };
