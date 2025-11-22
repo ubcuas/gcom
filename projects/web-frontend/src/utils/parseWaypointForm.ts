@@ -6,7 +6,7 @@ const parseOptionalFloat = (field: string) => {
     return Number.isNaN(parsed) ? undefined : parsed;
 };
 
-export default function parseWaypointForm(formState: FormState): Waypoint {
+export default function parseWaypointForm(formState: FormState, existingWaypoint?: Waypoint): Waypoint {
     return {
         lat: parseFloat(formState.lat),
         long: parseFloat(formState.long),
@@ -19,6 +19,8 @@ export default function parseWaypointForm(formState: FormState): Waypoint {
         param2: parseOptionalFloat(formState.param2),
         param3: parseOptionalFloat(formState.param3),
         param4: parseOptionalFloat(formState.param4),
-        id: "-1",
+        id: existingWaypoint?.id ?? "-1",
+        order: existingWaypoint?.order,
+        route: existingWaypoint?.route,
     };
 }

@@ -2,9 +2,10 @@ import { Button, Grid, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { WaypointEditState } from "../../types/Waypoint";
 import { useAppDispatch } from "../../store/store";
-import { addToQueuedWaypoints, editWaypointAtIndex } from "../../store/slices/appSlice";
+import { addWaypointToCurrentRoute, editWaypointInCurrentRoute } from "../../store/slices/dataSlice";
 import { FormErrors, FormKeys, FormState } from "../../types/WaypointForm";
 import parseWaypointForm from "../../utils/parseWaypointForm";
+import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
 
 // TODO: Needs a bit of cleaning up, im sure there are better logical flows for this form.
 
@@ -90,7 +91,8 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     const handleFormSubmit = () => {
         if (checkReqFields(["lat", "long", "alt"])) {
             const waypoint = parseWaypointForm(formState);
-            dispatch(addToQueuedWaypoints(waypoint));
+            dispatch(addWaypointToCurrentRoute(waypoint));
+            dispatch(saveCurrentRouteToBackend());
         }
     };
 
@@ -100,13 +102,14 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     };
 
     const handleFinishEditing = () => {
-        const waypoint = parseWaypointForm(formState);
+        const waypoint = parseWaypointForm(formState, editState.waypoint);
         dispatch(
-            editWaypointAtIndex({
+            editWaypointInCurrentRoute({
                 index: editState.index,
                 waypoint,
             }),
         );
+        dispatch(saveCurrentRouteToBackend());
         cancelEditing();
     };
 
