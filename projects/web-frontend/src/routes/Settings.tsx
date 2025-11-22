@@ -17,8 +17,8 @@ export default function Settings() {
     const settings = useAppSelector(selectAppSlice);
 
     const [coords, setCoords] = useState<StringCoords>({
-        lat: settings.mapCenterCoords.lat.toString(),
-        long: settings.mapCenterCoords.long.toString(),
+        lat: (settings.mapCenterCoords.lat ?? 0).toString(),
+        long: (settings.mapCenterCoords.long ?? 0).toString(),
     });
 
     const getCoordError = (coords: StringCoords) => ({
