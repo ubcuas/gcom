@@ -42,13 +42,13 @@ The pymavlink-based mission planner is a **cross-platform HTTP API server** that
 
 ### Infrastructure Ports
 
-| Port  | Protocol | Purpose | Component |
-|-------|----------|---------|-----------|
-| **5760** | TCP | SITL autopilot output | Docker container |
-| **14550** | UDP | Mission Planner GUI (optional) | Mavproxy output |
-| **14551** | UDP | pymavlink script input | Mavproxy output |
-| **9000** | HTTP/WS | API server | Flask application |
-| **1323** | WebSocket | Status updates (optional, disabled by default) | External status listener |
+| Port      | Protocol  | Purpose                                        | Component                |
+| --------- | --------- | ---------------------------------------------- | ------------------------ |
+| **5760**  | TCP       | SITL autopilot output                          | Docker container         |
+| **14550** | UDP       | Mission Planner GUI (optional)                 | Mavproxy output          |
+| **14551** | UDP       | pymavlink script input                         | Mavproxy output          |
+| **9000**  | HTTP/WS   | API server                                     | Flask application        |
+| **1323**  | WebSocket | Status updates (optional, disabled by default) | External status listener |
 
 ### HTTP API Endpoints
 
@@ -89,6 +89,8 @@ poetry install --no-root
 ```
 
 ### 2. Start SITL (Docker)
+Find the correct SITL version from [docker hub](https://hub.docker.com/r/ubcuas/uasitl/tags)
+
 ```bash
 # Pull the image (choose plane or copter, x86 or ARM)
 docker pull ubcuas/uasitl:copter-4.5.0  # example version
@@ -138,15 +140,15 @@ poetry run python src_pymav/main.py
 
 ## Command-Line Arguments
 
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `--dev` | Production | Run in development mode |
-| `--port` | 9000 | HTTP server port |
-| `--socket-port` | 9001 | Socket.IO port (not actively used) |
-| `--status-host` | localhost | Status WebSocket host |
-| `--status-port` | 1323 | Status WebSocket port |
-| `--disable-status` | false | Disable status WebSocket |
-| `--mavlink-conn` | `udpin:localhost:14551` | MAVLink connection string |
+| Argument           | Default                 | Description                        |
+| ------------------ | ----------------------- | ---------------------------------- |
+| `--dev`            | Production              | Run in development mode            |
+| `--port`           | 9000                    | HTTP server port                   |
+| `--socket-port`    | 9001                    | Socket.IO port (not actively used) |
+| `--status-host`    | localhost               | Status WebSocket host              |
+| `--status-port`    | 1323                    | Status WebSocket port              |
+| `--disable-status` | false                   | Disable status WebSocket           |
+| `--mavlink-conn`   | `udpin:localhost:14551` | MAVLink connection string          |
 
 ## Core Flow
 
@@ -187,13 +189,13 @@ When you call `POST /queue [waypoint_array]`:
 
 ## Key Differences from Legacy System
 
-| Aspect | **pymavlink (New)** | Legacy (Deprecated) |
-|--------|-------------------|---------------------|
-| Platform | Cross-platform | Windows only |
-| Dependencies | pymavlink only | Mission Planner desktop app |
-| MAVLink Access | Direct via socket | Mission Planner scripting API |
-| Connection | UDP/TCP network | IronPython scripting |
-| Mission Planner | Optional (visualization) | Required (runtime) |
+| Aspect          | **pymavlink (New)**      | Legacy (Deprecated)           |
+| --------------- | ------------------------ | ----------------------------- |
+| Platform        | Cross-platform           | Windows only                  |
+| Dependencies    | pymavlink only           | Mission Planner desktop app   |
+| MAVLink Access  | Direct via socket        | Mission Planner scripting API |
+| Connection      | UDP/TCP network          | IronPython scripting          |
+| Mission Planner | Optional (visualization) | Required (runtime)            |
 
 ## Summary
 

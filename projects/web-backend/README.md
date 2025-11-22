@@ -5,7 +5,7 @@
 **If you are on Windows, you will need to run this whole project in WSL**
 
 1. Install Python and Redis
-2. `pip install - requirements.txt` to install all Python dependencies
+2. `pip install -r requirements.txt` to install all Python dependencies
 
 ## Running the Server
 

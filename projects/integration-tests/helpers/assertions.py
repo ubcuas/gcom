@@ -181,13 +181,16 @@ def filter_home_waypoint(queue: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def assert_queue_empty(queue: List[Dict[str, Any]]) -> None:
-    """Assert that waypoint queue is empty (excluding home waypoint).
+    """Assert that waypoint queue is empty (only home waypoint present).
+
+    Note: MAVLink missions always include a home waypoint at seq=0.
+    An "empty" queue means only the home waypoint is present.
 
     Args:
         queue: Waypoint queue from API
 
     Raises:
-        AssertionError: If queue is not empty
+        AssertionError: If queue has more than just home waypoint
     """
     filtered = filter_home_waypoint(queue)
     assert len(filtered) == 0, f"Expected empty queue but found {len(filtered)} waypoints"
@@ -255,6 +258,10 @@ def assert_queue_upload_successful(
     2. Checking response status
     3. Retrieving and validating the queue contents (excluding home waypoint)
 
+    Note: MAVLink missions always include a home waypoint at seq=0.
+    This function accounts for that by comparing only the uploaded waypoints
+    (skipping the home waypoint in the returned queue).
+
     Args:
         api_client: API client instance
         waypoints: List of waypoints to upload
@@ -275,7 +282,14 @@ def assert_queue_upload_successful(
 
     queue = api_client.get_queue()
     filtered_queue = filter_home_waypoint(queue)
-    assert_waypoints_match(filtered_queue, waypoints)
+
+    # Don't check names - MAVLink doesn't preserve them
+    assert_waypoints_match(
+        filtered_queue,
+        waypoints,
+        check_fields=["latitude", "longitude", "altitude"]
+    )
+
     return filtered_queue
 
 

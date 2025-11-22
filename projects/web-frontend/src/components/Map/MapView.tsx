@@ -11,6 +11,7 @@ import {
 import { selectAircraftStatus, selectMPSWaypoints } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
+import { MAPTILER_API_KEY } from "../../constants";
 
 export default function MapView() {
     const mpsWaypoints = useAppSelector(selectMPSWaypoints);
@@ -18,7 +19,6 @@ export default function MapView() {
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const coords = useAppSelector(selectMapCenterCoords);
     const dispatch = useAppDispatch();
-    const KEY = import.meta.env.VITE_MAPTILER_KEY as string;
 
     useEffect(() => {
         dispatch(initializeMpsWaypointMapState(mpsWaypoints.length));
@@ -52,7 +52,7 @@ export default function MapView() {
                 }}
                 mapStyle={
                     window.navigator.onLine
-                        ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${KEY}`
+                        ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`
                         : "http://localhost:8000/api/map-tiles/osmbright"
                 }
                 doubleClickZoom={false}
