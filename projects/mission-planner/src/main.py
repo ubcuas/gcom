@@ -14,11 +14,16 @@ def run_http_server(mav_connection, production, host, port):
 
 def run_status_client(mav_connection, production, host, port):
     ws_client = Status_Client(mav_connection)
-    ws_client.connect_to(production, host, port)
+    while not stop_event.is_set():
+        ws_client.connect_to(production, host, port)
+    
+    # for some reason, only after hitting keyboard interrupt ctrl-c THREE times to interupt sio
+    # not a clean disconnect, not calling this code for some reason
+    ws_client.stop()
 
-def signal_handler(sig, frame):
-    print("Caught Ctrl+C, shutting down...")
-    stop_event.set()
+# def signal_handler(sig, frame):
+#     print("Caught Ctrl+C, shutting down...")
+#     stop_event.set()
 
 if __name__ == "__main__":
     # Simplified argument parsing here, replace with your own
@@ -35,13 +40,14 @@ if __name__ == "__main__":
     print("MAV connection successful")
 
     # Setup Ctrl+C handler
-    signal.signal(signal.SIGINT, signal_handler)
+    # signal.signal(signal.SIGINT, signal_handler)
 
     # Start HTTP server thread
     http_thread = Thread(target=run_http_server, args=(mav_connection, production, HOST, PORT))
     http_thread.start()
 
     # Start status websocket client thread if enabled
+    status_thread = None
     if not DISABLE_STATUS:
         status_thread = Thread(target=run_status_client, args=(mav_connection, production, STATUS_HOST, STATUS_PORT))
         status_thread.start()
@@ -51,7 +57,7 @@ if __name__ == "__main__":
         while not stop_event.is_set():
             stop_event.wait(1)
     except KeyboardInterrupt:
-        pass
+        stop_event.set()
 
     print("Shutting down threads...")
 
@@ -60,7 +66,7 @@ if __name__ == "__main__":
     # You might want to set socketio.stop() inside HTTP_Server to support this.
 
     http_thread.join(timeout=3)
-    if not DISABLE_STATUS:
+    if status_thread:
         status_thread.join(timeout=3)
 
     print("Exited cleanly.")
