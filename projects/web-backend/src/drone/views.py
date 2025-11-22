@@ -86,7 +86,25 @@ def queue(request):
     elif request.method == "POST":
         try:
             waypoints = json.loads(request.body)
-            response = DroneApiClient.post_queue(waypoints)
+
+            # Transform waypoints to mission-planner format
+            transformed_waypoints = []
+            for wp in waypoints:
+                transformed_wp = wp.copy()
+                # Map ardupilot_param2/3 to param2/3 for mission-planner
+                # We ignore param1 and param4 as they are not used
+                transformed_wp['param1'] = 0
+                param2 = wp.get('ardupilot_param2', 0) 
+                param3 = wp.get('ardupilot_param3', 0)
+                transformed_wp['param2'] = param2 if param2 != None else 0
+                transformed_wp['param3'] = param3 if param3 != None else 0
+                transformed_wp['param4'] = 0
+                # Remove the ardupilot_param fields
+                transformed_wp.pop('ardupilot_param2', None)
+                transformed_wp.pop('ardupilot_param3', None)
+                transformed_waypoints.append(transformed_wp)
+
+            response = DroneApiClient.post_queue(transformed_waypoints)
 
             if response.status_code >= 400:
                 print(f"[ERROR] Queue POST failed with status {response.status_code}")
@@ -124,7 +142,22 @@ def post_home(request):
 def insert(request):
     try:
         queue = json.loads(request.body)
-        response = DroneApiClient.insert(queue)
+
+        # Transform waypoints to mission-planner format
+        transformed_queue = []
+        for wp in queue:
+            transformed_wp = wp.copy()
+            # Map ardupilot_param2/3 to param2/3 for mission-planner
+            transformed_wp['param1'] = 0
+            transformed_wp['param2'] = wp.get('ardupilot_param2', 0)
+            transformed_wp['param3'] = wp.get('ardupilot_param3', 0)
+            transformed_wp['param4'] = 0
+            # Remove the ardupilot_param fields
+            transformed_wp.pop('ardupilot_param2', None)
+            transformed_wp.pop('ardupilot_param3', None)
+            transformed_queue.append(transformed_wp)
+
+        response = DroneApiClient.insert(transformed_queue)
         return HttpResponse(status=response.status_code)
     except (KeyError, ValueError, TypeError):
         return JsonResponse({"error": "Invalid input"}, status=400)

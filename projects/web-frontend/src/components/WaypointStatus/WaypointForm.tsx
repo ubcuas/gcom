@@ -22,10 +22,8 @@ const defaultFormState: FormState = {
     radius: "",
     remarks: "",
     command: "",
-    param1: "",
-    param2: "",
-    param3: "",
-    param4: "",
+    ardupilot_param2: "5",
+    ardupilot_param3: "0",
 };
 
 export default function WaypointForm({ editState, clearEditState }: WaypointFormProps) {
@@ -49,10 +47,12 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                 radius: editState.waypoint.radius ? String(editState.waypoint.radius) : "",
                 remarks: editState.waypoint.remarks ?? "",
                 command: editState.waypoint.command ?? "",
-                param1: editState.waypoint.param1 ? String(editState.waypoint.param1) : "",
-                param2: editState.waypoint.param2 ? String(editState.waypoint.param2) : "",
-                param3: editState.waypoint.param3 ? String(editState.waypoint.param3) : "",
-                param4: editState.waypoint.param4 ? String(editState.waypoint.param4) : "",
+                ardupilot_param2: editState.waypoint.ardupilot_param2
+                    ? String(editState.waypoint.ardupilot_param2)
+                    : "",
+                ardupilot_param3: editState.waypoint.ardupilot_param3
+                    ? String(editState.waypoint.ardupilot_param3)
+                    : "",
             });
         } else {
             setFormState(defaultFormState);
@@ -73,7 +73,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
 
     const handleFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (
-            ["lat", "long", "alt", "radius", "param1", "param2", "param3", "param4"].includes(event.target.id) &&
+            ["lat", "long", "alt", "radius", "ardupilot_param2", "ardupilot_param3"].includes(event.target.id) &&
             /[^0-9.-]/.test(event.target.value)
         ) {
             return;
@@ -201,46 +201,24 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                     onChange={handleFormChange}
                 />
             </Grid>
-            <Grid item xs={12} md={6} lg={3}>
+            <Grid item xs={12} md={6}>
                 <TextField
                     fullWidth
-                    id="param1"
+                    id="ardupilot_param2"
                     type="string"
-                    label="Param 1"
-                    value={formState.param1}
+                    label="ArduPilot Param 2"
+                    value={formState.ardupilot_param2}
                     onChange={handleFormChange}
                     onWheel={preventScroll}
                 />
             </Grid>
-            <Grid item xs={12} md={6} lg={3}>
+            <Grid item xs={12} md={6}>
                 <TextField
                     fullWidth
-                    id="param2"
+                    id="ardupilot_param3"
                     type="string"
-                    label="Param 2"
-                    value={formState.param2}
-                    onChange={handleFormChange}
-                    onWheel={preventScroll}
-                />
-            </Grid>
-            <Grid item xs={12} md={6} lg={3}>
-                <TextField
-                    fullWidth
-                    id="param3"
-                    type="string"
-                    label="Param 3"
-                    value={formState.param3}
-                    onChange={handleFormChange}
-                    onWheel={preventScroll}
-                />
-            </Grid>
-            <Grid item xs={12} md={6} lg={3}>
-                <TextField
-                    fullWidth
-                    id="param4"
-                    type="string"
-                    label="Param 4"
-                    value={formState.param4}
+                    label="ArduPilot Param 3"
+                    value={formState.ardupilot_param3}
                     onChange={handleFormChange}
                     onWheel={preventScroll}
                 />
