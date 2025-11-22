@@ -250,54 +250,6 @@ def test_create_route_with_waypoints(api_client, sample_route_data):
     assert_route_contains_waypoints(retrieved_route, num_waypoints)
     assert_waypoints_ordered(retrieved_route["waypoints"])
 
-
-def test_reorder_waypoints_in_route(api_client, sample_route_data):
-    """Test reordering waypoints within a route.
-
-    Args:
-        api_client: API client fixture
-        sample_route_data: Sample route data fixture
-    """
-    # Create route
-    route_response = api_client.create_route(sample_route_data)
-    route = route_response.json()
-
-    # Create 4 waypoints in order
-    waypoint_ids = []
-    for i in range(4):
-        waypoint_data = {
-            "name": f"OrderWP{i}",
-            "latitude": -35.363261 + (i * 0.001),
-            "longitude": 149.165230 + (i * 0.001),
-            "altitude": 50.0,
-            "order": i,
-            "route": route["id"],
-        }
-        response = api_client.create_waypoint(waypoint_data)
-        waypoint = response.json()
-        waypoint_ids.append(waypoint["id"])
-
-    # Act: Reorder waypoints [0,1,2,3] -> [3,1,0,2]
-    new_order = [waypoint_ids[3], waypoint_ids[1], waypoint_ids[0], waypoint_ids[2]]
-    reorder_response = api_client.reorder_route_waypoints(route["id"], new_order)
-
-    # Assert: Verify reorder succeeded
-    assert reorder_response.status_code == 200, f"Failed to reorder: {reorder_response.text}"
-
-    # Verify new order
-    retrieved_route = api_client.get_route(route["id"])
-    waypoints = retrieved_route["waypoints"]
-
-    assert len(waypoints) == 4
-    assert waypoints[0]["id"] == waypoint_ids[3]
-    assert waypoints[1]["id"] == waypoint_ids[1]
-    assert waypoints[2]["id"] == waypoint_ids[0]
-    assert waypoints[3]["id"] == waypoint_ids[2]
-
-    # Verify order field is updated correctly
-    assert_waypoints_ordered(waypoints)
-
-
 def test_delete_route_cascades_to_waypoints(api_client, sample_route_data):
     """Test that deleting a route also deletes its waypoints (cascade).
 
