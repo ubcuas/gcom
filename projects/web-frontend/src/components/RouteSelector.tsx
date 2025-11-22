@@ -28,13 +28,23 @@ export const RouteSelector = () => {
         void dispatch(fetchAllRoutes());
     }, [dispatch]);
 
+    useEffect(() => {
+        if (availableRoutes.length > 0 && !currentRoute) {
+            void dispatch(switchToRoute(availableRoutes[0].id));
+        }
+    }, [availableRoutes, currentRoute, dispatch]);
+
     const handleRouteChange = (routeId: number) => {
         void dispatch(switchToRoute(routeId));
     };
 
     const handleCreateRoute = async () => {
         if (newRouteName.trim()) {
-            await dispatch(createNewRoute(newRouteName.trim()));
+            const result = await dispatch(createNewRoute(newRouteName.trim()));
+            if (result.meta.requestStatus === "fulfilled") {
+                const newRoute = result.payload as { id: number };
+                await dispatch(switchToRoute(newRoute.id));
+            }
             setNewRouteName("");
             setShowCreateDialog(false);
         }
@@ -90,7 +100,7 @@ export const RouteSelector = () => {
                         <InputLabel id="route-select-label">Select a route</InputLabel>
                         <Select
                             labelId="route-select-label"
-                            value={currentRoute?.id ?? ""}
+                            value={String(currentRoute?.id) ?? ""}
                             onChange={(e) => handleRouteChange(Number(e.target.value))}
                             label="Select a route"
                         >
