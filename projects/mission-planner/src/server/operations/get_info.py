@@ -92,8 +92,7 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
 
     msg = mav_connection.recv_match(type=['MISSION_COUNT'], blocking=True, timeout=3)
     if not msg:
-        print('No MISSION_COUNT received within timeout period')
-        return ret
+        raise TimeoutError('No MISSION_COUNT received within timeout period')
     if msg and msg.get_type() != "BAD_DATA":
         print(f"Recieved {msg}")
 
@@ -108,10 +107,11 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
 
         # receive MISSION_ITEM_INT
         msg = mav_connection.recv_match(type=['MISSION_ITEM_INT'], blocking=True, timeout=3)
+        print(f"Received MISSION_ITEM_INT: {msg}")
         if msg and msg.get_type() != "BAD_DATA":
             # print(f"Recieved the {current}th Mission Item: {msg}")
-        
-            ret.push(Waypoint(msg.seq, f"Mission Waypoint {msg.seq}" if msg.seq != 0 else "Home Waypoint", 
+
+            ret.push(Waypoint(msg.seq, f"Mission Waypoint {msg.seq}" if msg.seq != 0 else "Home Waypoint",
                             msg.x / 10000000,
                             msg.y / 10000000,
                             msg.z,
@@ -120,7 +120,7 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
                             msg.param2,
                             msg.param3,
                             msg.param4))
-        else: 
-            ret.push(Waypoint(name=f"Error reading waypoint {current}"))
+        else:
+            raise TimeoutError(f"Failed to receive MISSION_ITEM_INT for waypoint {current}")
 
     return ret
