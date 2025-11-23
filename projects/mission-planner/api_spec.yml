@@ -433,7 +433,7 @@ components:
       type: object
       properties:
         timestamp:
-          type: integer
+          type: float64
         current_wpn:
           type: integer
         latitude:

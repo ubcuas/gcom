@@ -51,7 +51,7 @@ def get_status(mav_connection: mavutil.mavfile) -> Status:
     status_wind = mav_connection.messages.get('WIND_COV', Object(wind_x = 0, wind_y = 0))
     latency_wind = mav_connection.time_since('WIND_COV')
 
-    print(f"Latencies: {latency_time:2f}s, {latency_gps:2f}s, {latency_att:2f}s, {latency_vfr:2f}s, {latency_sys:2f}s, {latency_wpn:2f}s, {latency_wind:2f}s")
+    # print(f"Latencies: {latency_time:2f}s, {latency_gps:2f}s, {latency_att:2f}s, {latency_vfr:2f}s, {latency_sys:2f}s, {latency_wpn:2f}s, {latency_wind:2f}s")
 
     # wind calculations in the horizontal plane TODO determine if vertical windspeed is needed
     winddirection = math.degrees(math.atan(status_wind.wind_x / status_wind.wind_y)) if status_wind.wind_y != 0 else (0 if status_wind.wind_x > 0 else 180)
@@ -92,8 +92,7 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
 
     msg = mav_connection.recv_match(type=['MISSION_COUNT'], blocking=True, timeout=3)
     if not msg:
-        print('No MISSION_COUNT received within timeout period')
-        return ret
+        raise TimeoutError('No MISSION_COUNT received within timeout period')
     if msg and msg.get_type() != "BAD_DATA":
         print(f"Recieved {msg}")
 
@@ -108,10 +107,11 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
 
         # receive MISSION_ITEM_INT
         msg = mav_connection.recv_match(type=['MISSION_ITEM_INT'], blocking=True, timeout=3)
+        print(f"Received MISSION_ITEM_INT: {msg}")
         if msg and msg.get_type() != "BAD_DATA":
             # print(f"Recieved the {current}th Mission Item: {msg}")
-        
-            ret.push(Waypoint(msg.seq, f"Mission Waypoint {msg.seq}" if msg.seq != 0 else "Home Waypoint", 
+
+            ret.push(Waypoint(msg.seq, f"Mission Waypoint {msg.seq}" if msg.seq != 0 else "Home Waypoint",
                             msg.x / 10000000,
                             msg.y / 10000000,
                             msg.z,
@@ -120,7 +120,7 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
                             msg.param2,
                             msg.param3,
                             msg.param4))
-        else: 
-            ret.push(Waypoint(name=f"Error reading waypoint {current}"))
+        else:
+            raise TimeoutError(f"Failed to receive MISSION_ITEM_INT for waypoint {current}")
 
     return ret

@@ -24,7 +24,8 @@ class HTTP_Server:
     def __init__(self, mav_connection):
         self.mav_connection: mavfile = mav_connection
 
-    def serve_forever(self, production=True, HOST="localhost", PORT=9000):
+    # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
+    def serve_forever(self, production : bool, host : str, port : int):
         print("GCOM HTTP Server starting...")
         app = Flask(__name__)
         socketio = SocketIO(app)
@@ -36,21 +37,25 @@ class HTTP_Server:
 
         @app.route("/queue", methods=["GET"])
         def get_queue():
-            curr = get_status(self.mav_connection)._wpn 
-            wpq = get_current_mission(self.mav_connection)
+            try:
+                curr = get_status(self.mav_connection)._wpn
+                wpq = get_current_mission(self.mav_connection)
 
-            formatted = []
-            for wp in wpq:
-                wp_dict = wp.get_asdict()
-                wp_dict.update(wp.get_command())
+                formatted = []
+                for wp in wpq:
+                    wp_dict = wp.get_asdict()
+                    wp_dict.update(wp.get_command())
 
-                formatted.append(wp_dict)
-            
-            remaining = json.dumps(formatted[curr:])
+                    formatted.append(wp_dict)
 
-            print("Queue sent to GCOM")
+                remaining = json.dumps(formatted[curr:])
 
-            return remaining, 200
+                print("Queue sent to GCOM")
+
+                return remaining, 200
+            except TimeoutError as e:
+                print(f"[ERROR] Failed to retrieve mission: {str(e)}")
+                return "Failed to retrieve mission from drone", 400
 
         @app.route("/queue", methods=["POST"])
         def post_queue():
@@ -101,57 +106,61 @@ class HTTP_Server:
 
         @app.route("/insert", methods=["POST"])
         def post_insert_wp():
-            payload = request.get_json()
+            try:
+                payload = request.get_json()
 
-            ret: Status = get_status(self.mav_connection)
-            last_altitude = ret._alt if ret != () else 50
+                ret: Status = get_status(self.mav_connection)
+                last_altitude = ret._alt if ret != () else 50
 
-            curr = max(ret._wpn, 1)
-            curr_wpq = get_current_mission(self.mav_connection)
+                curr = max(ret._wpn, 1)
+                curr_wpq = get_current_mission(self.mav_connection)
 
-            # gets new waypoints
-            new_waypoints = []
-            for wpdict in payload:
-                altitude = wpdict.get("altitude")
-                if altitude != None:
-                    last_altitude = altitude
+                # gets new waypoints
+                new_waypoints = []
+                for wpdict in payload:
+                    altitude = wpdict.get("altitude")
+                    if altitude != None:
+                        last_altitude = altitude
+                    else:
+                        altitude = last_altitude
+
+                    command = wpdict.get("command", "WAYPOINT")
+                    # converts any unknown waypoint types to WAYPOINT
+                    command = command_int_to_string(command_string_to_int(command))
+
+                    param1 = wpdict.get("param1", 0)
+                    param2 = wpdict.get("param2", 0)
+                    param3 = wpdict.get("param3", 0)
+                    param4 = wpdict.get("param4", 0)
+
+                    wp = Waypoint(
+                        wpdict["id"],
+                        wpdict["name"],
+                        wpdict["latitude"],
+                        wpdict["longitude"],
+                        last_altitude,
+                        command,
+                        param1,
+                        param2,
+                        param3,
+                        param4,
+                    )
+                    new_waypoints.append(wp)
+
+                # start list with new waypoints, extend with current mission at the end
+                new_waypoints.extend(curr_wpq.aslist()[curr:])
+
+                success = new_mission(self.mav_connection, WaypointQueue(new_waypoints.copy()))
+                copy = WaypointQueue(new_waypoints.copy()).aslist()
+                new_waypoints.clear()
+
+                if success:
+                    return "Waypoint(s) Inserted", 200
                 else:
-                    altitude = last_altitude
-
-                command = wpdict.get("command", "WAYPOINT")
-                # converts any unknown waypoint types to WAYPOINT
-                command = command_int_to_string(command_string_to_int(command))
-
-                param1 = wpdict.get("param1", 0)
-                param2 = wpdict.get("param2", 0)
-                param3 = wpdict.get("param3", 0)
-                param4 = wpdict.get("param4", 0)
-
-                wp = Waypoint(
-                    wpdict["id"],
-                    wpdict["name"],
-                    wpdict["latitude"],
-                    wpdict["longitude"],
-                    last_altitude,
-                    command,
-                    param1,
-                    param2,
-                    param3,
-                    param4,
-                )
-                new_waypoints.append(wp)
-            
-            # start list with new waypoints, extend with current mission at the end
-            new_waypoints.extend(curr_wpq.aslist()[curr:])
-
-            success = new_mission(self.mav_connection, WaypointQueue(new_waypoints.copy()))
-            copy = WaypointQueue(new_waypoints.copy()).aslist()
-            new_waypoints.clear()
-            
-            if success:
-                return "Waypoint(s) Inserted", 200
-            else:
-                return "Failed to set new mission", 400
+                    return "Failed to set new mission", 400
+            except TimeoutError as e:
+                print(f"[ERROR] Failed to retrieve current mission: {str(e)}")
+                return "Failed to retrieve current mission from drone", 400
 
         @app.route("/clear", methods=["GET"])
         def get_clear_queue():
@@ -215,7 +224,7 @@ class HTTP_Server:
                 else:
                     return (
                         f"Arm/disarm failed - drone is NOT in the requested state",
-                        418,
+                        400,
                     )
             else:
                 return f"Unrecognized arm/disarm command parameter", 400
@@ -349,4 +358,4 @@ class HTTP_Server:
                 return f"Invalid input, missing a parameter.", 400
 
 
-        socketio.run(app, host="0.0.0.0", port=PORT, debug=(not production), use_reloader=False)
+        socketio.run(app, host=host, port=port, debug=(not production), use_reloader=False)

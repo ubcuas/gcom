@@ -2,7 +2,8 @@
  * Based on the Drone struct in GCOM-2023.
  */
 
-import { FrontendWaypoint } from "../schemas/waypoint";
+export type { Waypoint } from "../schemas/waypoint";
+import type { Waypoint } from "../schemas/waypoint";
 
 // maybe not needed idk
 export enum Designation {
@@ -11,8 +12,6 @@ export enum Designation {
     Obstacle = "obstacle",
     Payload = "payload",
 }
-
-export type Waypoint = FrontendWaypoint;
 
 export type WaypointEditState = {
     index: number;

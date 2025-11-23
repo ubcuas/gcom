@@ -1,17 +1,12 @@
 import { Waypoint } from "../types/Waypoint";
 import { Route } from "../types/Route";
 import api from "./api";
-import {
-    serializeWaypoint,
-    deserializeWaypoint,
-    deserializeRoute,
-    serializePartialWaypoint,
-} from "../schemas/waypoint";
+import { WaypointSchema, RouteSchema, PartialWaypointSchema } from "../schemas/waypoint";
 
 // TODO: Implement new endpoint logic
 
 export const armDrone = async (arm: boolean) => {
-    return await api.post("/drone/arm", { arm });
+    return await api.put("/drone/arm", { arm });
 };
 
 export const takeoffDrone = async (altitude?: number) => {
@@ -19,29 +14,28 @@ export const takeoffDrone = async (altitude?: number) => {
 };
 
 export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
-    const backendWaypoints = waypoints.map((wp) => serializeWaypoint.parse(wp));
-    console.log("Posting waypoints to drone via API", backendWaypoints);
-    return await api.post("/drone/queue", backendWaypoints);
+    console.log("Preparing to post waypoints to drone via API", waypoints);
+    return await api.post("/drone/queue", waypoints);
 };
 
 export const getGCOM = async (): Promise<Waypoint[]> => {
     const response = await api.get("/drone/queue");
-    return response.data.map((wp: unknown) => deserializeWaypoint.parse(wp));
+    return response.data.map((wp: unknown) => WaypointSchema.parse(wp));
 };
 
 export const listRoutes = async (): Promise<Route[]> => {
     const response = await api.get("/route/");
-    return response.data.map((route: unknown) => deserializeRoute.parse(route));
+    return response.data.map((route: unknown) => RouteSchema.parse(route));
 };
 
 export const getRouteById = async (id: number): Promise<Route> => {
     const response = await api.get(`/route/${id}/`);
-    return deserializeRoute.parse(response.data);
+    return RouteSchema.parse(response.data);
 };
 
 export const createRoute = async (name: string): Promise<Route> => {
     const response = await api.post("/route/", { name });
-    return deserializeRoute.parse(response.data);
+    return RouteSchema.parse(response.data);
 };
 
 export const deleteRoute = async (id: number): Promise<void> => {
@@ -50,7 +44,7 @@ export const deleteRoute = async (id: number): Promise<void> => {
 
 export const updateRouteName = async (id: number, name: string): Promise<Route> => {
     const response = await api.put(`/route/${id}/`, { name });
-    return deserializeRoute.parse(response.data);
+    return RouteSchema.parse(response.data);
 };
 
 export const addWaypointToRoute = async (
@@ -59,13 +53,13 @@ export const addWaypointToRoute = async (
     order: number,
 ): Promise<Waypoint> => {
     console.log("Adding waypoint to route via API", routeId, waypoint, order);
-    const backendWaypoint = serializePartialWaypoint.parse(waypoint);
+    const validatedWaypoint = PartialWaypointSchema.parse(waypoint);
     const response = await api.post("/waypoint/", {
-        ...backendWaypoint,
+        ...validatedWaypoint,
         route: routeId,
         order,
     });
-    return deserializeWaypoint.parse(response.data);
+    return WaypointSchema.parse(response.data);
 };
 
 export const updateWaypoint = async (
@@ -73,9 +67,9 @@ export const updateWaypoint = async (
     waypoint: Partial<Omit<Waypoint, "id">>,
 ): Promise<Waypoint> => {
     console.log("Updating waypoint via API", waypointId, waypoint);
-    const backendWaypoint = serializePartialWaypoint.parse(waypoint);
-    const response = await api.put(`/waypoint/${waypointId}/`, backendWaypoint);
-    return deserializeWaypoint.parse(response.data);
+    const validatedWaypoint = PartialWaypointSchema.parse(waypoint);
+    const response = await api.put(`/waypoint/${waypointId}/`, validatedWaypoint);
+    return WaypointSchema.parse(response.data);
 };
 
 export const deleteWaypoint = async (waypointId: string): Promise<void> => {
@@ -87,8 +81,7 @@ export const reorderWaypoints = async (routeId: number, waypointIds: string[]): 
 };
 
 export const syncRouteWaypoints = async (routeId: number, waypoints: Waypoint[]): Promise<Route> => {
-    const backendWaypoints = waypoints.map((wp) => serializeWaypoint.parse(wp));
-    console.log("Syncing waypoints via API", routeId, backendWaypoints);
-    const response = await api.post(`/route/${routeId}/sync-waypoints/`, backendWaypoints);
-    return deserializeRoute.parse(response.data);
+    console.log("Syncing waypoints via API", routeId, waypoints);
+    const response = await api.post(`/route/${routeId}/sync-waypoints/`, waypoints);
+    return RouteSchema.parse(response.data);
 };

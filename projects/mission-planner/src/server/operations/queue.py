@@ -93,7 +93,9 @@ def verify_ack(mavlink_connection: mavutil.mavlink_connection, error_msg: str) -
     """
     ack = mavlink_connection.recv_match(type='MISSION_ACK', blocking=True, timeout=3)
     print(ack)
-    if ack is None or ack.type != 0:
+    if (ack is None):
+        print(f'{error_msg}: No ACK received')
+    elif (ack.type != 0):
         print(f'{error_msg}: {ack.type}')
         return False
     return True
@@ -106,7 +108,4 @@ def clear_mission(mavlink_connection: mavutil.mavlink_connection) -> bool:
     )
 
     return verify_ack(mavlink_connection, "")
-
-def insert_wp():
-    pass
 

@@ -38,7 +38,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
 
     const routeData: GeoJSON.GeoJSON = {
         type: "LineString",
-        coordinates: clientWPQueue.map((waypoint) => [waypoint.long, waypoint.lat]),
+        coordinates: clientWPQueue.map((waypoint) => [waypoint.longitude, waypoint.latitude]),
     };
     const routeStyle: LayerProps = {
         id: "mps-route",
@@ -54,8 +54,8 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
         dispatch(
             addWaypointToCurrentRoute({
                 id: "-1",
-                lat: roundTo(event.lngLat.lat, 7),
-                long: roundTo(event.lngLat.lng, 7),
+                latitude: roundTo(event.lngLat.lat, 7),
+                longitude: roundTo(event.lngLat.lng, 7),
             }),
         );
         dispatch(saveCurrentRouteToBackend());
@@ -110,8 +110,8 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                                         index: i,
                                         waypoint: {
                                             ...waypoint,
-                                            lat: roundTo(draggedMarkerData!.lat, 7),
-                                            long: roundTo(draggedMarkerData!.long, 7),
+                                            latitude: roundTo(draggedMarkerData!.lat, 7),
+                                            longitude: roundTo(draggedMarkerData!.long, 7),
                                         },
                                     }),
                                 );
@@ -121,12 +121,12 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                             latitude={
                                 draggedMarkerData && draggedMarkerData.index === i
                                     ? draggedMarkerData.lat
-                                    : waypoint.lat
+                                    : waypoint.latitude
                             }
                             longitude={
                                 draggedMarkerData && draggedMarkerData.index === i
                                     ? draggedMarkerData.long
-                                    : waypoint.long
+                                    : waypoint.longitude
                             }
                             style={{
                                 cursor: "pointer",
@@ -162,12 +162,12 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                                 latitude={
                                     draggedMarkerData && draggedMarkerData.index === i
                                         ? draggedMarkerData.lat
-                                        : waypoint.lat
+                                        : waypoint.latitude
                                 }
                                 longitude={
                                     draggedMarkerData && draggedMarkerData.index === i
                                         ? draggedMarkerData.long
-                                        : waypoint.long
+                                        : waypoint.longitude
                                 }
                             >
                                 <WaypointItem

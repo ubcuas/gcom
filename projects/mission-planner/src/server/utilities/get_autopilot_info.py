@@ -61,6 +61,8 @@ def wait_for_heartbeat(connection, sysid, timeout=3):
     start_time = time.time()
     while time.time() - start_time < timeout:
         msg = connection.recv_match(type='HEARTBEAT', blocking=True, timeout=timeout)
+        if msg is None:
+            continue
         if msg.get_srcSystem() == sysid:
             return msg
     return None

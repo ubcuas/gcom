@@ -16,7 +16,7 @@ class DroneTelemetry(models.Model):
         battery_voltage (float): The battery voltage of the drone
     """
 
-    timestamp = models.IntegerField(primary_key=True, null=False)
+    timestamp = models.FloatField(primary_key=True, null=False)
     latitude = models.FloatField(null=False)
     longitude = models.FloatField(null=False)
     altitude = models.FloatField(null=False)

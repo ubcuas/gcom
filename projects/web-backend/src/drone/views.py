@@ -45,7 +45,7 @@ def takeoff(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_http_methods(["PUT"])
 def arm(request):
     try:
         data = json.loads(request.body)
@@ -165,7 +165,7 @@ def diversion(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_http_methods(["PUT"])
 def flightmode(request):
     try:
         data = json.loads(request.body)
