@@ -5,53 +5,61 @@ from pymavlink import mavutil
 from server.common.status import Status
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_int_to_string
-from server.utilities.request_message_streaming import request_messages
+from server.services.status_cache import StatusCache
 
 """
     Get current status of a drone
     Type of message can be found on https://mavlink.io/en/messages/common.html
 
 """
-def get_status(mav_connection: mavutil.mavfile) -> Status:
+def get_status(status_cache: StatusCache) -> Status:
+    """
+    Get current drone status from the status cache.
 
-    # trigger an update
-    # mav_connection.recv_match(blocking=True)
-    request_messages(mav_connection, [
-        mavutil.mavlink.MAVLINK_MSG_ID_SYSTEM_TIME, # seems like only one is needed
-        # mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, 
-        # mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE,
-        # mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD,
-        # mavutil.mavlink.MAVLINK_MSG_ID_SYS_STATUS,
-        # mavutil.mavlink.MAVLINK_MSG_ID_MISSION_CURRENT,
-        # mavutil.mavlink.MAVLINK_MSG_ID_WIND_COV,
-    ])
+    This function reads from the status cache which is continuously updated
+    by the global MAVLink receiver thread. Returns near-instantaneously without
+    any blocking network I/O.
 
-    # use the mav_connection.messages dictionary to access the most recent messages of a particular type
+    Args:
+        status_cache: The StatusCache instance containing latest MAVLink messages
 
+    Returns:
+        Status object with current drone state
+    """
+
+    # Helper to create default objects for missing messages
     Object = lambda **kwargs: type("Object", (), kwargs)
 
-    system_time = mav_connection.messages.get('SYSTEM_TIME', Object(time_unix_usec = 0, time_boot_ms = 0))
-    latency_time = mav_connection.time_since('SYSTEM_TIME')
+    # Retrieve cached messages with their ages
+    system_time_data = status_cache.get('SYSTEM_TIME')
+    system_time = system_time_data[0] if system_time_data else Object(time_unix_usec=0, time_boot_ms=0)
+    latency_time = system_time_data[1] if system_time_data else 0
 
-    status_gps = mav_connection.messages.get('GLOBAL_POSITION_INT', Object(lat = 0, lon = 0, alt = 0))
-    latency_gps = mav_connection.time_since('GLOBAL_POSITION_INT')
+    status_gps_data = status_cache.get('GLOBAL_POSITION_INT')
+    status_gps = status_gps_data[0] if status_gps_data else Object(lat=0, lon=0, alt=0)
+    latency_gps = status_gps_data[1] if status_gps_data else 0
 
-    status_att = mav_connection.messages.get('ATTITUDE', Object(roll = 0, pitch = 0, yaw = 0))
-    latency_att = mav_connection.time_since('ATTITUDE')
+    status_att_data = status_cache.get('ATTITUDE')
+    status_att = status_att_data[0] if status_att_data else Object(roll=0, pitch=0, yaw=0)
+    latency_att = status_att_data[1] if status_att_data else 0
 
-    status_vfr = mav_connection.messages.get('VFR_HUD', Object(airspeed = 0, groundspeed = 0, climb = 0))
-    latency_vfr = mav_connection.time_since('VFR_HUD')
+    status_vfr_data = status_cache.get('VFR_HUD')
+    status_vfr = status_vfr_data[0] if status_vfr_data else Object(airspeed=0, groundspeed=0, climb=0)
+    latency_vfr = status_vfr_data[1] if status_vfr_data else 0
 
-    status_sys = mav_connection.messages.get('SYS_STATUS', Object(voltage_battery = 0))
-    latency_sys = mav_connection.time_since('SYS_STATUS')
+    status_sys_data = status_cache.get('SYS_STATUS')
+    status_sys = status_sys_data[0] if status_sys_data else Object(voltage_battery=0)
+    latency_sys = status_sys_data[1] if status_sys_data else 0
 
-    status_wpn = mav_connection.messages.get('MISSION_CURRENT', Object(seq = 0, total = 0, mission_state = 0, mission_mode = 0, mission_id = 0))
-    latency_wpn = mav_connection.time_since('MISSION_CURRENT')
+    status_wpn_data = status_cache.get('MISSION_CURRENT')
+    status_wpn = status_wpn_data[0] if status_wpn_data else Object(seq=0, total=0, mission_state=0, mission_mode=0, mission_id=0)
+    latency_wpn = status_wpn_data[1] if status_wpn_data else 0
 
-    status_wind = mav_connection.messages.get('WIND_COV', Object(wind_x = 0, wind_y = 0))
-    latency_wind = mav_connection.time_since('WIND_COV')
+    status_wind_data = status_cache.get('WIND_COV')
+    status_wind = status_wind_data[0] if status_wind_data else Object(wind_x=0, wind_y=0)
+    latency_wind = status_wind_data[1] if status_wind_data else 0
 
-    # print(f"Latencies: {latency_time:2f}s, {latency_gps:2f}s, {latency_att:2f}s, {latency_vfr:2f}s, {latency_sys:2f}s, {latency_wpn:2f}s, {latency_wind:2f}s")
+    # print(f"Latencies: {latency_time:.2f}s, {latency_gps:.2f}s, {latency_att:.2f}s, {latency_vfr:.2f}s, {latency_sys:.2f}s, {latency_wpn:.2f}s, {latency_wind:.2f}s")
 
     # wind calculations in the horizontal plane TODO determine if vertical windspeed is needed
     winddirection = math.degrees(math.atan(status_wind.wind_x / status_wind.wind_y)) if status_wind.wind_y != 0 else (0 if status_wind.wind_x > 0 else 180)

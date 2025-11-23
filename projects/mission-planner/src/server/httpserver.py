@@ -22,19 +22,14 @@ from server.services import StatusCache, MavlinkReceiver
 
 
 class HTTP_Server:
-    def __init__(self, mav_connection):
+    def __init__(self, mav_connection, status_cache: StatusCache, receiver: MavlinkReceiver):
         self.mav_connection: mavfile = mav_connection
-        self.status_cache = StatusCache()
-        self.receiver = MavlinkReceiver(mav_connection, self.status_cache)
+        self.status_cache = status_cache
+        self.receiver = receiver
 
     # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
     def serve_forever(self, production : bool, host : str, port : int):
         print("GCOM HTTP Server starting...")
-
-        # Start the MAVLink receiver thread
-        self.receiver.start()
-        print("MAVLink receiver thread started")
-
         app = Flask(__name__)
         socketio = SocketIO(app)
 
@@ -46,7 +41,7 @@ class HTTP_Server:
         @app.route("/queue", methods=["GET"])
         def get_queue():
             try:
-                curr = get_status(self.mav_connection)._wpn
+                curr = get_status(self.status_cache)._wpn
                 wpq = get_current_mission(self.mav_connection)
 
                 formatted = []
@@ -69,7 +64,7 @@ class HTTP_Server:
         def post_queue():
             payload = request.get_json()
 
-            ret = get_status(self.mav_connection)
+            ret = get_status(self.status_cache)
             last_altitude = ret.as_dictionary().get("altitude", 50)
 
             wpq = []
@@ -117,7 +112,7 @@ class HTTP_Server:
             try:
                 payload = request.get_json()
 
-                ret: Status = get_status(self.mav_connection)
+                ret: Status = get_status(self.status_cache)
                 last_altitude = ret._alt if ret != () else 50
 
                 curr = max(ret._wpn, 1)
@@ -182,7 +177,7 @@ class HTTP_Server:
         @app.route("/status", methods=["GET"])
         def get_status_handler():
             print("Status sent to GCOM")
-            s = get_status(self.mav_connection).as_dictionary()
+            s = get_status(self.status_cache).as_dictionary()
             return s, 200
 
         @app.route("/takeoff", methods=["POST"])
@@ -373,7 +368,5 @@ class HTTP_Server:
             self.shutdown()
 
     def shutdown(self):
-        """Shutdown the HTTP server and stop background services."""
-        print("Shutting down MAVLink receiver...")
-        self.receiver.stop()
-        print("HTTP Server shutdown complete")
+        """Shutdown the HTTP server."""
+        print("HTTP Server shutdown")

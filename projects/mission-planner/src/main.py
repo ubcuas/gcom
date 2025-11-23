@@ -5,15 +5,14 @@ from threading import Thread, Event
 from server.utilities.connect_to_sysid import connect_to_sysid
 from server.httpserver import HTTP_Server
 from server.status_wsclient import Status_Client
+from server.services import StatusCache, MavlinkReceiver
 
 stop_event = Event()
 
-def run_http_server(mav_connection, production, host, port):
-    http_server = HTTP_Server(mav_connection)
+def run_http_server(http_server, production, host, port):
     http_server.serve_forever(production, host, port)
 
-def run_status_client(mav_connection, production, host, port):
-    ws_client = Status_Client(mav_connection)
+def run_status_client(ws_client, production, host, port):
     while not stop_event.is_set():
         ws_client.connect_to(production, host, port)
     
@@ -39,17 +38,28 @@ if __name__ == "__main__":
         raise ConnectionError(f"MAV connection failed. Is mavproxy running?")
     else:
         print(f"MAV connection successful")
-    
+
     # set_message_streaming_rates(mav_connection) # optional - set update rate (applies to both MissionPlanner and this server)
 
+    # Create global MAVLink services
+    print("Creating MAVLink receiver and status cache...")
+    status_cache = StatusCache()
+    receiver = MavlinkReceiver(mav_connection, status_cache)
+    receiver.start()
+    print("MAVLink receiver started")
+
+    # Create server instances
+    http_server = HTTP_Server(mav_connection, status_cache, receiver)
+    ws_client = Status_Client(status_cache) if not DISABLE_STATUS else None
+
     # Start HTTP server thread
-    http_thread = Thread(target=run_http_server, args=(mav_connection, production, HOST, PORT))
+    http_thread = Thread(target=run_http_server, args=(http_server, production, HOST, PORT))
     http_thread.start()
 
     # Start status websocket client thread if enabled
     status_thread = None
     if not DISABLE_STATUS:
-        status_thread = Thread(target=run_status_client, args=(mav_connection, production, STATUS_HOST, STATUS_PORT))
+        status_thread = Thread(target=run_status_client, args=(ws_client, production, STATUS_HOST, STATUS_PORT))
         status_thread.start()
 
     try:
@@ -60,6 +70,10 @@ if __name__ == "__main__":
         stop_event.set()
 
     print("Shutting down threads...")
+
+    # Stop the MAVLink receiver
+    print("Stopping MAVLink receiver...")
+    receiver.stop()
 
     # Flask's server doesn't provide a clean stop API,
     # but exiting main thread will kill the app.

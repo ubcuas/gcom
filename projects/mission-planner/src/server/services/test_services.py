@@ -20,8 +20,12 @@ import sys
 import time
 from pymavlink import mavutil
 
-from status_cache import StatusCache
-from mavlink_receiver import MavlinkReceiver
+# Add parent directory to path to import server modules
+sys.path.insert(0, '../../')
+
+from server.services.status_cache import StatusCache
+from server.services.mavlink_receiver import MavlinkReceiver
+from server.operations.get_info import get_status
 
 
 def test_services(connection_string: str):
@@ -101,6 +105,21 @@ def test_services(connection_string: str):
         print(f"Received {any_msg.get_type()} in {elapsed:.2f}s")
     else:
         print(f"Timeout waiting for any message after {elapsed:.2f}s")
+
+    # Test get_status function
+    print("\n=== Testing get_status() with status_cache ===")
+    try:
+        status = get_status(status_cache)
+        status_dict = status.as_dictionary()
+        print(f"Status retrieved successfully:")
+        print(f"  Position: lat={status_dict.get('latitude', 0):.6f}, lon={status_dict.get('longitude', 0):.6f}, alt={status_dict.get('altitude', 0):.1f}m")
+        print(f"  Attitude: roll={status_dict.get('roll', 0):.1f}°, pitch={status_dict.get('pitch', 0):.1f}°, yaw={status_dict.get('yaw', 0):.1f}°")
+        print(f"  Speed: airspeed={status_dict.get('airspeed', 0):.1f} m/s, groundspeed={status_dict.get('groundspeed', 0):.1f} m/s")
+        print(f"  Battery: {status_dict.get('voltage', 0):.1f}V")
+    except Exception as e:
+        print(f"ERROR getting status: {e}")
+        import traceback
+        traceback.print_exc()
 
     # Stop receiver
     print("\n=== Stopping receiver ===")
