@@ -4,7 +4,7 @@ import socketio
 from server.common.status import Status
 from server.operations.get_info import get_status
 
-DELAY = 0.1
+DELAY = 1
 # DELAY = 2
 RECONNECT = 15
 
