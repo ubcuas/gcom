@@ -15,9 +15,9 @@ type WaypointFormProps = {
 };
 
 const defaultFormState: FormState = {
-    lat: "",
-    long: "",
-    alt: "",
+    latitude: "",
+    longitude: "",
+    altitude: "",
     name: "",
     radius: "",
     remarks: "",
@@ -33,18 +33,18 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     const [formState, setFormState] = useState<FormState>(defaultFormState);
 
     const [formErrors, setFormErrors] = useState<FormErrors>({
-        lat: false,
-        long: false,
-        alt: false,
+        latitude: false,
+        longitude: false,
+        altitude: false,
     });
 
     useEffect(() => {
         if (editState.waypoint) {
             // TODO: bit ugly, could be improved in the future.
             setFormState({
-                lat: editState.waypoint.latitude ? String(editState.waypoint.latitude) : "",
-                long: editState.waypoint.longitude ? String(editState.waypoint.longitude) : "",
-                alt: editState.waypoint.alt ? String(editState.waypoint.alt) : "",
+                latitude: editState.waypoint.latitude ? String(editState.waypoint.latitude) : "",
+                longitude: editState.waypoint.longitude ? String(editState.waypoint.longitude) : "",
+                altitude: editState.waypoint.altitude ? String(editState.waypoint.altitude) : "",
                 name: editState.waypoint.name ?? "No Name",
                 radius: editState.waypoint.radius ? String(editState.waypoint.radius) : "",
                 remarks: editState.waypoint.remarks ?? "",
@@ -73,7 +73,9 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
 
     const handleFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (
-            ["lat", "long", "alt", "radius", "param1", "param2", "param3", "param4"].includes(event.target.id) &&
+            ["latitude", "longitude", "altitude", "radius", "param1", "param2", "param3", "param4"].includes(
+                event.target.id,
+            ) &&
             /[^0-9.-]/.test(event.target.value)
         ) {
             return;
@@ -89,7 +91,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     };
 
     const handleFormSubmit = () => {
-        if (checkReqFields(["lat", "long", "alt"])) {
+        if (checkReqFields(["latitude", "longitude", "altitude"])) {
             const waypoint = parseWaypointForm(formState);
             dispatch(addWaypointToCurrentRoute(waypoint));
             dispatch(saveCurrentRouteToBackend());
@@ -122,42 +124,42 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                 <TextField
                     fullWidth
                     required
-                    id="lat"
+                    id="latitude"
                     type="string"
                     label="Latitude"
                     onChange={handleFormChange}
                     onWheel={preventScroll}
-                    value={formState.lat}
-                    error={formErrors.lat}
-                    helperText={formErrors.lat && "Latitude is required."}
+                    value={formState.latitude}
+                    error={formErrors.latitude}
+                    helperText={formErrors.latitude && "Latitude is required."}
                 />
             </Grid>
             <Grid item xs={12} lg={6}>
                 <TextField
                     fullWidth
                     required
-                    id="long"
+                    id="longitude"
                     type="string"
                     label="Longitude"
                     onChange={handleFormChange}
                     onWheel={preventScroll}
-                    value={formState.long}
-                    error={formErrors.long}
-                    helperText={formErrors.long && "Longitude is required."}
+                    value={formState.longitude}
+                    error={formErrors.longitude}
+                    helperText={formErrors.longitude && "Longitude is required."}
                 />
             </Grid>
             <Grid item xs={12} lg={6}>
                 <TextField
                     fullWidth
                     required
-                    id="alt"
+                    id="altitude"
                     type="string"
                     label="Altitude"
                     onChange={handleFormChange}
                     onWheel={preventScroll}
-                    value={formState.alt}
-                    error={formErrors.alt}
-                    helperText={formErrors.alt && "Altitude is required."}
+                    value={formState.altitude}
+                    error={formErrors.altitude}
+                    helperText={formErrors.altitude && "Altitude is required."}
                 />
             </Grid>
             <Grid item xs={12} lg={6}>

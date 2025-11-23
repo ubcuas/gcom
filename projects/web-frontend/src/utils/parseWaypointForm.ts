@@ -8,9 +8,9 @@ const parseOptionalFloat = (field: string) => {
 
 export default function parseWaypointForm(formState: FormState, existingWaypoint?: Waypoint): Waypoint {
     return {
-        latitude: parseFloat(formState.lat),
-        longitude: parseFloat(formState.long),
-        alt: parseOptionalFloat(formState.alt),
+        latitude: parseFloat(formState.latitude),
+        longitude: parseFloat(formState.longitude),
+        altitude: parseOptionalFloat(formState.altitude),
         radius: parseOptionalFloat(formState.radius),
         name: formState.name.trim(),
         remarks: formState.remarks.trim(),

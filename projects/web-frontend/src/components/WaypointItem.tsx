@@ -61,7 +61,7 @@ export default function WaypointItem({ waypoint, sx, handleDelete, handleEdit }:
                         color: (theme) => theme.palette.primary.main,
                     }}
                 >
-                    {waypoint.alt}
+                    {waypoint.altitude}
                 </Typography>
             </Typography>
             {waypoint.command && (
