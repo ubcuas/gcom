@@ -18,15 +18,23 @@ from server.utilities.request_message_streaming import set_parameter
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.status import Status
 from server.common.encoders import command_string_to_int, command_int_to_string
+from server.services import StatusCache, MavlinkReceiver
 
 
 class HTTP_Server:
     def __init__(self, mav_connection):
         self.mav_connection: mavfile = mav_connection
+        self.status_cache = StatusCache()
+        self.receiver = MavlinkReceiver(mav_connection, self.status_cache)
 
     # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
     def serve_forever(self, production : bool, host : str, port : int):
         print("GCOM HTTP Server starting...")
+
+        # Start the MAVLink receiver thread
+        self.receiver.start()
+        print("MAVLink receiver thread started")
+
         app = Flask(__name__)
         socketio = SocketIO(app)
 
@@ -358,4 +366,14 @@ class HTTP_Server:
                 return f"Invalid input, missing a parameter.", 400
 
 
-        socketio.run(app, host=host, port=port, debug=(not production), use_reloader=False)
+        try:
+            socketio.run(app, host=host, port=port, debug=(not production), use_reloader=False)
+        finally:
+            # Ensure receiver thread stops cleanly
+            self.shutdown()
+
+    def shutdown(self):
+        """Shutdown the HTTP server and stop background services."""
+        print("Shutting down MAVLink receiver...")
+        self.receiver.stop()
+        print("HTTP Server shutdown complete")

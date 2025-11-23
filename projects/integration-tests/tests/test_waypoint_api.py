@@ -355,6 +355,7 @@ def test_load_saved_route_to_drone(api_client, sample_route_data):
     drone_waypoints = transform_db_waypoints_to_drone_format(
         retrieved_route["waypoints"]
     )
+    print("posting waypoitns", drone_waypoints)
 
     # Step 4: Load to drone queue
     upload_response = api_client.post_queue(drone_waypoints)
