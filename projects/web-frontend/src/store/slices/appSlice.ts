@@ -11,6 +11,7 @@ type AppState = {
     globalSnackbar: {
         message: string;
         open: boolean;
+        severity: "success" | "error";
     };
     telemetrySockets: boolean;
     bypassArmingRestriction: boolean;
@@ -26,6 +27,7 @@ const initialState: AppState = localStorage.getItem("appSlice")
           globalSnackbar: {
               message: "",
               open: false,
+              severity: "error",
           },
           telemetrySockets: false,
           bypassArmingRestriction: false,
@@ -41,10 +43,11 @@ const appSlice = createSlice({
         setPreferredTheme: (state, action: PayloadAction<"light" | "dark">) => {
             state.preferredTheme = action.payload;
         },
-        openSnackbar: (state, action: PayloadAction<string>) => {
+        openSnackbar: (state, action: PayloadAction<{ message: string; severity?: "success" | "error" }>) => {
             state.globalSnackbar = {
-                message: action.payload,
+                message: action.payload.message,
                 open: true,
+                severity: action.payload.severity || "error",
             };
         },
         closeSnackbar: (state) => {

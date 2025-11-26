@@ -10,7 +10,7 @@ export type ErrorSnackbarProps = {
 };
 
 export default function ErrorSnackbar() {
-    const { message, open } = useAppSelector(selectSnackbar);
+    const { message, open, severity } = useAppSelector(selectSnackbar);
     const dispatch = useAppDispatch();
 
     return (
@@ -21,7 +21,7 @@ export default function ErrorSnackbar() {
             onClose={() => dispatch(closeSnackbar())}
         >
             <Alert
-                severity="error"
+                severity={severity}
                 variant="filled"
                 action={
                     <IconButton

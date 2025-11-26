@@ -36,7 +36,7 @@ export default function WaypointStatusCard() {
             await postWaypointsToDrone(waypointQueue);
         } catch (error) {
             const message = createErrorMessage(error);
-            dispatch(openSnackbar(message));
+            dispatch(openSnackbar({ message }));
         }
     };
 

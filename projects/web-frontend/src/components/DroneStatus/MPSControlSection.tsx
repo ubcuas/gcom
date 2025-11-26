@@ -2,13 +2,18 @@ import { Box, Button, Modal, Paper, TextField, Tooltip, Typography } from "@mui/
 import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
 import { armDrone, prepareTakeoffDrone } from "../../api/endpoints.ts";
+import { openSnackbar } from "../../store/slices/appSlice";
+import { useAppDispatch } from "../../store/store";
 
 export default function MPSControlSection() {
+    const dispatch = useAppDispatch();
     const [clientSideState, setClientSideState] = useState({
         armed: false,
         takeoffAltitude: 0,
     });
     const [modalState, setModalState] = useState(false);
+    const [preparingTakeoff, setPreparingTakeoff] = useState(false);
+    const [armingInProgress, setArmingInProgress] = useState(false);
 
     return (
         <Box
@@ -23,16 +28,32 @@ export default function MPSControlSection() {
                     <Button
                         fullWidth
                         variant="outlined"
-                        color="success"
+                        color={armingInProgress ? "inherit" : "success"}
+                        disabled={armingInProgress}
                         onClick={() => {
-                            armDrone(false).then((response) => {
-                                if (response.status === 200) {
-                                    setClientSideState((prevState) => ({
-                                        ...prevState,
-                                        armed: false,
-                                    }));
-                                }
-                            });
+                            setArmingInProgress(true);
+                            armDrone(false)
+                                .then((response) => {
+                                    if (response.status === 200) {
+                                        setClientSideState((prevState) => ({
+                                            ...prevState,
+                                            armed: false,
+                                        }));
+                                        dispatch(
+                                            openSnackbar({
+                                                message: "Drone disarmed successfully",
+                                                severity: "success",
+                                            }),
+                                        );
+                                    } else {
+                                        dispatch(
+                                            openSnackbar({
+                                                message: "Failed to disarm drone",
+                                            }),
+                                        );
+                                    }
+                                })
+                                .finally(() => setArmingInProgress(false));
                         }}
                     >
                         Disarm Drone
@@ -74,15 +95,28 @@ export default function MPSControlSection() {
                 />
                 <Button
                     variant="contained"
-                    color="error"
+                    color={preparingTakeoff ? "inherit" : "error"}
+                    disabled={preparingTakeoff}
                     onClick={() => {
-                        prepareTakeoffDrone(clientSideState.takeoffAltitude).then((response) => {
-                            if (response.status === 200) {
-                                console.log("Drone prepared for takeoff", response);
-                                return;
-                            }
-                            console.error("Failed to prepare drone for takeoff", response);
-                        });
+                        setPreparingTakeoff(true);
+                        prepareTakeoffDrone(clientSideState.takeoffAltitude)
+                            .then((response) => {
+                                if (response.status === 200) {
+                                    dispatch(
+                                        openSnackbar({
+                                            message: "Drone prepared for takeoff. Switch to AUTO mode to begin.",
+                                            severity: "success",
+                                        }),
+                                    );
+                                } else {
+                                    dispatch(
+                                        openSnackbar({
+                                            message: "Failed to prepare drone for takeoff",
+                                        }),
+                                    );
+                                }
+                            })
+                            .finally(() => setPreparingTakeoff(false));
                     }}
                     endIcon={
                         <Tooltip title="Clears mission queue and loads a takeoff waypoint. Switch drone to AUTO mode to takeoff">
@@ -161,17 +195,29 @@ export default function MPSControlSection() {
                         color="error"
                         onClick={() => {
                             setModalState(false);
-                            armDrone(true).then((response) => {
-                                if (response.status === 200) {
-                                    console.log("Drone armed successfully", response);
-                                    setClientSideState((prevState) => ({
-                                        ...prevState,
-                                        armed: true,
-                                    }));
-                                } else {
-                                    console.error("Failed to arm drone", response);
-                                }
-                            });
+                            setArmingInProgress(true);
+                            armDrone(true)
+                                .then((response) => {
+                                    if (response.status === 200) {
+                                        setClientSideState((prevState) => ({
+                                            ...prevState,
+                                            armed: true,
+                                        }));
+                                        dispatch(
+                                            openSnackbar({
+                                                message: "Drone armed successfully",
+                                                severity: "success",
+                                            }),
+                                        );
+                                    } else {
+                                        dispatch(
+                                            openSnackbar({
+                                                message: "Failed to arm drone",
+                                            }),
+                                        );
+                                    }
+                                })
+                                .finally(() => setArmingInProgress(false));
                         }}
                     >
                         Yes
