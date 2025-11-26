@@ -13,13 +13,13 @@ class StatusCache:
     """
 
     STATUS_MESSAGE_TYPES = [
-        'SYSTEM_TIME',
-        'GLOBAL_POSITION_INT',
-        'ATTITUDE',
-        'VFR_HUD',
-        'SYS_STATUS',
-        'MISSION_CURRENT',
-        'WIND_COV',
+        "SYSTEM_TIME",
+        "GLOBAL_POSITION_INT",
+        "ATTITUDE",
+        "VFR_HUD",
+        "SYS_STATUS",
+        "MISSION_CURRENT",
+        "WIND_COV",
     ]
 
     def __init__(self):

@@ -115,7 +115,7 @@ class MavlinkReceiver:
 
                 msg_type = msg.get_type()
 
-                if msg_type == 'BAD_DATA':
+                if msg_type == "BAD_DATA":
                     continue
 
                 # Reset error count on successful receive
@@ -133,12 +133,14 @@ class MavlinkReceiver:
                 logger.error(f"Error in receiver loop: {e}", exc_info=True)
 
                 if error_count >= max_consecutive_errors:
-                    logger.critical(f"Too many consecutive errors ({error_count}), stopping receiver")
+                    logger.critical(
+                        f"Too many consecutive errors ({error_count}), stopping receiver"
+                    )
                     self._running = False
                     break
 
                 # Exponential backoff on errors
-                backoff = min(2 ** error_count, 30)
+                backoff = min(2**error_count, 5)
                 time.sleep(backoff)
 
         logger.info("MavlinkReceiver loop exiting")
@@ -173,7 +175,7 @@ class MavlinkReceiver:
         self,
         msg_type: str,
         timeout: Optional[float] = None,
-        filter_func: Optional[Callable[[Any], bool]] = None
+        filter_func: Optional[Callable[[Any], bool]] = None,
     ) -> Optional[Any]:
         """
         Wait for a specific message type with optional filtering.
@@ -234,7 +236,7 @@ class MavlinkReceiver:
         self,
         msg_types: List[str],
         timeout: Optional[float] = None,
-        filter_func: Optional[Callable[[Any], bool]] = None
+        filter_func: Optional[Callable[[Any], bool]] = None,
     ) -> Optional[Any]:
         """
         Wait for any of the specified message types.
@@ -301,7 +303,9 @@ class MavlinkReceiver:
         """
         # For now, this could be implemented with a background thread per callback
         # that calls wait_for_message in a loop. We can add this in the future if needed.
-        raise NotImplementedError("subscribe() not yet implemented - use wait_for_message()")
+        raise NotImplementedError(
+            "subscribe() not yet implemented - use wait_for_message()"
+        )
 
     def is_running(self) -> bool:
         """Check if the receiver thread is running."""
