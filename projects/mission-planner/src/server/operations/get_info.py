@@ -6,6 +6,7 @@ from server.common.status import Status
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_int_to_string
 from server.services.status_cache import StatusCache
+from server.services.mavlink_receiver import MavlinkReceiver
 
 """
     Get current status of a drone
@@ -88,17 +89,17 @@ def get_status(status_cache: StatusCache) -> Status:
         windvelocity
     )
 
-def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
+def get_current_mission(mav_connection: mavutil.mavfile, receiver: MavlinkReceiver) -> WaypointQueue:
 
     ret = WaypointQueue()
 
     mav_connection.mav.mission_request_list_send(
-        mav_connection.target_system, 
+        mav_connection.target_system,
         mav_connection.target_component,
         mavutil.mavlink.MAV_MISSION_TYPE_MISSION
     )
 
-    msg = mav_connection.recv_match(type=['MISSION_COUNT'], blocking=True, timeout=3)
+    msg = receiver.wait_for_message('MISSION_COUNT', timeout=3.0)
     if not msg:
         raise TimeoutError('No MISSION_COUNT received within timeout period')
     if msg and msg.get_type() != "BAD_DATA":
@@ -114,7 +115,7 @@ def get_current_mission(mav_connection: mavutil.mavfile) -> WaypointQueue:
         )
 
         # receive MISSION_ITEM_INT
-        msg = mav_connection.recv_match(type=['MISSION_ITEM_INT'], blocking=True, timeout=3)
+        msg = receiver.wait_for_message('MISSION_ITEM_INT', timeout=3.0)
         print(f"Received MISSION_ITEM_INT: {msg}")
         if msg and msg.get_type() != "BAD_DATA":
             # print(f"Recieved the {current}th Mission Item: {msg}")

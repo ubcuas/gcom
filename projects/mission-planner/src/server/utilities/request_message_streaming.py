@@ -1,6 +1,7 @@
 from pymavlink import mavutil
+from server.services.mavlink_receiver import MavlinkReceiver
 
-def set_message_streaming_rates(connection):
+def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
     GPS_RATE_HZ = 0.25
     ATTITUDE_RATE_HZ = 1
     VFR_HUD_RATE_HZ = 1
@@ -24,8 +25,12 @@ def set_message_streaming_rates(connection):
     
     connection.mav.send(message)
 
-    response = connection.recv_match(type='COMMAND_ACK', blocking=True)
-    if (response and response.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
+    response = receiver.wait_for_message(
+        'COMMAND_ACK',
+        timeout=3.0,
+        filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
+    )
+    if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
         print(f"Setting {GPS_RATE_HZ = } Hz")
     else:
         print(f"Setting {GPS_RATE_HZ = } failed")
@@ -46,8 +51,12 @@ def set_message_streaming_rates(connection):
     
     connection.mav.send(message)
 
-    response = connection.recv_match(type='COMMAND_ACK', blocking=True)
-    if (response and response.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
+    response = receiver.wait_for_message(
+        'COMMAND_ACK',
+        timeout=3.0,
+        filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
+    )
+    if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
         print(f"Setting {ATTITUDE_RATE_HZ = } Hz")
     else:
         print(f"Setting {ATTITUDE_RATE_HZ = } failed")
@@ -68,8 +77,12 @@ def set_message_streaming_rates(connection):
     
     connection.mav.send(message)
 
-    response = connection.recv_match(type='COMMAND_ACK', blocking=True)
-    if (response and response.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
+    response = receiver.wait_for_message(
+        'COMMAND_ACK',
+        timeout=3.0,
+        filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
+    )
+    if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
         print(f"Setting {VFR_HUD_RATE_HZ = } Hz")
     else:
         print(f"Setting {VFR_HUD_RATE_HZ = } failed")
@@ -90,8 +103,12 @@ def set_message_streaming_rates(connection):
     
     connection.mav.send(message)
 
-    response = connection.recv_match(type='COMMAND_ACK', blocking=True)
-    if (response and response.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
+    response = receiver.wait_for_message(
+        'COMMAND_ACK',
+        timeout=3.0,
+        filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
+    )
+    if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
         print(f"Setting {SYS_STATUS_RATE_HZ = } Hz")
     else:
         print(f"Setting {SYS_STATUS_RATE_HZ = } failed")
@@ -112,8 +129,12 @@ def set_message_streaming_rates(connection):
     
     connection.mav.send(message)
 
-    response = connection.recv_match(type='COMMAND_ACK', blocking=True)
-    if (response and response.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
+    response = receiver.wait_for_message(
+        'COMMAND_ACK',
+        timeout=3.0,
+        filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
+    )
+    if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
         print(f"Setting {MISSION_ITEM_REACHED_RATE_HZ = } Hz")
     else:
         print(f"Setting {MISSION_ITEM_REACHED_RATE_HZ = } failed")
@@ -134,15 +155,19 @@ def set_message_streaming_rates(connection):
     
     connection.mav.send(message)
 
-    response = connection.recv_match(type='COMMAND_ACK', blocking=True)
-    if (response and response.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
+    response = receiver.wait_for_message(
+        'COMMAND_ACK',
+        timeout=3.0,
+        filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
+    )
+    if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
         print(f"Setting {WIND_COV_RATE_HZ = } Hz")
     else:
         print(f"Setting {WIND_COV_RATE_HZ = } failed")
 
 
 
-def request_messages(connection, message_types: list) -> bool:
+def request_messages(connection, receiver: MavlinkReceiver, message_types: list) -> bool:
     for message_type in message_types:
         message = connection.mav.command_long_encode(
             connection.target_system,  # Target system ID
@@ -160,15 +185,19 @@ def request_messages(connection, message_types: list) -> bool:
         
         connection.mav.send(message)
 
-        response = connection.recv_match(type='COMMAND_ACK', blocking=True)
-        if (response and response.command == mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
+        response = receiver.wait_for_message(
+            'COMMAND_ACK',
+            timeout=3.0,
+            filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE
+        )
+        if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
             # print(f"Request for Message of type {message_type} ACCEPTED")
             pass
         else:
             print(f"Request for Message of type {message_type} DENIED")
 
 
-def set_parameter(connection, param_id, param_value) -> bool:
+def set_parameter(connection, receiver: MavlinkReceiver, param_id, param_value) -> bool:
     param_id = bytes(param_id, "ascii")
     # obtain parameter type
     connection.mav.param_request_read_send(
@@ -178,7 +207,7 @@ def set_parameter(connection, param_id, param_value) -> bool:
         -1
     )
 
-    param_value_msg = connection.recv_match(type='PARAM_VALUE', blocking=True, timeout=3)
+    param_value_msg = receiver.wait_for_message('PARAM_VALUE', timeout=3.0)
     print(param_value_msg)
 
     if param_value_msg is None:
@@ -194,7 +223,7 @@ def set_parameter(connection, param_id, param_value) -> bool:
         param_type
     )
 
-    param_value_msg = connection.recv_match(type='PARAM_VALUE', blocking=True, timeout=3)
+    param_value_msg = receiver.wait_for_message('PARAM_VALUE', timeout=3.0)
     print(param_value_msg)
 
     if param_value_msg is None:

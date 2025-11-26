@@ -42,7 +42,7 @@ class HTTP_Server:
         def get_queue():
             try:
                 curr = get_status(self.status_cache)._wpn
-                wpq = get_current_mission(self.mav_connection)
+                wpq = get_current_mission(self.mav_connection, self.receiver)
 
                 formatted = []
                 for wp in wpq:
@@ -98,7 +98,7 @@ class HTTP_Server:
                 )
                 wpq.append(wp)
 
-            success = new_mission(self.mav_connection, WaypointQueue(wpq.copy()))
+            success = new_mission(self.mav_connection, self.receiver, WaypointQueue(wpq.copy()))
             copy = WaypointQueue(wpq.copy()).aslist()
             wpq.clear()
 
@@ -116,7 +116,7 @@ class HTTP_Server:
                 last_altitude = ret._alt if ret != () else 50
 
                 curr = max(ret._wpn, 1)
-                curr_wpq = get_current_mission(self.mav_connection)
+                curr_wpq = get_current_mission(self.mav_connection, self.receiver)
 
                 # gets new waypoints
                 new_waypoints = []
@@ -153,7 +153,7 @@ class HTTP_Server:
                 # start list with new waypoints, extend with current mission at the end
                 new_waypoints.extend(curr_wpq.aslist()[curr:])
 
-                success = new_mission(self.mav_connection, WaypointQueue(new_waypoints.copy()))
+                success = new_mission(self.mav_connection, self.receiver, WaypointQueue(new_waypoints.copy()))
                 copy = WaypointQueue(new_waypoints.copy()).aslist()
                 new_waypoints.clear()
 
@@ -167,7 +167,7 @@ class HTTP_Server:
 
         @app.route("/clear", methods=["GET"])
         def get_clear_queue():
-            result = clear_mission(self.mav_connection)
+            result = clear_mission(self.mav_connection, self.receiver)
 
             if result:
                 return "Mission has been Cleared", 200
@@ -191,7 +191,7 @@ class HTTP_Server:
             print(f"Taking off to altitude {altitude}")
 
             try:
-                result = takeoff(self.mav_connection, altitude)
+                result = takeoff(self.mav_connection, self.receiver, altitude)
 
                 if result == 0:
                     return "Takeoff command successful", 200
@@ -217,7 +217,7 @@ class HTTP_Server:
 
                 print("ARMING drone" if arm else "DISARMING drone")
                 
-                result = arm_disarm(self.mav_connection, arm)
+                result = arm_disarm(self.mav_connection, self.receiver, arm)
 
                 if result == 0:
                     return (
@@ -244,11 +244,12 @@ class HTTP_Server:
             # set RTL altitude parameter
             alt_cm = altitude * 100
 
-            if not set_parameter(self.mav_connection, "RTL_ALT", alt_cm):
+            if not set_parameter(self.mav_connection, self.receiver, "RTL_ALT", alt_cm):
                 return "Failed to set RTL altitude parameter", 400
 
             success = change_flight_mode(
                 self.mav_connection,
+                self.receiver,
                 self.mav_connection.target_system,
                 self.mav_connection.target_component,
                 "RTL",
@@ -262,10 +263,10 @@ class HTTP_Server:
         @app.route("/land", methods=["GET"])
         def get_land():
             print("Landing")
-            if not change_flight_mode(self.mav_connection, "LOITER"):
+            if not change_flight_mode(self.mav_connection, self.receiver, self.mav_connection.target_system, self.mav_connection.target_component, "LOITER"):
                 return "Failed to set drone into LOITER mode", 400
 
-            if land_in_place(self.mav_connection) == 0:
+            if land_in_place(self.mav_connection, self.receiver) == 0:
                 return "Landing Immediately", 200
             else:
                 return "Landing failed", 400
@@ -283,7 +284,7 @@ class HTTP_Server:
             landing_mission.push(Waypoint(0, "Approach", land.get('latitude'), land.get('longitude'), land.get('altitude', 35)))
             landing_mission.push(Waypoint(1, "Landing", land.get('latitude'), land.get('longitude'), 0, "LAND"))
 
-            if new_mission(self.mav_connection, landing_mission):
+            if new_mission(self.mav_connection, self.receiver, landing_mission):
                 return "Landing at Specified Location", 200
             else:
                 return "Landing failed", 400
@@ -299,7 +300,7 @@ class HTTP_Server:
             ):
                 return "Long/lat/alt cannot be null", 400
 
-            if set_home(self.mav_connection, home.get("latitude"), home.get("longitude"), home.get("altitude")) == 0:
+            if set_home(self.mav_connection, self.receiver, home.get("latitude"), home.get("longitude"), home.get("altitude")) == 0:
                 return "Setting New Home", 200
             else:
                 return "New Home NOT set", 400
@@ -310,6 +311,7 @@ class HTTP_Server:
 
             success = change_flight_mode(
                 self.mav_connection,
+                self.receiver,
                 self.mav_connection.target_system,
                 self.mav_connection.target_component,
                 input["mode"],
@@ -330,7 +332,7 @@ class HTTP_Server:
                 wpq = scan_area(center_lat=input["center_lat"], center_lng=input["center_lng"],
                             altitude=input["altitude"], target_area_radius=input["target_area_radius"])
                 
-                if new_mission(self.mav_connection, wpq):
+                if new_mission(self.mav_connection, self.receiver, wpq):
                     return f"Scan Mission Set", 200
                 else:
                     return "Mission request failed", 400
@@ -351,9 +353,9 @@ class HTTP_Server:
                 curr_lat = input["curr_lat"]
                 curr_lon = input["curr_lon"]
                 wpq = generate_water_wps(current_alt, deliver_alt, deliver_duration_secs, curr_lat, curr_lon)
-                
-                
-                if new_mission(self.mav_connection, wpq):
+
+
+                if new_mission(self.mav_connection, self.receiver, wpq):
                     return f"Commencing Deliver operation", 200
                 else:
                     return "Mission request failed", 400

@@ -1,8 +1,9 @@
 from pymavlink.mavutil import mavfile, mavlink
+from server.services.mavlink_receiver import MavlinkReceiver
 
 
 def change_flight_mode(
-    mav_connection: mavfile, tgt_sys_id: int = 1, tgt_comp_id: int = 1, flightmode: str = ""
+    mav_connection: mavfile, receiver: MavlinkReceiver, tgt_sys_id: int = 1, tgt_comp_id: int = 1, flightmode: str = ""
 ) -> bool:
 
     flightmode = flightmode.upper()
@@ -25,7 +26,7 @@ def change_flight_mode(
         param6=0,
         param7=0,
     )
-    verify_ack(mav_connection, "Failed ACK after change_flight_mode")
+    verify_ack(receiver, "Failed ACK after change_flight_mode")
 
     return True
 
@@ -34,18 +35,18 @@ def change_aircraft_type(mav_connection: mavfile):
     # TODO investigate whether to deprecate
     pass
 
-def verify_ack(mavlink_connection: mavfile, error_msg: str) -> bool:
+def verify_ack(receiver: MavlinkReceiver, error_msg: str) -> bool:
     """
     Verifies the ack response.
 
     Args:
-        master (mavutil.mavlink_connection): The MAVLink connection to use.
+        receiver: The MavlinkReceiver instance
         error_msg (str): The error message to log if ack verification fails.
 
     Returns:
         bool: True if ack verification successful, False otherwise.
     """
-    ack = mavlink_connection.recv_match(type='COMMAND_ACK', blocking=True, timeout=3)
+    ack = receiver.wait_for_message('COMMAND_ACK', timeout=3.0)
     print("ack:", ack)
     # if ack.type != 0:
     #     print(f'{error_msg}: {ack.type}')
