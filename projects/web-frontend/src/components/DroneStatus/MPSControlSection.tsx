@@ -1,6 +1,7 @@
-import { Box, Button, Modal, Paper, TextField, Typography } from "@mui/material";
+import { Box, Button, Modal, Paper, TextField, Tooltip, Typography } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
-import { armDrone, takeoffDrone } from "../../api/endpoints.ts";
+import { armDrone, prepareTakeoffDrone } from "../../api/endpoints.ts";
 
 export default function MPSControlSection() {
     const [clientSideState, setClientSideState] = useState({
@@ -75,10 +76,21 @@ export default function MPSControlSection() {
                     variant="contained"
                     color="error"
                     onClick={() => {
-                        takeoffDrone(clientSideState.takeoffAltitude);
+                        prepareTakeoffDrone(clientSideState.takeoffAltitude).then((response) => {
+                            if (response.status === 200) {
+                                console.log("Drone prepared for takeoff", response);
+                                return;
+                            }
+                            console.error("Failed to prepare drone for takeoff", response);
+                        });
                     }}
+                    endIcon={
+                        <Tooltip title="Clears mission queue and loads a takeoff waypoint. Switch drone to AUTO mode to takeoff">
+                            <InfoIcon fontSize="small" />
+                        </Tooltip>
+                    }
                 >
-                    Takeoff
+                    Prepare for Takeoff
                 </Button>
             </Box>
             <Box
@@ -151,10 +163,13 @@ export default function MPSControlSection() {
                             setModalState(false);
                             armDrone(true).then((response) => {
                                 if (response.status === 200) {
+                                    console.log("Drone armed successfully", response);
                                     setClientSideState((prevState) => ({
                                         ...prevState,
                                         armed: true,
                                     }));
+                                } else {
+                                    console.error("Failed to arm drone", response);
                                 }
                             });
                         }}
