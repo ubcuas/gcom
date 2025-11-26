@@ -10,6 +10,10 @@ from server.services.status_cache import StatusCache
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("[%(levelname)s] %(name)s  - %(message)s"))
+logger.addHandler(handler)
 
 
 class MavlinkHandler:
@@ -122,6 +126,10 @@ class MavlinkHandler:
 
                 # Reset error count on successful receive
                 error_count = 0
+
+                # Log STATUSTEXT messages
+                if msg_type == "STATUSTEXT":
+                    logger.info(f"STATUSTEXT: {msg.text}")
 
                 # Route to status cache if it's a status message
                 if msg_type in StatusCache.STATUS_MESSAGE_TYPES:
