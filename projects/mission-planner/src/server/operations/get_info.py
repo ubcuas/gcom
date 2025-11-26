@@ -6,7 +6,7 @@ from server.common.status import Status
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_int_to_string
 from server.services.status_cache import StatusCache
-from server.services.mavlink_receiver import MavlinkReceiver
+from server.services.mavlink_handler import MavlinkHandler
 
 """
     Get current status of a drone
@@ -18,7 +18,7 @@ def get_status(status_cache: StatusCache) -> Status:
     Get current drone status from the status cache.
 
     This function reads from the status cache which is continuously updated
-    by the global MAVLink receiver thread. Returns near-instantaneously without
+    by the global MAVLink handler thread. Returns near-instantaneously without
     any blocking network I/O.
 
     Args:
@@ -89,17 +89,17 @@ def get_status(status_cache: StatusCache) -> Status:
         windvelocity
     )
 
-def get_current_mission(receiver: MavlinkReceiver) -> WaypointQueue:
+def get_current_mission(handler: MavlinkHandler) -> WaypointQueue:
 
     ret = WaypointQueue()
 
-    receiver.mav.mission_request_list_send(
-        receiver.target_system,
-        receiver.target_component,
+    handler.mav.mission_request_list_send(
+        handler.target_system,
+        handler.target_component,
         mavutil.mavlink.MAV_MISSION_TYPE_MISSION
     )
 
-    msg = receiver.wait_for_message('MISSION_COUNT', timeout=3.0)
+    msg = handler.wait_for_message('MISSION_COUNT', timeout=3.0)
     if not msg:
         raise TimeoutError('No MISSION_COUNT received within timeout period')
     if msg and msg.get_type() != "BAD_DATA":
@@ -107,15 +107,15 @@ def get_current_mission(receiver: MavlinkReceiver) -> WaypointQueue:
 
     # use MISSION_REQUEST_INT for all mission items
     for current in range(msg.count):
-        msg = receiver.mav.mission_request_int_send(
-            receiver.target_system,
-            receiver.target_component,
+        msg = handler.mav.mission_request_int_send(
+            handler.target_system,
+            handler.target_component,
             current,
             mavutil.mavlink.MAV_MISSION_TYPE_MISSION
         )
 
         # receive MISSION_ITEM_INT
-        msg = receiver.wait_for_message('MISSION_ITEM_INT', timeout=3.0)
+        msg = handler.wait_for_message('MISSION_ITEM_INT', timeout=3.0)
         print(f"Received MISSION_ITEM_INT: {msg}")
         if msg and msg.get_type() != "BAD_DATA":
             # print(f"Recieved the {current}th Mission Item: {msg}")

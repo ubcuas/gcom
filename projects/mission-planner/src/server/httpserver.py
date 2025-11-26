@@ -18,14 +18,14 @@ from server.utilities.request_message_streaming import set_parameter
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.status import Status
 from server.common.encoders import command_string_to_int, command_int_to_string
-from server.services import StatusCache, MavlinkReceiver
+from server.services import StatusCache, MavlinkHandler
 
 
 class HTTP_Server:
-    def __init__(self, mav_connection, status_cache: StatusCache, receiver: MavlinkReceiver):
+    def __init__(self, mav_connection, status_cache: StatusCache, handler: MavlinkHandler):
         self.mav_connection: mavfile = mav_connection
         self.status_cache = status_cache
-        self.receiver = receiver
+        self.handler = handler
 
     # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
     def serve_forever(self, production : bool, host : str, port : int):
@@ -42,7 +42,7 @@ class HTTP_Server:
         def get_queue():
             try:
                 curr = get_status(self.status_cache)._wpn
-                wpq = get_current_mission(self.receiver)
+                wpq = get_current_mission(self.handler)
 
                 formatted = []
                 for wp in wpq:
@@ -98,7 +98,7 @@ class HTTP_Server:
                 )
                 wpq.append(wp)
 
-            success = new_mission(self.receiver, WaypointQueue(wpq.copy()))
+            success = new_mission(self.handler, WaypointQueue(wpq.copy()))
             copy = WaypointQueue(wpq.copy()).aslist()
             wpq.clear()
 
@@ -116,7 +116,7 @@ class HTTP_Server:
                 last_altitude = ret._alt if ret != () else 50
 
                 curr = max(ret._wpn, 1)
-                curr_wpq = get_current_mission(self.receiver)
+                curr_wpq = get_current_mission(self.handler)
 
                 # gets new waypoints
                 new_waypoints = []
@@ -153,7 +153,7 @@ class HTTP_Server:
                 # start list with new waypoints, extend with current mission at the end
                 new_waypoints.extend(curr_wpq.aslist()[curr:])
 
-                success = new_mission(self.receiver, WaypointQueue(new_waypoints.copy()))
+                success = new_mission(self.handler, WaypointQueue(new_waypoints.copy()))
                 copy = WaypointQueue(new_waypoints.copy()).aslist()
                 new_waypoints.clear()
 
@@ -167,7 +167,7 @@ class HTTP_Server:
 
         @app.route("/clear", methods=["GET"])
         def get_clear_queue():
-            result = clear_mission(self.receiver)
+            result = clear_mission(self.handler)
 
             if result:
                 return "Mission has been Cleared", 200
@@ -191,7 +191,7 @@ class HTTP_Server:
             print(f"Taking off to altitude {altitude}")
 
             try:
-                result = takeoff(self.receiver, altitude)
+                result = takeoff(self.handler, altitude)
 
                 if result == 0:
                     return "Takeoff command successful", 200
@@ -217,7 +217,7 @@ class HTTP_Server:
 
                 print("ARMING drone" if arm else "DISARMING drone")
                 
-                result = arm_disarm(self.receiver, arm)
+                result = arm_disarm(self.handler, arm)
 
                 if result == 0:
                     return (
@@ -244,11 +244,11 @@ class HTTP_Server:
             # set RTL altitude parameter
             alt_cm = altitude * 100
 
-            if not set_parameter(self.receiver, "RTL_ALT", alt_cm):
+            if not set_parameter(self.handler, "RTL_ALT", alt_cm):
                 return "Failed to set RTL altitude parameter", 400
 
             success = change_flight_mode(
-                self.receiver,
+                self.handler,
                 self.mav_connection.target_system,
                 self.mav_connection.target_component,
                 "RTL",
@@ -262,10 +262,10 @@ class HTTP_Server:
         @app.route("/land", methods=["GET"])
         def get_land():
             print("Landing")
-            if not change_flight_mode(self.receiver, self.mav_connection.target_system, self.mav_connection.target_component, "LOITER"):
+            if not change_flight_mode(self.handler, self.mav_connection.target_system, self.mav_connection.target_component, "LOITER"):
                 return "Failed to set drone into LOITER mode", 400
 
-            if land_in_place(self.receiver) == 0:
+            if land_in_place(self.handler) == 0:
                 return "Landing Immediately", 200
             else:
                 return "Landing failed", 400
@@ -283,7 +283,7 @@ class HTTP_Server:
             landing_mission.push(Waypoint(0, "Approach", land.get('latitude'), land.get('longitude'), land.get('altitude', 35)))
             landing_mission.push(Waypoint(1, "Landing", land.get('latitude'), land.get('longitude'), 0, "LAND"))
 
-            if new_mission(self.receiver, landing_mission):
+            if new_mission(self.handler, landing_mission):
                 return "Landing at Specified Location", 200
             else:
                 return "Landing failed", 400
@@ -299,7 +299,7 @@ class HTTP_Server:
             ):
                 return "Long/lat/alt cannot be null", 400
 
-            if set_home(self.receiver, home.get("latitude"), home.get("longitude"), home.get("altitude")) == 0:
+            if set_home(self.handler, home.get("latitude"), home.get("longitude"), home.get("altitude")) == 0:
                 return "Setting New Home", 200
             else:
                 return "New Home NOT set", 400
@@ -309,7 +309,7 @@ class HTTP_Server:
             input = request.get_json()
 
             success = change_flight_mode(
-                self.receiver,
+                self.handler,
                 self.mav_connection.target_system,
                 self.mav_connection.target_component,
                 input["mode"],
@@ -330,7 +330,7 @@ class HTTP_Server:
                 wpq = scan_area(center_lat=input["center_lat"], center_lng=input["center_lng"],
                             altitude=input["altitude"], target_area_radius=input["target_area_radius"])
                 
-                if new_mission(self.receiver, wpq):
+                if new_mission(self.handler, wpq):
                     return f"Scan Mission Set", 200
                 else:
                     return "Mission request failed", 400
@@ -353,7 +353,7 @@ class HTTP_Server:
                 wpq = generate_water_wps(current_alt, deliver_alt, deliver_duration_secs, curr_lat, curr_lon)
 
 
-                if new_mission(self.receiver, wpq):
+                if new_mission(self.handler, wpq):
                     return f"Commencing Deliver operation", 200
                 else:
                     return "Mission request failed", 400
@@ -364,7 +364,7 @@ class HTTP_Server:
         try:
             socketio.run(app, host=host, port=port, debug=(not production), use_reloader=False)
         finally:
-            # Ensure receiver thread stops cleanly
+            # Ensure handler thread stops cleanly
             self.shutdown()
 
     def shutdown(self):

@@ -12,14 +12,16 @@ from server.services.status_cache import StatusCache
 logger = logging.getLogger(__name__)
 
 
-class MavlinkReceiver:
+class MavlinkHandler:
     """
-    Global MAVLink message receiver thread.
+    Global MAVLink message handler thread.
 
     This service runs a single background thread that continuously receives MAVLink
     messages and distributes them to:
     1. Status cache for status messages
     2. Registered listeners for command/response messages
+
+    It also provides convenient access to the MAVLink connection for sending messages.
 
     This eliminates blocking recv_match calls and prevents message interference
     between different parts of the codebase.
@@ -64,32 +66,32 @@ class MavlinkReceiver:
         return self.mav_connection.mode_mapping
 
     def start(self) -> None:
-        """Start the receiver thread."""
+        """Start the handler thread."""
         if self._running:
-            logger.warning("MavlinkReceiver already running")
+            logger.warning("MavlinkHandler already running")
             return
 
         self._running = True
         self._shutdown_flag.clear()
         self._thread = threading.Thread(target=self._receiver_loop, daemon=True)
         self._thread.start()
-        logger.info("MavlinkReceiver started")
+        logger.info("MavlinkHandler started")
 
     def stop(self) -> None:
-        """Stop the receiver thread gracefully."""
+        """Stop the handler thread gracefully."""
         if not self._running:
             return
 
-        logger.info("Stopping MavlinkReceiver...")
+        logger.info("Stopping MavlinkHandler...")
         self._running = False
         self._shutdown_flag.set()
 
         if self._thread:
             self._thread.join(timeout=5.0)
             if self._thread.is_alive():
-                logger.warning("MavlinkReceiver thread did not stop cleanly")
+                logger.warning("MavlinkHandler thread did not stop cleanly")
             else:
-                logger.info("MavlinkReceiver stopped")
+                logger.info("MavlinkHandler stopped")
 
         self._thread = None
 
@@ -100,7 +102,7 @@ class MavlinkReceiver:
         Continuously receives messages and routes them to status cache
         and/or registered listeners.
         """
-        logger.info("MavlinkReceiver loop starting")
+        logger.info("MavlinkHandler loop starting")
         error_count = 0
         max_consecutive_errors = 10
 
@@ -130,11 +132,11 @@ class MavlinkReceiver:
 
             except Exception as e:
                 error_count += 1
-                logger.error(f"Error in receiver loop: {e}", exc_info=True)
+                logger.error(f"Error in handler loop: {e}", exc_info=True)
 
                 if error_count >= max_consecutive_errors:
                     logger.critical(
-                        f"Too many consecutive errors ({error_count}), stopping receiver"
+                        f"Too many consecutive errors ({error_count}), stopping handler"
                     )
                     self._running = False
                     break
@@ -143,7 +145,7 @@ class MavlinkReceiver:
                 backoff = min(2**error_count, 5)
                 time.sleep(backoff)
 
-        logger.info("MavlinkReceiver loop exiting")
+        logger.info("MavlinkHandler loop exiting")
 
     def _notify_listeners(self, msg_type: str, message: Any) -> None:
         """
@@ -308,5 +310,5 @@ class MavlinkReceiver:
         )
 
     def is_running(self) -> bool:
-        """Check if the receiver thread is running."""
+        """Check if the handler thread is running."""
         return self._running

@@ -5,7 +5,7 @@ from threading import Thread, Event
 from server.utilities.connect_to_sysid import connect_to_sysid
 from server.httpserver import HTTP_Server
 from server.status_wsclient import Status_Client
-from server.services import StatusCache, MavlinkReceiver
+from server.services import StatusCache, MavlinkHandler
 
 stop_event = Event()
 
@@ -42,14 +42,14 @@ if __name__ == "__main__":
     # set_message_streaming_rates(mav_connection) # optional - set update rate (applies to both MissionPlanner and this server)
 
     # Create global MAVLink services
-    print("Creating MAVLink receiver and status cache...")
+    print("Creating MAVLink handler and status cache...")
     status_cache = StatusCache()
-    receiver = MavlinkReceiver(mav_connection, status_cache)
-    receiver.start()
-    print("MAVLink receiver started")
+    handler = MavlinkHandler(mav_connection, status_cache)
+    handler.start()
+    print("MAVLink handler started")
 
     # Create server instances
-    http_server = HTTP_Server(mav_connection, status_cache, receiver)
+    http_server = HTTP_Server(mav_connection, status_cache, handler)
     ws_client = Status_Client(status_cache) if not DISABLE_STATUS else None
 
     # Start HTTP server thread
@@ -71,9 +71,9 @@ if __name__ == "__main__":
 
     print("Shutting down threads...")
 
-    # Stop the MAVLink receiver
-    print("Stopping MAVLink receiver...")
-    receiver.stop()
+    # Stop the MAVLink handler
+    print("Stopping MAVLink handler...")
+    handler.stop()
 
     # Flask's server doesn't provide a clean stop API,
     # but exiting main thread will kill the app.

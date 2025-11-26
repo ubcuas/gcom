@@ -2,31 +2,31 @@ from pymavlink import mavutil
 
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_string_to_int, command_int_to_string
-from server.services.mavlink_receiver import MavlinkReceiver
+from server.services.mavlink_handler import MavlinkHandler
 
-def set_home(receiver: MavlinkReceiver, latitude: float, longitude: float, altitude: float): # -> int | None:
+def set_home(handler: MavlinkHandler, latitude: float, longitude: float, altitude: float): # -> int | None:
     # Send a set home command
-    receiver.mav.command_long_send(
-        receiver.target_system,
-        receiver.target_component,
+    handler.mav.command_long_send(
+        handler.target_system,
+        handler.target_component,
         mavutil.mavlink.MAV_CMD_DO_SET_HOME,
         0, 0, 0, 0, 0, latitude, longitude, altitude
     )
 
     # Wait for the acknowledgment
-    ack = receiver.wait_for_message('COMMAND_ACK', timeout=5.0)
+    ack = handler.wait_for_message('COMMAND_ACK', timeout=5.0)
     if ack is None:
         print('No acknowledgment received within the timeout period.')
         return None
 
     return ack.result
 
-def new_mission(receiver: MavlinkReceiver, waypoint_queue: WaypointQueue) -> bool:
+def new_mission(handler: MavlinkHandler, waypoint_queue: WaypointQueue) -> bool:
     # Clear any existing mission from vehicle
     print('Clearing mission')
-    receiver.mav.mission_clear_all_send(receiver.target_system, receiver.target_component)
+    handler.mav.mission_clear_all_send(handler.target_system, handler.target_component)
 
-    if not verify_ack(receiver, 'Error clearing mission'):
+    if not verify_ack(handler, 'Error clearing mission'):
         return False
     
     # Insert the home waypoint
@@ -44,7 +44,7 @@ def new_mission(receiver: MavlinkReceiver, waypoint_queue: WaypointQueue) -> boo
         wp: Waypoint = waypoint_queue[seq - 1]
 
         wp_list.append(mavutil.mavlink.MAVLink_mission_item_int_message(
-        receiver.target_system, receiver.target_component, seq,
+        handler.target_system, handler.target_component, seq,
         0, command_string_to_int(wp._com), 0, 1,
         float(wp._param1), float(wp._param2), float(wp._param3),
         float(wp._param4), int(wp._lat * 10000000), int(wp._lng * 10000000),
@@ -52,47 +52,47 @@ def new_mission(receiver: MavlinkReceiver, waypoint_queue: WaypointQueue) -> boo
     ))
 
     # Send waypoint count to the UAV
-    receiver.connection.waypoint_count_send(len(wp_list))
+    handler.connection.waypoint_count_send(len(wp_list))
 
     # Upload waypoints to the UAV
-    return send_waypoints(receiver, wp_list)
+    return send_waypoints(handler, wp_list)
 
-def send_waypoints(receiver: MavlinkReceiver, wp_list: list) -> bool:
+def send_waypoints(handler: MavlinkHandler, wp_list: list) -> bool:
     """
     Send the waypoints to the UAV.
 
     Args:
-        receiver: The MavlinkReceiver instance
+        handler: The MavlinkHandler instance
         wploader (list): The waypoint loader list.
 
     Returns:
         bool: True if waypoints are successfully sent, False otherwise.
     """
     for i in range(len(wp_list)):
-        msg = receiver.wait_for_any_message(['MISSION_REQUEST_INT', 'MISSION_REQUEST'], timeout=3.0)
+        msg = handler.wait_for_any_message(['MISSION_REQUEST_INT', 'MISSION_REQUEST'], timeout=3.0)
         if not msg:
             print('No waypoint request received')
             return False
         print(f'Sending waypoint {msg.seq}/{len(wp_list)-1}')
-        receiver.mav.send(wp_list[msg.seq])
+        handler.mav.send(wp_list[msg.seq])
 
         if msg.seq == len(wp_list)-1:
             break
 
-    return verify_ack(receiver, 'Error uploading mission')
+    return verify_ack(handler, 'Error uploading mission')
 
-def verify_ack(receiver: MavlinkReceiver, error_msg: str) -> bool:
+def verify_ack(handler: MavlinkHandler, error_msg: str) -> bool:
     """
     Verifies the ack response.
 
     Args:
-        receiver: The MavlinkReceiver instance
+        handler: The MavlinkHandler instance
         error_msg (str): The error message to log if ack verification fails.
 
     Returns:
         bool: True if ack verification successful, False otherwise.
     """
-    ack = receiver.wait_for_message('MISSION_ACK', timeout=3.0)
+    ack = handler.wait_for_message('MISSION_ACK', timeout=3.0)
     print(ack)
     if (ack is None):
         print(f'{error_msg}: No ACK received')
@@ -101,12 +101,12 @@ def verify_ack(receiver: MavlinkReceiver, error_msg: str) -> bool:
         return False
     return True
 
-def clear_mission(receiver: MavlinkReceiver) -> bool:
-    receiver.mav.mission_clear_all_send(
-        receiver.target_system,
-        receiver.target_component,
+def clear_mission(handler: MavlinkHandler) -> bool:
+    handler.mav.mission_clear_all_send(
+        handler.target_system,
+        handler.target_component,
         mavutil.mavlink.MAV_MISSION_TYPE_MISSION
     )
 
-    return verify_ack(receiver, "")
+    return verify_ack(handler, "")
 
