@@ -5,6 +5,7 @@ from flask_socketio import SocketIO
 from pymavlink.mavutil import mavfile
 
 from server.operations.takeoff import takeoff, arm_disarm
+from server.operations.prepare_takeoff import prepare_takeoff
 from server.operations.queue import new_mission, set_home, clear_mission
 from server.operations.get_info import get_status, get_current_mission
 from server.operations.change_modes import change_flight_mode
@@ -206,6 +207,28 @@ class HTTP_Server:
             except Exception as e:
                 print(f"[ERROR] Takeoff failed - {type(e).__name__}: {str(e)}")
                 return "Takeoff failed - unknown error", 500
+
+        @app.route("/prepare_takeoff", methods=["POST"])
+        def post_prepare_takeoff():
+            payload = request.get_json()
+
+            if not ("altitude" in payload):
+                return "Altitude cannot be null", 400
+
+            altitude = float(payload["altitude"])
+            print(f"Preparing takeoff sequence with waypoint at altitude {altitude}")
+
+            try:
+                result = prepare_takeoff(self.handler, self.status_cache, altitude)
+
+                if result:
+                    return "Takeoff sequence prepared successfully", 200
+                else:
+                    return "Failed to prepare takeoff sequence", 400
+
+            except Exception as e:
+                print(f"[ERROR] Prepare takeoff failed - {type(e).__name__}: {str(e)}")
+                return "Prepare takeoff failed - unknown error", 500
 
 
         @app.route("/arm", methods=["PUT"])
