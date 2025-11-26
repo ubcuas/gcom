@@ -51,7 +51,7 @@ def test_takeoff_and_rtl(api_client):
     )
 
     # Step 3: Prepare takeoff mission (creates waypoint at current position + target altitude)
-    response = api_client.prepare_takeoff(relative_altitude)
+    response = api_client.prepare_takeoff(target_altitude)
     assert response.status_code == 200, (
         f"Prepare takeoff command failed: {response.text}"
     )
