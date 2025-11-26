@@ -3,17 +3,17 @@ from server.services.mavlink_receiver import MavlinkReceiver
 
 
 def change_flight_mode(
-    mav_connection: mavfile, receiver: MavlinkReceiver, tgt_sys_id: int = 1, tgt_comp_id: int = 1, flightmode: str = ""
+    receiver: MavlinkReceiver, tgt_sys_id: int = 1, tgt_comp_id: int = 1, flightmode: str = ""
 ) -> bool:
 
     flightmode = flightmode.upper()
-    if flightmode not in mav_connection.mode_mapping():
+    if flightmode not in receiver.mode_mapping():
         return False
 
-    mode_id = mav_connection.mode_mapping()[flightmode.upper()]
+    mode_id = receiver.mode_mapping()[flightmode.upper()]
     sub_mode = 0
 
-    mav_connection.mav.command_long_send(
+    receiver.mav.command_long_send(
         target_system=tgt_sys_id,
         target_component=tgt_comp_id,
         command=mavlink.MAV_CMD_DO_SET_MODE,

@@ -37,6 +37,32 @@ class MavlinkReceiver:
         self._listeners: Dict[str, List[queue.Queue]] = defaultdict(list)
         self._listeners_lock = threading.Lock()
 
+    # Convenience properties for cleaner access to MAVLink connection
+    @property
+    def connection(self) -> mavutil.mavfile:
+        """Get the underlying MAVLink connection."""
+        return self.mav_connection
+
+    @property
+    def mav(self):
+        """Get the MAVLink protocol handler for sending messages."""
+        return self.mav_connection.mav
+
+    @property
+    def target_system(self) -> int:
+        """Get the target system ID."""
+        return self.mav_connection.target_system
+
+    @property
+    def target_component(self) -> int:
+        """Get the target component ID."""
+        return self.mav_connection.target_component
+
+    @property
+    def mode_mapping(self):
+        """Get the flight mode mapping."""
+        return self.mav_connection.mode_mapping
+
     def start(self) -> None:
         """Start the receiver thread."""
         if self._running:

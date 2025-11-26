@@ -89,13 +89,13 @@ def get_status(status_cache: StatusCache) -> Status:
         windvelocity
     )
 
-def get_current_mission(mav_connection: mavutil.mavfile, receiver: MavlinkReceiver) -> WaypointQueue:
+def get_current_mission(receiver: MavlinkReceiver) -> WaypointQueue:
 
     ret = WaypointQueue()
 
-    mav_connection.mav.mission_request_list_send(
-        mav_connection.target_system,
-        mav_connection.target_component,
+    receiver.mav.mission_request_list_send(
+        receiver.target_system,
+        receiver.target_component,
         mavutil.mavlink.MAV_MISSION_TYPE_MISSION
     )
 
@@ -107,9 +107,9 @@ def get_current_mission(mav_connection: mavutil.mavfile, receiver: MavlinkReceiv
 
     # use MISSION_REQUEST_INT for all mission items
     for current in range(msg.count):
-        msg = mav_connection.mav.mission_request_int_send(
-            mav_connection.target_system,
-            mav_connection.target_component,
+        msg = receiver.mav.mission_request_int_send(
+            receiver.target_system,
+            receiver.target_component,
             current,
             mavutil.mavlink.MAV_MISSION_TYPE_MISSION
         )

@@ -12,12 +12,11 @@ from connect_to_sysid import connect_to_sysid
 from server.services.mavlink_receiver import MavlinkReceiver
 
 
-def get_autopilot_info(connection, receiver: MavlinkReceiver, sysid=1):
+def get_autopilot_info(receiver: MavlinkReceiver, sysid=1):
     """
     Get the autopilot information for the MAVLink connection.
 
     Args:
-        connection (mavutil.mavlink_connection): The MAVLink connection.
         receiver: The MavlinkReceiver instance
         sysid (int, optional): System ID to search for. Defaults to 1.
 
@@ -41,7 +40,7 @@ def get_autopilot_info(connection, receiver: MavlinkReceiver, sysid=1):
 
     # If autopilot type is ArduPilot Mega, request autopilot version and add to autopilot_info. I don't think this is implemented for PX4.
     if autopilot_info["autopilot"] == "ardupilotmega":
-        msg = request_autopilot_version(connection, receiver)
+        msg = request_autopilot_version(receiver)
         if msg:
             autopilot_info["version"] = get_fc_version_from_msg(msg)
 
@@ -67,10 +66,10 @@ def wait_for_heartbeat(receiver: MavlinkReceiver, sysid, timeout=3):
     )
     return msg
 
-def request_autopilot_version(connection, receiver: MavlinkReceiver):
+def request_autopilot_version(receiver: MavlinkReceiver):
     """Request and return an AUTOPILOT_VERSION message from a mavlink connection"""
-    connection.mav.send(mavutil.mavlink.MAVLink_autopilot_version_request_message(
-        connection.target_system, connection.target_component))
+    receiver.mav.send(mavutil.mavlink.MAVLink_autopilot_version_request_message(
+        receiver.target_system, receiver.target_component))
     return receiver.wait_for_message('AUTOPILOT_VERSION', timeout=3.0)
 
 

@@ -4,11 +4,11 @@ from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_string_to_int, command_int_to_string
 from server.services.mavlink_receiver import MavlinkReceiver
 
-def set_home(mavlink_connection: mavutil.mavlink_connection, receiver: MavlinkReceiver, latitude: float, longitude: float, altitude: float): # -> int | None:
+def set_home(receiver: MavlinkReceiver, latitude: float, longitude: float, altitude: float): # -> int | None:
     # Send a set home command
-    mavlink_connection.mav.command_long_send(
-        mavlink_connection.target_system,
-        mavlink_connection.target_component,
+    receiver.mav.command_long_send(
+        receiver.target_system,
+        receiver.target_component,
         mavutil.mavlink.MAV_CMD_DO_SET_HOME,
         0, 0, 0, 0, 0, latitude, longitude, altitude
     )
@@ -21,10 +21,10 @@ def set_home(mavlink_connection: mavutil.mavlink_connection, receiver: MavlinkRe
 
     return ack.result
 
-def new_mission(mavlink_connection: mavutil.mavlink_connection, receiver: MavlinkReceiver, waypoint_queue: WaypointQueue) -> bool:
+def new_mission(receiver: MavlinkReceiver, waypoint_queue: WaypointQueue) -> bool:
     # Clear any existing mission from vehicle
     print('Clearing mission')
-    mavlink_connection.mav.mission_clear_all_send(mavlink_connection.target_system, mavlink_connection.target_component)
+    receiver.mav.mission_clear_all_send(receiver.target_system, receiver.target_component)
 
     if not verify_ack(receiver, 'Error clearing mission'):
         return False
@@ -44,25 +44,25 @@ def new_mission(mavlink_connection: mavutil.mavlink_connection, receiver: Mavlin
         wp: Waypoint = waypoint_queue[seq - 1]
 
         wp_list.append(mavutil.mavlink.MAVLink_mission_item_int_message(
-        mavlink_connection.target_system, mavlink_connection.target_component, seq, 
-        0, command_string_to_int(wp._com), 0, 1, 
-        float(wp._param1), float(wp._param2), float(wp._param3), 
-        float(wp._param4), int(wp._lat * 10000000), int(wp._lng * 10000000), 
+        receiver.target_system, receiver.target_component, seq,
+        0, command_string_to_int(wp._com), 0, 1,
+        float(wp._param1), float(wp._param2), float(wp._param3),
+        float(wp._param4), int(wp._lat * 10000000), int(wp._lng * 10000000),
         int(wp._alt)
     ))
 
     # Send waypoint count to the UAV
-    mavlink_connection.waypoint_count_send(len(wp_list))
+    receiver.connection.waypoint_count_send(len(wp_list))
 
     # Upload waypoints to the UAV
-    return send_waypoints(mavlink_connection, receiver, wp_list)
+    return send_waypoints(receiver, wp_list)
 
-def send_waypoints(mavlink_connection: mavutil.mavlink_connection, receiver: MavlinkReceiver, wp_list: list) -> bool:
+def send_waypoints(receiver: MavlinkReceiver, wp_list: list) -> bool:
     """
     Send the waypoints to the UAV.
 
     Args:
-        master (mavutil.mavlink_connection): The MAVLink connection to use.
+        receiver: The MavlinkReceiver instance
         wploader (list): The waypoint loader list.
 
     Returns:
@@ -74,7 +74,7 @@ def send_waypoints(mavlink_connection: mavutil.mavlink_connection, receiver: Mav
             print('No waypoint request received')
             return False
         print(f'Sending waypoint {msg.seq}/{len(wp_list)-1}')
-        mavlink_connection.mav.send(wp_list[msg.seq])
+        receiver.mav.send(wp_list[msg.seq])
 
         if msg.seq == len(wp_list)-1:
             break
@@ -101,10 +101,10 @@ def verify_ack(receiver: MavlinkReceiver, error_msg: str) -> bool:
         return False
     return True
 
-def clear_mission(mavlink_connection: mavutil.mavlink_connection, receiver: MavlinkReceiver) -> bool:
-    mavlink_connection.mav.mission_clear_all_send(
-        mavlink_connection.target_system,
-        mavlink_connection.target_component,
+def clear_mission(receiver: MavlinkReceiver) -> bool:
+    receiver.mav.mission_clear_all_send(
+        receiver.target_system,
+        receiver.target_component,
         mavutil.mavlink.MAV_MISSION_TYPE_MISSION
     )
 

@@ -30,12 +30,11 @@ def get_enum_value_by_name(enum_dict, name):
     raise ValueError("No enum entry with name: " + name)
 
 
-def wait_until_position_aiding(mav_connection, receiver: MavlinkReceiver, timeout=120):
+def wait_until_position_aiding(receiver: MavlinkReceiver, timeout=120):
     """
     Wait until the MAVLink connection has EKF position aiding.
 
     Args:
-        mav_connection (mavutil.mavlink_connection): The MAVLink connection to check.
         receiver: The MavlinkReceiver instance
         timeout (int, optional): The maximum time to wait for EKF position aiding in seconds. Defaults to 120.
 
@@ -45,7 +44,7 @@ def wait_until_position_aiding(mav_connection, receiver: MavlinkReceiver, timeou
     Returns:
         None
     """
-    autopilot_info = get_autopilot_info(mav_connection, receiver)
+    autopilot_info = get_autopilot_info(receiver)
     if autopilot_info["autopilot"] == "ardupilotmega":
         estimator_status_msg = "EKF_STATUS_REPORT"
     elif autopilot_info["autopilot"] == "px4":

@@ -1,7 +1,7 @@
 from pymavlink import mavutil
 from server.services.mavlink_receiver import MavlinkReceiver
 
-def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
+def set_message_streaming_rates(receiver: MavlinkReceiver):
     GPS_RATE_HZ = 0.25
     ATTITUDE_RATE_HZ = 1
     VFR_HUD_RATE_HZ = 1
@@ -9,9 +9,9 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
     MISSION_ITEM_REACHED_RATE_HZ = 1
     WIND_COV_RATE_HZ = 10
 
-    message = connection.mav.command_long_encode(
-        connection.target_system,  # Target system ID
-        connection.target_component,  # Target component ID
+    message = receiver.mav.command_long_encode(
+        receiver.target_system,  # Target system ID
+        receiver.target_component,  # Target component ID
         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
         0,  # Confirmation
         mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT,  # param1: Message ID to be streamed
@@ -22,8 +22,8 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
         0,       # param6 (unused)
         2        # param7: Response Target: (2 - broadcast)
     )
-    
-    connection.mav.send(message)
+
+    receiver.mav.send(message)
 
     response = receiver.wait_for_message(
         'COMMAND_ACK',
@@ -35,9 +35,9 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
     else:
         print(f"Setting {GPS_RATE_HZ = } failed")
 
-    message = connection.mav.command_long_encode(
-        connection.target_system,  # Target system ID
-        connection.target_component,  # Target component ID
+    message = receiver.mav.command_long_encode(
+        receiver.target_system,  # Target system ID
+        receiver.target_component,  # Target component ID
         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
         0,  # Confirmation
         mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE,  # param1: Message ID to be streamed
@@ -48,8 +48,8 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
         0,       # param6 (unused)
         2        # param7: Response Target: (2 - broadcast)
     )
-    
-    connection.mav.send(message)
+
+    receiver.mav.send(message)
 
     response = receiver.wait_for_message(
         'COMMAND_ACK',
@@ -61,9 +61,9 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
     else:
         print(f"Setting {ATTITUDE_RATE_HZ = } failed")
     
-    message = connection.mav.command_long_encode(
-        connection.target_system,  # Target system ID
-        connection.target_component,  # Target component ID
+    message = receiver.mav.command_long_encode(
+        receiver.target_system,  # Target system ID
+        receiver.target_component,  # Target component ID
         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
         0,  # Confirmation
         mavutil.mavlink.MAVLINK_MSG_ID_VFR_HUD,  # param1: Message ID to be streamed
@@ -74,8 +74,8 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
         0,       # param6 (unused)
         2        # param7: Response Target: (2 - broadcast)
     )
-    
-    connection.mav.send(message)
+
+    receiver.mav.send(message)
 
     response = receiver.wait_for_message(
         'COMMAND_ACK',
@@ -87,9 +87,9 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
     else:
         print(f"Setting {VFR_HUD_RATE_HZ = } failed")
 
-    message = connection.mav.command_long_encode(
-        connection.target_system,  # Target system ID
-        connection.target_component,  # Target component ID
+    message = receiver.mav.command_long_encode(
+        receiver.target_system,  # Target system ID
+        receiver.target_component,  # Target component ID
         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
         0,  # Confirmation
         mavutil.mavlink.MAVLINK_MSG_ID_SYS_STATUS,  # param1: Message ID to be streamed
@@ -100,8 +100,8 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
         0,       # param6 (unused)
         2        # param7: Response Target: (2 - broadcast)
     )
-    
-    connection.mav.send(message)
+
+    receiver.mav.send(message)
 
     response = receiver.wait_for_message(
         'COMMAND_ACK',
@@ -113,9 +113,9 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
     else:
         print(f"Setting {SYS_STATUS_RATE_HZ = } failed")
     
-    message = connection.mav.command_long_encode(
-        connection.target_system,  # Target system ID
-        connection.target_component,  # Target component ID
+    message = receiver.mav.command_long_encode(
+        receiver.target_system,  # Target system ID
+        receiver.target_component,  # Target component ID
         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
         0,  # Confirmation
         mavutil.mavlink.MAVLINK_MSG_ID_MISSION_ITEM_REACHED,  # param1: Message ID to be streamed
@@ -126,8 +126,8 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
         0,       # param6 (unused)
         2        # param7: Response Target: (2 - broadcast)
     )
-    
-    connection.mav.send(message)
+
+    receiver.mav.send(message)
 
     response = receiver.wait_for_message(
         'COMMAND_ACK',
@@ -139,9 +139,9 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
     else:
         print(f"Setting {MISSION_ITEM_REACHED_RATE_HZ = } failed")
     
-    message = connection.mav.command_long_encode(
-        connection.target_system,  # Target system ID
-        connection.target_component,  # Target component ID
+    message = receiver.mav.command_long_encode(
+        receiver.target_system,  # Target system ID
+        receiver.target_component,  # Target component ID
         mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,  # ID of command to send
         0,  # Confirmation
         mavutil.mavlink.MAVLINK_MSG_ID_WIND_COV,  # param1: Message ID to be streamed
@@ -152,8 +152,8 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
         0,       # param6 (unused)
         2        # param7: Response Target: (2 - broadcast)
     )
-    
-    connection.mav.send(message)
+
+    receiver.mav.send(message)
 
     response = receiver.wait_for_message(
         'COMMAND_ACK',
@@ -167,11 +167,11 @@ def set_message_streaming_rates(connection, receiver: MavlinkReceiver):
 
 
 
-def request_messages(connection, receiver: MavlinkReceiver, message_types: list) -> bool:
+def request_messages(receiver: MavlinkReceiver, message_types: list) -> bool:
     for message_type in message_types:
-        message = connection.mav.command_long_encode(
-            connection.target_system,  # Target system ID
-            connection.target_component,  # Target component ID
+        message = receiver.mav.command_long_encode(
+            receiver.target_system,  # Target system ID
+            receiver.target_component,  # Target component ID
             mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE,  # ID of command to send
             0,  # Confirmation
             message_type,  # param1: Message ID to be streamed
@@ -182,8 +182,8 @@ def request_messages(connection, receiver: MavlinkReceiver, message_types: list)
             0,       # param6 (unused)
             0        # param7: Response Target (0 - default, 1 - requestor, 2 - broadcast)
         )
-        
-        connection.mav.send(message)
+
+        receiver.mav.send(message)
 
         response = receiver.wait_for_message(
             'COMMAND_ACK',
@@ -197,12 +197,12 @@ def request_messages(connection, receiver: MavlinkReceiver, message_types: list)
             print(f"Request for Message of type {message_type} DENIED")
 
 
-def set_parameter(connection, receiver: MavlinkReceiver, param_id, param_value) -> bool:
+def set_parameter(receiver: MavlinkReceiver, param_id, param_value) -> bool:
     param_id = bytes(param_id, "ascii")
     # obtain parameter type
-    connection.mav.param_request_read_send(
-        connection.target_system,
-        connection.target_component,
+    receiver.mav.param_request_read_send(
+        receiver.target_system,
+        receiver.target_component,
         param_id,
         -1
     )
@@ -215,9 +215,9 @@ def set_parameter(connection, receiver: MavlinkReceiver, param_id, param_value) 
     before = param_value_msg.param_value
     param_type = param_value_msg.param_type
 
-    connection.mav.param_set_send(
-        connection.target_system,
-        connection.target_component,
+    receiver.mav.param_set_send(
+        receiver.target_system,
+        receiver.target_component,
         param_id,
         param_value,
         param_type
