@@ -4,10 +4,15 @@ from server.utilities.wait_for_position_aiding import wait_until_position_aiding
 from server.utilities.get_autopilot_info import get_autopilot_info
 from server.services.mavlink_handler import MavlinkHandler
 
-def takeoff(handler: MavlinkHandler, takeoff_altitude, tgt_sys_id: int = 1, tgt_comp_id: int = 1) -> int:
+
+def takeoff(
+    handler: MavlinkHandler, takeoff_altitude, tgt_sys_id: int = 1, tgt_comp_id: int = 1
+) -> int:
     # TODO: what's the difference between these tgt_sys_id and tgt_comp_id parameters, and handler.target_system & handler.target_component?
-    print("Heartbeat from system (system %u component %u)" %
-          (handler.target_system, handler.target_component))
+    print(
+        "Heartbeat from system (system %u component %u)"
+        % (handler.target_system, handler.target_component)
+    )
 
     wait_until_position_aiding(handler)
 
@@ -23,17 +28,36 @@ def takeoff(handler: MavlinkHandler, takeoff_altitude, tgt_sys_id: int = 1, tgt_
         print(handler.mode_mapping())
         mode_id = handler.mode_mapping()["TAKEOFF"][1]
         print(mode_id)
-        msg = handler.wait_for_message('GLOBAL_POSITION_INT', timeout=3.0)
+        msg = handler.wait_for_message("GLOBAL_POSITION_INT", timeout=3.0)
         starting_alt = msg.alt / 1000
-        takeoff_params = [0, 0, 0, 0, float("NAN"), float("NAN"), starting_alt + takeoff_altitude]
+        takeoff_params = [
+            0,
+            0,
+            0,
+            0,
+            float("NAN"),
+            float("NAN"),
+            starting_alt + takeoff_altitude,
+        ]
 
     else:
         raise ValueError("Autopilot not supported")
 
     # Change mode to guided (Ardupilot) or takeoff (PX4)
-    handler.mav.command_long_send(tgt_sys_id, tgt_comp_id, mavutil.mavlink.MAV_CMD_DO_SET_MODE,
-                                0, mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, mode_id, 0, 0, 0, 0, 0)
-    ack_msg = handler.wait_for_message('COMMAND_ACK', timeout=3.0)
+    handler.mav.command_long_send(
+        tgt_sys_id,
+        tgt_comp_id,
+        mavutil.mavlink.MAV_CMD_DO_SET_MODE,
+        0,
+        mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        mode_id,
+        0,
+        0,
+        0,
+        0,
+        0,
+    )
+    ack_msg = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
     print(f"Change Mode ACK:  {ack_msg}")
     # ! Commented out fail handling because we are going to completely rewrite the takeoff logic
     # if ack_msg.result != 0:
@@ -44,20 +68,42 @@ def takeoff(handler: MavlinkHandler, takeoff_altitude, tgt_sys_id: int = 1, tgt_
         return 1
 
     # Command Takeoff
-    handler.mav.command_long_send(tgt_sys_id, tgt_comp_id,
-                                         mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, takeoff_params[0], takeoff_params[1], takeoff_params[2], takeoff_params[3], takeoff_params[4], takeoff_params[5], takeoff_params[6])
+    handler.mav.command_long_send(
+        tgt_sys_id,
+        tgt_comp_id,
+        mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+        0,
+        takeoff_params[0],
+        takeoff_params[1],
+        takeoff_params[2],
+        takeoff_params[3],
+        takeoff_params[4],
+        takeoff_params[5],
+        takeoff_params[6],
+    )
 
-    takeoff_msg = handler.wait_for_message('COMMAND_ACK', timeout=3.0)
+    takeoff_msg = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
     print(f"Takeoff ACK:  {takeoff_msg}")
 
     return takeoff_msg.result
 
+
 def arm_disarm(handler: MavlinkHandler, arm_disarm: bool) -> int:
+    handler.mav.command_long_send(
+        handler.target_system,
+        handler.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        1 if arm_disarm else 0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+    )
 
-    handler.mav.command_long_send(handler.target_system, handler.target_component,
-                                         mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1 if arm_disarm else 0, 0, 0, 0, 0, 0, 0)
-
-    arm_msg = handler.wait_for_message('COMMAND_ACK', timeout=3.0)
+    arm_msg = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
     print(f"Arm ACK:  {arm_msg}")
 
     return arm_msg.result
