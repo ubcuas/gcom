@@ -3,9 +3,11 @@ from server.services.mavlink_handler import MavlinkHandler
 
 
 def change_flight_mode(
-    handler: MavlinkHandler, tgt_sys_id: int = 1, tgt_comp_id: int = 1, flightmode: str = ""
+    handler: MavlinkHandler,
+    tgt_sys_id: int = 1,
+    tgt_comp_id: int = 1,
+    flightmode: str = "",
 ) -> bool:
-
     flightmode = flightmode.upper()
     if flightmode not in handler.mode_mapping():
         return False
@@ -35,6 +37,7 @@ def change_aircraft_type(mav_connection: mavfile):
     # TODO investigate whether to deprecate
     pass
 
+
 def verify_ack(handler: MavlinkHandler, error_msg: str) -> bool:
     """
     Verifies the ack response.
@@ -46,7 +49,7 @@ def verify_ack(handler: MavlinkHandler, error_msg: str) -> bool:
     Returns:
         bool: True if ack verification successful, False otherwise.
     """
-    ack = handler.wait_for_message('COMMAND_ACK', timeout=3.0)
+    ack = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
     print("ack:", ack)
     # if ack.type != 0:
     #     print(f'{error_msg}: {ack.type}')

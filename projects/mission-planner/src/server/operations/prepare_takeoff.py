@@ -3,6 +3,7 @@ from server.operations.queue import new_mission
 from server.operations.get_info import get_status
 from server.services.mavlink_handler import MavlinkHandler
 from server.services.status_cache import StatusCache
+from server.utilities.wait_for_position_aiding import wait_until_position_aiding
 
 
 def prepare_takeoff(
@@ -23,6 +24,7 @@ def prepare_takeoff(
         bool: True if mission was successfully prepared, False otherwise
     """
     # Get current drone position
+    wait_until_position_aiding(handler)
     status = get_status(status_cache)
     current_lat = status._lat
     current_lng = status._lng
