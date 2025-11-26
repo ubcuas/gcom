@@ -31,36 +31,14 @@ def get_status(status_cache: StatusCache) -> Status:
     # Helper to create default objects for missing messages
     Object = lambda **kwargs: type("Object", (), kwargs)
 
-    # Retrieve cached messages with their ages
-    system_time_data = status_cache.get('SYSTEM_TIME')
-    system_time = system_time_data[0] if system_time_data else Object(time_unix_usec=0, time_boot_ms=0)
-    latency_time = system_time_data[1] if system_time_data else 0
-
-    status_gps_data = status_cache.get('GLOBAL_POSITION_INT')
-    status_gps = status_gps_data[0] if status_gps_data else Object(lat=0, lon=0, alt=0)
-    latency_gps = status_gps_data[1] if status_gps_data else 0
-
-    status_att_data = status_cache.get('ATTITUDE')
-    status_att = status_att_data[0] if status_att_data else Object(roll=0, pitch=0, yaw=0)
-    latency_att = status_att_data[1] if status_att_data else 0
-
-    status_vfr_data = status_cache.get('VFR_HUD')
-    status_vfr = status_vfr_data[0] if status_vfr_data else Object(airspeed=0, groundspeed=0, climb=0)
-    latency_vfr = status_vfr_data[1] if status_vfr_data else 0
-
-    status_sys_data = status_cache.get('SYS_STATUS')
-    status_sys = status_sys_data[0] if status_sys_data else Object(voltage_battery=0)
-    latency_sys = status_sys_data[1] if status_sys_data else 0
-
-    status_wpn_data = status_cache.get('MISSION_CURRENT')
-    status_wpn = status_wpn_data[0] if status_wpn_data else Object(seq=0, total=0, mission_state=0, mission_mode=0, mission_id=0)
-    latency_wpn = status_wpn_data[1] if status_wpn_data else 0
-
-    status_wind_data = status_cache.get('WIND_COV')
-    status_wind = status_wind_data[0] if status_wind_data else Object(wind_x=0, wind_y=0)
-    latency_wind = status_wind_data[1] if status_wind_data else 0
-
-    # print(f"Latencies: {latency_time:.2f}s, {latency_gps:.2f}s, {latency_att:.2f}s, {latency_vfr:.2f}s, {latency_sys:.2f}s, {latency_wpn:.2f}s, {latency_wind:.2f}s")
+    # Retrieve cached messages
+    system_time = status_cache.get_message('SYSTEM_TIME') or Object(time_unix_usec=0, time_boot_ms=0)
+    status_gps = status_cache.get_message('GLOBAL_POSITION_INT') or Object(lat=0, lon=0, alt=0)
+    status_att = status_cache.get_message('ATTITUDE') or Object(roll=0, pitch=0, yaw=0)
+    status_vfr = status_cache.get_message('VFR_HUD') or Object(airspeed=0, groundspeed=0, climb=0)
+    status_sys = status_cache.get_message('SYS_STATUS') or Object(voltage_battery=0)
+    status_wpn = status_cache.get_message('MISSION_CURRENT') or Object(seq=0, total=0, mission_state=0, mission_mode=0, mission_id=0)
+    status_wind = status_cache.get_message('WIND_COV') or Object(wind_x=0, wind_y=0)
 
     # wind calculations in the horizontal plane TODO determine if vertical windspeed is needed
     winddirection = math.degrees(math.atan(status_wind.wind_x / status_wind.wind_y)) if status_wind.wind_y != 0 else (0 if status_wind.wind_x > 0 else 180)
