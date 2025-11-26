@@ -4,6 +4,7 @@ from server.operations.get_info import get_status
 from server.services.mavlink_handler import MavlinkHandler
 from server.services.status_cache import StatusCache
 from server.utilities.wait_for_position_aiding import wait_until_position_aiding
+from server.utilities.request_message_streaming import set_parameter
 
 
 def prepare_takeoff(
@@ -29,6 +30,10 @@ def prepare_takeoff(
     current_lat = status._lat
     current_lng = status._lng
 
+    # Set AUTO_OPTIONS to 3
+    if not set_parameter(handler, "AUTO_OPTIONS", 3):
+        print("[WARNING] Failed to set AUTO_OPTIONS parameter to 3")
+
     # Create a mission with a single waypoint at current position with target altitude
     takeoff_mission = WaypointQueue()
     takeoff_mission.push(
@@ -38,7 +43,7 @@ def prepare_takeoff(
             lat=current_lat,
             lng=current_lng,
             alt=altitude,
-            command="WAYPOINT",
+            command="TAKEOFF",
         )
     )
 

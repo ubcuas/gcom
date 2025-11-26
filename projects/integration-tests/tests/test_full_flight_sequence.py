@@ -34,12 +34,12 @@ def test_takeoff_and_rtl(api_client):
 
     # Step 1: Verify drone is on ground and stationary
     initial_status = api_client.get_status()
-    assert (
-        initial_status["groundspeed"] < 0.5
-    ), f"Drone should be stationary on ground, but groundspeed is {initial_status['groundspeed']} m/s"
-    assert (
-        abs(initial_status["verticalspeed"]) < 0.5
-    ), f"Drone should not be climbing/descending, but verticalspeed is {initial_status['verticalspeed']} m/s"
+    assert initial_status["groundspeed"] < 0.5, (
+        f"Drone should be stationary on ground, but groundspeed is {initial_status['groundspeed']} m/s"
+    )
+    assert abs(initial_status["verticalspeed"]) < 0.5, (
+        f"Drone should not be climbing/descending, but verticalspeed is {initial_status['verticalspeed']} m/s"
+    )
 
     # Step 2: Capture baseline altitude (MSL at ground level)
     baseline_altitude = initial_status["altitude"]
@@ -52,7 +52,9 @@ def test_takeoff_and_rtl(api_client):
 
     # Step 3: Prepare takeoff mission (creates waypoint at current position + target altitude)
     response = api_client.prepare_takeoff(relative_altitude)
-    assert response.status_code == 200, f"Prepare takeoff command failed: {response.text}"
+    assert response.status_code == 200, (
+        f"Prepare takeoff command failed: {response.text}"
+    )
     print("Prepare takeoff command response received successfully.", response)
 
     # Step 4: Arm the drone
@@ -76,9 +78,9 @@ def test_takeoff_and_rtl(api_client):
 
     # Step 7: Verify drone is at target altitude
     status_at_altitude = api_client.get_status()
-    assert (
-        abs(status_at_altitude["altitude"] - target_altitude) <= 2.0
-    ), f"Drone altitude {status_at_altitude['altitude']}m not within 2m of target {target_altitude}m"
+    assert abs(status_at_altitude["altitude"] - target_altitude) <= 2.0, (
+        f"Drone altitude {status_at_altitude['altitude']}m not within 2m of target {target_altitude}m"
+    )
 
     # Step 8: Trigger RTL (Return-to-Launch)
     # This will make the drone return to home position and auto-land
@@ -98,6 +100,6 @@ def test_takeoff_and_rtl(api_client):
 
     # Step 10: Verify drone has landed (back at baseline)
     final_status = api_client.get_status()
-    assert (
-        abs(final_status["altitude"] - baseline_altitude) <= 2.0
-    ), f"Drone should have landed at baseline {baseline_altitude}m, but altitude is {final_status['altitude']}m"
+    assert abs(final_status["altitude"] - baseline_altitude) <= 2.0, (
+        f"Drone should have landed at baseline {baseline_altitude}m, but altitude is {final_status['altitude']}m"
+    )
