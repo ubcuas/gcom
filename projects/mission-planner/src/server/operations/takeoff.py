@@ -3,15 +3,15 @@ from server.utilities.connect_to_sysid import connect_to_sysid
 from server.utilities.wait_for_position_aiding import wait_until_position_aiding
 from server.utilities.get_autopilot_info import get_autopilot_info
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 
 def takeoff(
     handler: MavlinkHandler, takeoff_altitude, tgt_sys_id: int = 1, tgt_comp_id: int = 1
 ) -> int:
     # TODO: what's the difference between these tgt_sys_id and tgt_comp_id parameters, and handler.target_system & handler.target_component?
-    print(
-        "Heartbeat from system (system %u component %u)"
-        % (handler.target_system, handler.target_component)
+    logger.info(
+        f"Heartbeat from system (system {handler.target_system} component {handler.target_component})"
     )
 
     wait_until_position_aiding(handler)
@@ -19,15 +19,15 @@ def takeoff(
     autopilot_info = get_autopilot_info(handler, tgt_sys_id)
 
     if autopilot_info["autopilot"] == "ardupilotmega":
-        print("Connected to ArduPilot autopilot")
+        logger.info("Connected to ArduPilot autopilot")
         mode_id = handler.mode_mapping()["GUIDED"]
         takeoff_params = [0, 0, 0, 0, 0, 0, takeoff_altitude]
 
     elif autopilot_info["autopilot"] == "px4":
-        print("Connected to PX4 autopilot")
-        print(handler.mode_mapping())
+        logger.info("Connected to PX4 autopilot")
+        logger.debug(f"Mode mapping: {handler.mode_mapping()}")
         mode_id = handler.mode_mapping()["TAKEOFF"][1]
-        print(mode_id)
+        logger.debug(f"Mode ID: {mode_id}")
         msg = handler.wait_for_message("GLOBAL_POSITION_INT", timeout=3.0)
         starting_alt = msg.alt / 1000
         takeoff_params = [
@@ -58,7 +58,7 @@ def takeoff(
         0,
     )
     ack_msg = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
-    print(f"Change Mode ACK:  {ack_msg}")
+    logger.debug(f"Change Mode ACK: {ack_msg}")
     # ! Commented out fail handling because we are going to completely rewrite the takeoff logic
     # if ack_msg.result != 0:
     #     return ack_msg.result
@@ -83,7 +83,7 @@ def takeoff(
     )
 
     takeoff_msg = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
-    print(f"Takeoff ACK:  {takeoff_msg}")
+    logger.debug(f"Takeoff ACK: {takeoff_msg}")
 
     return takeoff_msg.result
 
@@ -104,6 +104,6 @@ def arm_disarm(handler: MavlinkHandler, arm_disarm: bool) -> int:
     )
 
     arm_msg = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
-    print(f"Arm ACK:  {arm_msg}")
+    logger.debug(f"Arm ACK: {arm_msg}")
 
     return arm_msg.result

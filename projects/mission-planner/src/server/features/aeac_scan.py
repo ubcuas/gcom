@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 
 from server.common.conversion import *
 from server.common.wpqueue import Waypoint, WaypointQueue
+from server.logging_config import logger
 
 # ALL UNITS IN METERS UNLESS SPECIFIED
 SPLINE_WAYPOINT_TYPE = "SPLINE_WAYPOINT"
@@ -48,7 +49,7 @@ def scan_area(center_lat, center_lng, altitude, target_area_radius) -> WaypointQ
     count = 0
 
     scan_radius = calculate_scan_radius(altitude, 44, 57) # from v1226-mpz 20MP Lens (12 mm focal)
-    print(scan_radius)
+    logger.debug(f"Scan radius: {scan_radius}")
     
     # go to center waypoint (with generous slack)
     wpq.push(Waypoint(0, "", center_lat, center_lng, altitude, command=SPLINE_WAYPOINT_TYPE))

@@ -1,5 +1,6 @@
 from pymavlink import mavutil
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 def set_message_streaming_rates(handler: MavlinkHandler):
     GPS_RATE_HZ = 0.25
@@ -31,9 +32,9 @@ def set_message_streaming_rates(handler: MavlinkHandler):
         filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
     )
     if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
-        print(f"Setting {GPS_RATE_HZ = } Hz")
+        logger.info(f"Setting GPS_RATE_HZ = {GPS_RATE_HZ} Hz")
     else:
-        print(f"Setting {GPS_RATE_HZ = } failed")
+        logger.warning(f"Setting GPS_RATE_HZ = {GPS_RATE_HZ} failed")
 
     message = handler.mav.command_long_encode(
         handler.target_system,  # Target system ID
@@ -57,9 +58,9 @@ def set_message_streaming_rates(handler: MavlinkHandler):
         filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
     )
     if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
-        print(f"Setting {ATTITUDE_RATE_HZ = } Hz")
+        logger.info(f"Setting ATTITUDE_RATE_HZ = {ATTITUDE_RATE_HZ} Hz")
     else:
-        print(f"Setting {ATTITUDE_RATE_HZ = } failed")
+        logger.warning(f"Setting ATTITUDE_RATE_HZ = {ATTITUDE_RATE_HZ} failed")
     
     message = handler.mav.command_long_encode(
         handler.target_system,  # Target system ID
@@ -83,9 +84,9 @@ def set_message_streaming_rates(handler: MavlinkHandler):
         filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
     )
     if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
-        print(f"Setting {VFR_HUD_RATE_HZ = } Hz")
+        logger.info(f"Setting VFR_HUD_RATE_HZ = {VFR_HUD_RATE_HZ} Hz")
     else:
-        print(f"Setting {VFR_HUD_RATE_HZ = } failed")
+        logger.warning(f"Setting VFR_HUD_RATE_HZ = {VFR_HUD_RATE_HZ} failed")
 
     message = handler.mav.command_long_encode(
         handler.target_system,  # Target system ID
@@ -109,9 +110,9 @@ def set_message_streaming_rates(handler: MavlinkHandler):
         filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
     )
     if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
-        print(f"Setting {SYS_STATUS_RATE_HZ = } Hz")
+        logger.info(f"Setting SYS_STATUS_RATE_HZ = {SYS_STATUS_RATE_HZ} Hz")
     else:
-        print(f"Setting {SYS_STATUS_RATE_HZ = } failed")
+        logger.warning(f"Setting SYS_STATUS_RATE_HZ = {SYS_STATUS_RATE_HZ} failed")
     
     message = handler.mav.command_long_encode(
         handler.target_system,  # Target system ID
@@ -135,9 +136,9 @@ def set_message_streaming_rates(handler: MavlinkHandler):
         filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
     )
     if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
-        print(f"Setting {MISSION_ITEM_REACHED_RATE_HZ = } Hz")
+        logger.info(f"Setting MISSION_ITEM_REACHED_RATE_HZ = {MISSION_ITEM_REACHED_RATE_HZ} Hz")
     else:
-        print(f"Setting {MISSION_ITEM_REACHED_RATE_HZ = } failed")
+        logger.warning(f"Setting MISSION_ITEM_REACHED_RATE_HZ = {MISSION_ITEM_REACHED_RATE_HZ} failed")
     
     message = handler.mav.command_long_encode(
         handler.target_system,  # Target system ID
@@ -161,9 +162,9 @@ def set_message_streaming_rates(handler: MavlinkHandler):
         filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL
     )
     if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
-        print(f"Setting {WIND_COV_RATE_HZ = } Hz")
+        logger.info(f"Setting WIND_COV_RATE_HZ = {WIND_COV_RATE_HZ} Hz")
     else:
-        print(f"Setting {WIND_COV_RATE_HZ = } failed")
+        logger.warning(f"Setting WIND_COV_RATE_HZ = {WIND_COV_RATE_HZ} failed")
 
 
 
@@ -191,10 +192,10 @@ def request_messages(handler: MavlinkHandler, message_types: list) -> bool:
             filter_func=lambda msg: msg.command == mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE
         )
         if (response and response.result == mavutil.mavlink.MAV_RESULT_ACCEPTED):
-            # print(f"Request for Message of type {message_type} ACCEPTED")
+            # logger.debug(f"Request for Message of type {message_type} ACCEPTED")
             pass
         else:
-            print(f"Request for Message of type {message_type} DENIED")
+            logger.warning(f"Request for Message of type {message_type} DENIED")
 
 
 def set_parameter(handler: MavlinkHandler, param_id, param_value) -> bool:
@@ -208,7 +209,7 @@ def set_parameter(handler: MavlinkHandler, param_id, param_value) -> bool:
     )
 
     param_value_msg = handler.wait_for_message('PARAM_VALUE', timeout=3.0)
-    print(param_value_msg)
+    logger.debug(f"Param value message: {param_value_msg}")
 
     if param_value_msg is None:
         return False
@@ -224,12 +225,12 @@ def set_parameter(handler: MavlinkHandler, param_id, param_value) -> bool:
     )
 
     param_value_msg = handler.wait_for_message('PARAM_VALUE', timeout=3.0)
-    print(param_value_msg)
+    logger.debug(f"Param value message: {param_value_msg}")
 
     if param_value_msg is None:
         return False
     after = param_value_msg.param_value
 
-    print(f"Value of parameter {param_id} changed from {before} to {after}")
+    logger.info(f"Value of parameter {param_id} changed from {before} to {after}")
     
     return before != after and after == param_value

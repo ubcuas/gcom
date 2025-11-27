@@ -1,5 +1,6 @@
 from pymavlink import mavutil
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 # return value of 0 indicates success
 def land_in_place(handler: MavlinkHandler, timeout: int = 10) -> int:
@@ -14,7 +15,7 @@ def land_in_place(handler: MavlinkHandler, timeout: int = 10) -> int:
     # Wait for the acknowledgment
     ack = handler.wait_for_message('COMMAND_ACK', timeout=float(timeout))
     if ack is None:
-        print('No acknowledgment received within the timeout period.')
+        logger.warning('No acknowledgment received within the timeout period.')
         return -1
 
     return ack.result
@@ -32,9 +33,9 @@ def land_at_position(handler: MavlinkHandler, latitude: float, longitude: float,
     # Wait for the acknowledgment
     ack = handler.wait_for_message('COMMAND_ACK', timeout=float(timeout))
     if ack is None:
-        print('No acknowledgment received within the timeout period.')
+        logger.warning('No acknowledgment received within the timeout period.')
         return -1
 
-    print(f"land at position command ack: {ack}")
+    logger.debug(f"land at position command ack: {ack}")
 
     return ack.result

@@ -1,19 +1,12 @@
 import threading
 import queue
 import time
-import logging
 from typing import Optional, Callable, List, Any, Dict
 from collections import defaultdict
 
 from pymavlink import mavutil
 from server.services.status_cache import StatusCache
-
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("[%(levelname)s] %(name)s  - %(message)s"))
-logger.addHandler(handler)
+from server.logging_config import logger
 
 
 class MavlinkHandler:
