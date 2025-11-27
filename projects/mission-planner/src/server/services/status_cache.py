@@ -20,6 +20,7 @@ class StatusCache:
         "SYS_STATUS",
         "MISSION_CURRENT",
         "WIND_COV",
+        "HEARTBEAT",
     ]
 
     def __init__(self):
@@ -113,3 +114,26 @@ class StatusCache:
         """Clear all cached messages."""
         with self._lock:
             self._cache.clear()
+
+    def get_flight_mode(self, mode_mapping: Dict[str, int]) -> Optional[str]:
+        """
+        Get the current flight mode from the cached HEARTBEAT message.
+
+        Args:
+            mode_mapping: Dictionary mapping mode names to mode IDs
+
+        Returns:
+            Flight mode name (e.g., 'GUIDED', 'RTL') or None if not available
+        """
+        heartbeat_msg = self.get_message("HEARTBEAT")
+        if not heartbeat_msg:
+            return None
+
+        custom_mode = heartbeat_msg.custom_mode
+
+        # Reverse lookup: find mode name from mode ID
+        for mode_name, mode_id in mode_mapping.items():
+            if mode_id == custom_mode:
+                return mode_name
+
+        return None

@@ -358,21 +358,32 @@ class HTTP_Server:
             else:
                 return "New Home NOT set", 400
 
-        @app.route("/flightmode", methods=["PUT"])
-        def put_flight_mode():
-            input = request.get_json()
+        @app.route("/flightmode", methods=["GET", "PUT"])
+        def flight_mode():
+            if request.method == "GET":
+                flight_mode = self.status_cache.get_flight_mode(
+                    self.mav_connection.mode_mapping()
+                )
 
-            success = change_flight_mode(
-                self.handler,
-                self.mav_connection.target_system,
-                self.mav_connection.target_component,
-                input["mode"],
-            )
+                if flight_mode is not None:
+                    return {"mode": flight_mode}, 200
+                else:
+                    return "Flight mode not available", 503
 
-            if success:
-                return f"OK! Changed mode: {input['mode']}", 200
-            else:
-                return f"Unrecognized mode: {input['mode']}", 400
+            else:  # PUT
+                input = request.get_json()
+
+                success = change_flight_mode(
+                    self.handler,
+                    self.mav_connection.target_system,
+                    self.mav_connection.target_component,
+                    input["mode"],
+                )
+
+                if success:
+                    return f"OK! Changed mode: {input['mode']}", 200
+                else:
+                    return f"Unrecognized mode: {input['mode']}", 400
 
         @app.route("/aeac_scan", methods=["POST"])
         def generate_scan_points():

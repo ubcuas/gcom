@@ -252,6 +252,25 @@ paths:
         "200":
           description: Diversion processed
   /flightmode:
+    get:
+      tags:
+        - options
+      summary: Get the current flight mode of the aircraft
+      description: >-
+        Returns the current flight mode from cached HEARTBEAT messages.
+      responses:
+        "200":
+          description: Successfully retrieved flight mode
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mode:
+                    type: string
+                    description: Current flight mode name
+        "503":
+          description: Flight mode not available (no HEARTBEAT received yet)
     put:
       tags:
         - options
