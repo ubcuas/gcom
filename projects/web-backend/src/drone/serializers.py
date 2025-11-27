@@ -18,4 +18,5 @@ class DroneTelemetrySerializer(serializers.ModelSerializer):
             "velocity",
             "heading",
             "battery_voltage",
+            "armed",
         )

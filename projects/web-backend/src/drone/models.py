@@ -14,6 +14,7 @@ class DroneTelemetry(models.Model):
         speed (float): The speed of the drone
         heading (float): The heading of the drone
         battery_voltage (float): The battery voltage of the drone
+        armed (bool): Whether the drone is armed
     """
 
     timestamp = models.FloatField(primary_key=True, null=False)
@@ -24,6 +25,7 @@ class DroneTelemetry(models.Model):
     speed = models.FloatField(null=False)
     heading = models.FloatField(null=False)
     battery_voltage = models.FloatField(null=False)
+    armed = models.BooleanField(null=False, default=False)
 
 
 class DroneSingleton(models.Model):
