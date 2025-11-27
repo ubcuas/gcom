@@ -10,7 +10,7 @@ from helpers import wait_for_altitude
 
 @pytest.mark.slow
 @pytest.mark.critical
-def test_takeoff_and_rtl(api_client):
+def test_takeoff_and_rtl(api_client, flight_cleanup):
     """Test complete takeoff and RTL (return-to-launch) cycle.
 
     A simple flight sequence. It uses:
@@ -27,8 +27,13 @@ def test_takeoff_and_rtl(api_client):
     - RTL return + descent: ~15-25 seconds
     - Total test duration: ~30-45 seconds (timeouts set with safety margins)
 
+    Cleanup:
+    - Automatic cleanup via flight_cleanup fixture
+    - Verifies disarm, clears mission, resets to STABILIZE mode
+
     Args:
         api_client: API client fixture
+        flight_cleanup: Flight cleanup fixture (runs after test)
     """
     relative_altitude = 25.0
 
