@@ -5,9 +5,10 @@ The fixtures handle service URLs, API client setup, and state reset.
 """
 
 import os
+import time
 import pytest
 from dotenv import load_dotenv
-from helpers import APIClient
+from helpers import APIClient, wait_for_drone_armed
 
 # Load environment variables from .env file if it exists
 load_dotenv()
@@ -233,3 +234,66 @@ def reset_database_state(api_client):
     except Exception as e:
         # Log but don't fail on cleanup errors
         print(f"Warning: Database cleanup failed during teardown: {e}")
+
+
+@pytest.fixture
+def flight_cleanup(api_client):
+    """Cleanup fixture to reset drone state after flight tests.
+
+    This fixture ensures the drone is in a safe, known state after flight tests
+    by verifying disarm, clearing missions, and resetting flight mode.
+
+    Args:
+        api_client: API client from fixture
+
+    Yields:
+        None: Control returns to test, cleanup runs after test completion
+    """
+    # Run the test
+    yield
+
+    # Teardown: Clean up after flight test
+    try:
+        print("\n=== Flight Test Cleanup ===")
+
+        # Step 1: Wait briefly for auto-disarm (ArduPilot LAND_DISARMDELAY ~20s)
+        # Check if already disarmed, if not wait a bit more
+        status = api_client.get_status()
+        if status.get("armed"):
+            print("Drone still armed, waiting for auto-disarm...")
+            try:
+                # Wait up to 30s for auto-disarm after landing
+                wait_for_drone_armed(api_client, armed=False, timeout=30.0)
+                print("Drone auto-disarmed successfully")
+            except TimeoutError:
+                # If auto-disarm didn't happen, force disarm
+                print("Auto-disarm timeout, forcing disarm...")
+                api_client.arm(False)
+                time.sleep(1)
+        else:
+            print("Drone already disarmed")
+
+        # Step 2: Clear mission/waypoint queue
+        response = api_client.clear_queue()
+        if response.status_code in [200, 204]:
+            print("Mission/waypoint queue cleared")
+        else:
+            print(f"Warning: Clear queue returned {response.status_code}")
+
+        # Step 3: Reset to STABILIZE mode
+        response = api_client.set_flight_mode_direct("STABILIZE")
+        if response.status_code == 200:
+            print("Flight mode reset to STABILIZE")
+        else:
+            print(f"Warning: Flight mode reset returned {response.status_code}")
+
+        # Step 4: Verify clean state
+        final_status = api_client.get_status()
+        assert not final_status.get("armed"), "Cleanup: Failed to disarm drone"
+        assert final_status["groundspeed"] < 0.5, "Cleanup: Drone not stationary"
+        print(f"Final state verified: disarmed, stationary (groundspeed: {final_status['groundspeed']:.2f} m/s)")
+        print("=== Cleanup Complete ===\n")
+
+    except Exception as e:
+        # Log but don't fail the test on cleanup errors
+        print(f"Warning: Flight cleanup encountered an error: {e}")

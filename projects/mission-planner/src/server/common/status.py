@@ -1,13 +1,13 @@
 import struct
 
 class Status():
-    def __init__(self, timestamp = 0, waypoint_number = -1, 
+    def __init__(self, timestamp = 0, waypoint_number = -1,
                  latitude = 0, longitude = 0, altitude = 0,
-                 roll = 0, pitch = 0, yaw = 0, 
+                 roll = 0, pitch = 0, yaw = 0,
                  airspeed = 0, groundspeed = 0, verticalspeed = 0,
-                 battery_voltage = 0, 
-                 wind_direction = 0, wind_velocity = 0):
-        
+                 battery_voltage = 0,
+                 wind_direction = 0, wind_velocity = 0, armed = False):
+
         self._timestamp: float = timestamp
         self._wpn: int = waypoint_number
 
@@ -24,12 +24,14 @@ class Status():
         self._vsp: float = verticalspeed
 
         self._btv: float = battery_voltage
-        
+
         self._wdr: float = wind_direction
         self._wvl: float = wind_velocity
+
+        self._armed: bool = armed
     
     def encoded_status(self) -> bytes:
-        return struct.pack('Qi12f',
+        return struct.pack('Qi12f?',
                            self._timestamp,
                            self._wpn,
                            self._lat,
@@ -43,15 +45,16 @@ class Status():
                            self._vsp,
                            self._btv,
                            self._wdr,
-                           self._wvl)
+                           self._wvl,
+                           self._armed)
 
     def decode_status(self, status_bytes: bytes) -> None:
-        (self._timestamp, self._wpn, 
-        self._lat, self._lng, self._alt, 
-        self._rol, self._pch, self._yaw, 
+        (self._timestamp, self._wpn,
+        self._lat, self._lng, self._alt,
+        self._rol, self._pch, self._yaw,
         self._asp, self._gsp, self._vsp,
-        self._btv, 
-        self._wdr, self._wvl) = struct.unpack('Qi12f', status_bytes)
+        self._btv,
+        self._wdr, self._wvl, self._armed) = struct.unpack('Qi12f?', status_bytes)
 
     def as_dictionary(self) -> dict:
         return {
@@ -69,6 +72,7 @@ class Status():
             'batteryvoltage': self._btv,
             'winddirection' : self._wdr,
             'windvelocity'  : self._wvl,
+            'armed'         : self._armed,
         }
     
     def as_reduced_status(self) -> dict:
@@ -80,6 +84,7 @@ class Status():
             'vertical_velocity': self._vsp,
             'velocity': self._gsp,
             'heading': self._yaw,
-            'battery_voltage' : self._btv
+            'battery_voltage' : self._btv,
+            'armed' : self._armed
         }
     

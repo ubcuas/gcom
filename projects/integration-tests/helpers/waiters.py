@@ -116,7 +116,6 @@ def wait_for_drone_armed(
     def check_armed() -> bool:
         try:
             status = api_client.get_status()
-            # Check if status has armed field - may vary by implementation
             is_armed = status.get("armed", False)
             return is_armed == armed
         except:
