@@ -152,6 +152,25 @@ class APIClient:
             response = requests.get(f"{self.web_backend_url}/api/drone/rtl")
         return response
 
+    def prepare_rtl_params(self, altitude: float) -> Response:
+        """Prepare RTL parameters via web-backend.
+
+        Sets RTL altitude parameter without triggering RTL mode.
+        The drone will not switch to RTL mode until explicitly commanded.
+
+        Args:
+            altitude: RTL altitude in meters
+
+        Returns:
+            Response object
+        """
+        response = requests.post(
+            f"{self.web_backend_url}/api/drone/prepare_rtl",
+            json={"altitude": altitude},
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
     def post_home(self, waypoint: Dict[str, Any]) -> Response:
         """Set home position via web-backend.
 
@@ -180,6 +199,32 @@ class APIClient:
         response = requests.post(
             f"{self.web_backend_url}/api/drone/insert",
             json=waypoints,
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
+    def get_flight_mode(self) -> str:
+        """Get current flight mode via web-backend.
+
+        Returns:
+            Flight mode string (e.g., "GUIDED", "AUTO", "LOITER")
+        """
+        response = requests.get(f"{self.web_backend_url}/api/drone/flightmode")
+        response.raise_for_status()
+        return response.json()["mode"]
+
+    def set_flight_mode(self, mode: str) -> Response:
+        """Set flight mode via web-backend.
+
+        Args:
+            mode: Flight mode string (e.g., "GUIDED", "AUTO", "LOITER", "RTL")
+
+        Returns:
+            Response object
+        """
+        response = requests.put(
+            f"{self.web_backend_url}/api/drone/flightmode",
+            json={"mode": mode},
             headers={"Content-Type": "application/json"},
         )
         return response
