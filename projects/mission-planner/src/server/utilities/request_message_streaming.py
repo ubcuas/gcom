@@ -198,6 +198,28 @@ def request_messages(handler: MavlinkHandler, message_types: list) -> bool:
             logger.warning(f"Request for Message of type {message_type} DENIED")
 
 
+def get_parameter(handler: MavlinkHandler, param_id: str):
+    param_id_bytes = bytes(param_id, "ascii")
+    handler.mav.param_request_read_send(
+        handler.target_system,
+        handler.target_component,
+        param_id_bytes,
+        -1
+    )
+
+    param_value_msg = handler.wait_for_message('PARAM_VALUE', timeout=3.0)
+    logger.debug(f"Param value message: {param_value_msg}")
+
+    if param_value_msg is None:
+        return None
+    
+    return {
+        "param_id": param_id,
+        "param_value": param_value_msg.param_value,
+        "param_type": param_value_msg.param_type
+    }
+
+
 def set_parameter(handler: MavlinkHandler, param_id, param_value) -> bool:
     param_id = bytes(param_id, "ascii")
     # obtain parameter type

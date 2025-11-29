@@ -18,4 +18,5 @@ urlpatterns = [
     path("clear", views.clear, name="clear"),
     path("diversion", views.diversion, name="diversion"),
     path("flightmode", views.flightmode, name="flight_mode"),
+    path("parameters/<str:param_id>", views.parameter, name="parameter"),
 ]

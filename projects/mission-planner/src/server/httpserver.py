@@ -14,7 +14,7 @@ from server.operations.land import land_in_place, land_at_position
 from server.features.aeac_scan import scan_area
 from server.features.aeac_water_delivery import generate_water_wps
 
-from server.utilities.request_message_streaming import set_parameter
+from server.utilities.request_message_streaming import set_parameter, get_parameter
 
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.status import Status
@@ -392,6 +392,43 @@ class HTTP_Server:
                     return f"OK! Changed mode: {input['mode']}", 200
                 else:
                     return f"Unrecognized mode: {input['mode']}", 400
+
+        @app.route("/parameters/<param_id>", methods=["GET"])
+        def get_param(param_id):
+            try:
+                result = get_parameter(self.handler, param_id)
+
+                if result is None:
+                    logger.error(f"Failed to get parameter {param_id}")
+                    return f"Parameter {param_id} not found or request timed out", 404
+
+                logger.info(f"Retrieved parameter {param_id}: {result['param_value']}")
+                return result, 200
+            except Exception as e:
+                logger.error(f"Error getting parameter {param_id}: {type(e).__name__}: {str(e)}")
+                return "Failed to get parameter", 500
+
+        @app.route("/parameters/<param_id>", methods=["PUT"])
+        def set_param(param_id):
+            try:
+                payload = request.get_json()
+
+                if "value" not in payload:
+                    return "Parameter value is required", 400
+
+                param_value = payload["value"]
+                logger.info(f"Setting parameter {param_id} to {param_value}")
+
+                success = set_parameter(self.handler, param_id, param_value)
+
+                if success:
+                    return f"Parameter {param_id} set to {param_value}", 200
+                else:
+                    logger.error(f"Failed to set parameter {param_id}")
+                    return f"Failed to set parameter {param_id}", 400
+            except Exception as e:
+                logger.error(f"Error setting parameter {param_id}: {type(e).__name__}: {str(e)}")
+                return "Failed to set parameter", 500
 
         @app.route("/aeac_scan", methods=["POST"])
         def generate_scan_points():
