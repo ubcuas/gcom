@@ -165,7 +165,7 @@ class APIClient:
             Response object
         """
         response = requests.post(
-            f"{self.web_backend_url}/api/drone/prepare_rtl",
+            f"{self.web_backend_url}/api/drone/prepare_rtl_params",
             json={"altitude": altitude},
             headers={"Content-Type": "application/json"},
         )
@@ -289,7 +289,9 @@ class APIClient:
         )
         return response
 
-    def partial_update_waypoint(self, waypoint_id: str, data: Dict[str, Any]) -> Response:
+    def partial_update_waypoint(
+        self, waypoint_id: str, data: Dict[str, Any]
+    ) -> Response:
         """Partially update a waypoint in the database.
 
         Args:
@@ -315,7 +317,9 @@ class APIClient:
         Returns:
             Response object
         """
-        response = requests.delete(f"{self.web_backend_url}/api/waypoint/{waypoint_id}/")
+        response = requests.delete(
+            f"{self.web_backend_url}/api/waypoint/{waypoint_id}/"
+        )
         return response
 
     # ==================== Database Route API Methods ====================
@@ -371,7 +375,9 @@ class APIClient:
         response = requests.delete(f"{self.web_backend_url}/api/route/{route_id}/")
         return response
 
-    def reorder_route_waypoints(self, route_id: int, waypoint_ids: List[str]) -> Response:
+    def reorder_route_waypoints(
+        self, route_id: int, waypoint_ids: List[str]
+    ) -> Response:
         """Reorder waypoints within a route.
 
         Args:
