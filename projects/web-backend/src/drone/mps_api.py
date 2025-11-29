@@ -48,6 +48,12 @@ class DroneApiClient:
         )
 
     @staticmethod
+    def prepare_rtl_params(altitude):
+        return DroneApiClient._fetch_from_mission_planner(
+            "prepare_rtl_params", method="POST", data={"altitude": altitude}
+        )
+
+    @staticmethod
     def arm(arm_value):
         return DroneApiClient._fetch_from_mission_planner(
             "arm", method="PUT", data={"arm": arm_value}
