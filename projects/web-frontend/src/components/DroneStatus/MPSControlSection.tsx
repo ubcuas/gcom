@@ -145,6 +145,7 @@ export default function MPSControlSection() {
                 <Button
                     fullWidth
                     variant="outlined"
+                    color="warning"
                     onClick={() => {
                         setDebugPanelOpen(true);
                     }}
