@@ -9,7 +9,6 @@ urlpatterns = [
     path("prepare_rtl_params", views.prepare_rtl_params, name="prepare_rtl_params"),
     path("arm", views.arm, name="arm"),
     path("land", views.land, name="land"),
-    path("rtl", views.get_rtl, name="rtl"),
     path("rtl", views.post_rtl, name="rtl"),
     path("lock", views.lock, name="lock"),
     path("insert", views.insert, name="insert"),

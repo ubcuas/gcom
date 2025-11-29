@@ -1,7 +1,7 @@
 import { Box, Button, Modal, Paper, TextField, Tooltip, Typography } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
-import { armDrone, prepareTakeoffDrone, prepareRtlParams } from "../../api/endpoints.ts";
+import { armDrone, prepareTakeoffDrone, returnToLaunch } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
 import { selectAircraftStatus } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
@@ -146,19 +146,19 @@ export default function MPSControlSection() {
                     disabled={preparingRtl}
                     onClick={() => {
                         setPreparingRtl(true);
-                        prepareRtlParams(rtlAltitude)
+                        returnToLaunch(rtlAltitude)
                             .then((response) => {
                                 if (response.status === 200) {
                                     dispatch(
                                         openSnackbar({
-                                            message: "RTL parameters prepared successfully",
+                                            message: "Return to launch initiated successfully",
                                             severity: "success",
                                         }),
                                     );
                                 } else {
                                     dispatch(
                                         openSnackbar({
-                                            message: "Failed to prepare RTL parameters",
+                                            message: "Failed to initiate return to launch",
                                         }),
                                     );
                                 }
@@ -171,7 +171,7 @@ export default function MPSControlSection() {
                         </Tooltip>
                     }
                 >
-                    Prepare RTL
+                    Return to Launch
                 </Button>
             </Box>
             <Box
