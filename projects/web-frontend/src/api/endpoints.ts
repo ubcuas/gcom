@@ -26,9 +26,13 @@ export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
     return await api.post("/drone/queue", waypoints);
 };
 
-export const getGCOM = async (): Promise<Waypoint[]> => {
+// not to be confused with the current route
+// these are the waypoints currently loaded in the drone's mission queue
+// not the ones stored in the backend which may or may not have been posted to the drone
+export const getCurrentMissionRaw = async (): Promise<object[]> => {
     const response = await api.get("/drone/queue");
-    return response.data.map((wp: unknown) => WaypointSchema.parse(wp));
+    console.log("Received waypoint queue from API", response.data);
+    return response.data;
 };
 
 export const listRoutes = async (): Promise<Route[]> => {

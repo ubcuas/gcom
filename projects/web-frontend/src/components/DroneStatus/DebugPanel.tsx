@@ -1,8 +1,9 @@
 import { Box, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableRow, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/store";
-import { selectAircraftStatus, selectCurrentRouteWaypoints } from "../../store/slices/dataSlice";
-import { getDroneParameter, getFlightMode } from "../../api/endpoints";
+import { selectAircraftStatus } from "../../store/slices/dataSlice";
+import { getDroneParameter, getFlightMode, getCurrentMissionRaw } from "../../api/endpoints";
+import { Waypoint } from "../../types/Waypoint";
 
 type DebugPanelProps = {
     open: boolean;
@@ -37,9 +38,9 @@ const getArmedColor = (armed: boolean) => {
 
 export default function DebugPanel({ open, onClose }: DebugPanelProps) {
     const aircraftStatus = useAppSelector(selectAircraftStatus);
-    const waypoints = useAppSelector(selectCurrentRouteWaypoints);
 
     const [flightMode, setFlightMode] = useState<string>("loading...");
+    const [waypointQueue, setWaypointQueue] = useState<object[] | string>("loading...");
 
     const [droneParams, setDroneParams] = useState<DroneParam[]>(
         DRONE_PARAM_NAMES.map((name) => ({ param: name, value: "loading..." })),
@@ -51,6 +52,13 @@ export default function DebugPanel({ open, onClose }: DebugPanelProps) {
                 .then((result) => setFlightMode(result.mode))
                 .catch(() => setFlightMode("error"));
 
+            getCurrentMissionRaw()
+                .then((result) => setWaypointQueue(result))
+                .catch((e) => {
+                    console.error("Error fetching GCOM", e);
+                    setWaypointQueue("error");
+                });
+
             DRONE_PARAM_NAMES.forEach(async (paramName) => {
                 try {
                     const result = await getDroneParameter(paramName);
@@ -58,6 +66,7 @@ export default function DebugPanel({ open, onClose }: DebugPanelProps) {
                         prev.map((p) => (p.param === paramName ? { ...p, value: result.param_value.toString() } : p)),
                     );
                 } catch (error) {
+                    console.log("Error fetching drone parameter", paramName, error);
                     setDroneParams((prev) => prev.map((p) => (p.param === paramName ? { ...p, value: "error" } : p)));
                 }
             });
@@ -161,12 +170,12 @@ export default function DebugPanel({ open, onClose }: DebugPanelProps) {
                         p: 2,
                         borderRadius: 1,
                         overflow: "auto",
-                        fontSize: "0.875rem",
+                        fontSize: "0.7rem",
                         fontFamily: "monospace",
                         maxHeight: "300px",
                     }}
                 >
-                    {JSON.stringify(waypoints, null, 2)}
+                    {JSON.stringify(waypointQueue, null, 2)}
                 </Box>
             </Paper>
         </Modal>
