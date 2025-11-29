@@ -20,7 +20,7 @@ def setup_logger(name: str = "mission_planner") -> logging.Logger:
     if logger.handlers:
         return logger
 
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # Create logs directory
     log_dir = Path(__file__).parent.parent.parent / "logs"
