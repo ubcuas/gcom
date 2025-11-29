@@ -72,6 +72,33 @@ def prepare_takeoff(request):
 
 
 @csrf_exempt
+@require_http_methods(["POST"])
+def prepare_rtl_params(request):
+    try:
+        data = json.loads(request.body)
+        altitude = data.get("altitude")
+        response = DroneApiClient.prepare_rtl_params(altitude)
+
+        if response.status_code >= 400:
+            print(f"[ERROR] Mission-planner response: {response.text}")
+            return JsonResponse(
+                {"error": "Mission-planner error", "details": response.text},
+                status=response.status_code,
+            )
+
+        return HttpResponse(status=response.status_code)
+    except (KeyError, ValueError, TypeError) as e:
+        print(f"[ERROR] Invalid input for prepare_rtl_params: {type(e).__name__}: {str(e)}")
+        return JsonResponse({"error": "Invalid input"}, status=400)
+    except Exception as e:
+        print(f"[ERROR] Unexpected error in prepare_rtl_params: {type(e).__name__}: {str(e)}")
+        return JsonResponse(
+            {"error": "Internal server error", "details": str(e)},
+            status=500,
+        )
+
+
+@csrf_exempt
 @require_http_methods(["PUT"])
 def arm(request):
     try:

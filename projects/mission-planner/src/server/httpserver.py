@@ -261,6 +261,24 @@ class HTTP_Server:
             else:
                 return f"Unrecognized arm/disarm command parameter", 400
 
+        @app.route("/prepare_rtl_params", methods=["POST"])
+        def post_prepare_rtl_params():
+            payload = request.get_json()
+
+            if not ("altitude" in payload):
+                return "Altitude cannot be null", 400
+
+            altitude = payload["altitude"]
+            print(f"Preparing RTL params with altitude {altitude}")
+
+            # set RTL altitude parameter
+            alt_cm = altitude * 100
+
+            if not set_parameter(self.handler, "RTL_ALT", alt_cm):
+                return "Failed to set RTL altitude parameter", 400
+
+            return "RTL parameters prepared successfully", 200
+
         @app.route("/rtl", methods=["GET", "POST"])
         def get_post_rtl():
             if request.method == "GET":
