@@ -60,8 +60,6 @@ async def drone_update(sid: str, data: dict) -> None:
         data (dict): The telemetry data of the drone
     """
 
-    print(f"[SOCKET] Latitude: {data['latitude']} \tLongitude: {data['longitude']} \tAltitude: {data['altitude']}")
-
     await sync_to_async(process_drone_update)(data)
     await sio.emit("drone_update", data)
 
