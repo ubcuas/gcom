@@ -1,11 +1,20 @@
 import { Box, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableRow, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/store";
 import { selectAircraftStatus, selectCurrentRouteWaypoints } from "../../store/slices/dataSlice";
+import { getDroneParameter } from "../../api/endpoints";
 
 type DebugPanelProps = {
     open: boolean;
     onClose: () => void;
 };
+
+type DroneParam = {
+    param: string;
+    value: string;
+};
+
+const DRONE_PARAM_NAMES = ["RTL_ALT", "WPNAV_SPEED", "LAND_SPEED", "RTL_LOIT_TIME", "BATT_LOW_VOLT"];
 
 const getFlightModeColor = (mode: string) => {
     switch (mode) {
@@ -32,14 +41,24 @@ export default function DebugPanel({ open, onClose }: DebugPanelProps) {
 
     const flightMode = "GUIDED";
 
-    const droneParams = [
-        { param: "RTL_ALT", value: "100" },
-        { param: "WP_RADIUS", value: "15" },
-        { param: "WPNAV_SPEED", value: "500" },
-        { param: "LAND_SPEED", value: "50" },
-        { param: "RTL_LOIT_TIME", value: "5000" },
-        { param: "BATT_LOW_VOLT", value: "10.5" },
-    ];
+    const [droneParams, setDroneParams] = useState<DroneParam[]>(
+        DRONE_PARAM_NAMES.map((name) => ({ param: name, value: "loading..." })),
+    );
+
+    useEffect(() => {
+        if (open) {
+            DRONE_PARAM_NAMES.forEach(async (paramName) => {
+                try {
+                    const result = await getDroneParameter(paramName);
+                    setDroneParams((prev) =>
+                        prev.map((p) => (p.param === paramName ? { ...p, value: result.param_value.toString() } : p)),
+                    );
+                } catch (error) {
+                    setDroneParams((prev) => prev.map((p) => (p.param === paramName ? { ...p, value: "error" } : p)));
+                }
+            });
+        }
+    }, [open]);
 
     return (
         <Modal open={open} onClose={onClose}>

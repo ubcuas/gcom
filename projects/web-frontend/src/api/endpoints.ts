@@ -93,3 +93,10 @@ export const syncRouteWaypoints = async (routeId: number, waypoints: Waypoint[])
     const response = await api.post(`/route/${routeId}/sync-waypoints/`, waypoints);
     return RouteSchema.parse(response.data);
 };
+
+export const getDroneParameter = async (
+    paramId: string,
+): Promise<{ param_id: string; param_value: number; param_type: number }> => {
+    const response = await api.get(`/drone/parameters/${paramId}`);
+    return response.data;
+};

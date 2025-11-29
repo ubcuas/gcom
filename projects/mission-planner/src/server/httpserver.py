@@ -224,7 +224,9 @@ class HTTP_Server:
                 return "Altitude cannot be null", 400
 
             altitude = float(payload["altitude"])
-            logger.info(f"Preparing takeoff sequence with waypoint at altitude {altitude}")
+            logger.info(
+                f"Preparing takeoff sequence with waypoint at altitude {altitude}"
+            )
 
             try:
                 result = prepare_takeoff(self.handler, self.status_cache, altitude)
@@ -405,7 +407,9 @@ class HTTP_Server:
                 logger.info(f"Retrieved parameter {param_id}: {result['param_value']}")
                 return result, 200
             except Exception as e:
-                logger.error(f"Error getting parameter {param_id}: {type(e).__name__}: {str(e)}")
+                logger.error(
+                    f"Error getting parameter {param_id}: {type(e).__name__}: {str(e)}"
+                )
                 return "Failed to get parameter", 500
 
         @app.route("/parameters/<param_id>", methods=["PUT"])
@@ -427,7 +431,9 @@ class HTTP_Server:
                     logger.error(f"Failed to set parameter {param_id}")
                     return f"Failed to set parameter {param_id}", 400
             except Exception as e:
-                logger.error(f"Error setting parameter {param_id}: {type(e).__name__}: {str(e)}")
+                logger.error(
+                    f"Error setting parameter {param_id}: {type(e).__name__}: {str(e)}"
+                )
                 return "Failed to set parameter", 500
 
         @app.route("/aeac_scan", methods=["POST"])
