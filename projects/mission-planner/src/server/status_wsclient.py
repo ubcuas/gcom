@@ -3,14 +3,15 @@ import socketio
 
 from server.common.status import Status
 from server.operations.get_info import get_status
+from server.services.status_cache import StatusCache
 
 DELAY = 1
 # DELAY = 2
 RECONNECT = 15
 
 class Status_Client:
-    def __init__(self, mav_connection):
-        self.mav_connection = mav_connection
+    def __init__(self, status_cache: StatusCache):
+        self.status_cache = status_cache
         self._url = ""
         self.sio = None
         self._running = True
@@ -42,7 +43,7 @@ class Status_Client:
 
         while self._running:
             try:
-                self.sio.emit('drone_update', get_status(self.mav_connection).as_reduced_status())
+                self.sio.emit('drone_update', get_status(self.status_cache).as_reduced_status())
                 if not self._running:
                     return
                 time.sleep(DELAY)

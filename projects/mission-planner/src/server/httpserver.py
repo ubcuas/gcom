@@ -5,6 +5,7 @@ from flask_socketio import SocketIO
 from pymavlink.mavutil import mavfile
 
 from server.operations.takeoff import takeoff, arm_disarm
+from server.operations.prepare_takeoff import prepare_takeoff
 from server.operations.queue import new_mission, set_home, clear_mission
 from server.operations.get_info import get_status, get_current_mission
 from server.operations.change_modes import change_flight_mode
@@ -18,14 +19,19 @@ from server.utilities.request_message_streaming import set_parameter
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.status import Status
 from server.common.encoders import command_string_to_int, command_int_to_string
+from server.services import StatusCache, MavlinkHandler
 
 
 class HTTP_Server:
-    def __init__(self, mav_connection):
+    def __init__(
+        self, mav_connection, status_cache: StatusCache, handler: MavlinkHandler
+    ):
         self.mav_connection: mavfile = mav_connection
+        self.status_cache = status_cache
+        self.handler = handler
 
     # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
-    def serve_forever(self, production : bool, host : str, port : int):
+    def serve_forever(self, production: bool, host: str, port: int):
         print("GCOM HTTP Server starting...")
         app = Flask(__name__)
         socketio = SocketIO(app)
@@ -38,8 +44,8 @@ class HTTP_Server:
         @app.route("/queue", methods=["GET"])
         def get_queue():
             try:
-                curr = get_status(self.mav_connection)._wpn
-                wpq = get_current_mission(self.mav_connection)
+                curr = get_status(self.status_cache)._wpn
+                wpq = get_current_mission(self.handler)
 
                 formatted = []
                 for wp in wpq:
@@ -61,7 +67,7 @@ class HTTP_Server:
         def post_queue():
             payload = request.get_json()
 
-            ret = get_status(self.mav_connection)
+            ret = get_status(self.status_cache)
             last_altitude = ret.as_dictionary().get("altitude", 50)
 
             wpq = []
@@ -95,7 +101,7 @@ class HTTP_Server:
                 )
                 wpq.append(wp)
 
-            success = new_mission(self.mav_connection, WaypointQueue(wpq.copy()))
+            success = new_mission(self.handler, WaypointQueue(wpq.copy()))
             copy = WaypointQueue(wpq.copy()).aslist()
             wpq.clear()
 
@@ -109,11 +115,11 @@ class HTTP_Server:
             try:
                 payload = request.get_json()
 
-                ret: Status = get_status(self.mav_connection)
+                ret: Status = get_status(self.status_cache)
                 last_altitude = ret._alt if ret != () else 50
 
                 curr = max(ret._wpn, 1)
-                curr_wpq = get_current_mission(self.mav_connection)
+                curr_wpq = get_current_mission(self.handler)
 
                 # gets new waypoints
                 new_waypoints = []
@@ -150,7 +156,7 @@ class HTTP_Server:
                 # start list with new waypoints, extend with current mission at the end
                 new_waypoints.extend(curr_wpq.aslist()[curr:])
 
-                success = new_mission(self.mav_connection, WaypointQueue(new_waypoints.copy()))
+                success = new_mission(self.handler, WaypointQueue(new_waypoints.copy()))
                 copy = WaypointQueue(new_waypoints.copy()).aslist()
                 new_waypoints.clear()
 
@@ -164,7 +170,7 @@ class HTTP_Server:
 
         @app.route("/clear", methods=["GET"])
         def get_clear_queue():
-            result = clear_mission(self.mav_connection)
+            result = clear_mission(self.handler)
 
             if result:
                 return "Mission has been Cleared", 200
@@ -174,7 +180,7 @@ class HTTP_Server:
         @app.route("/status", methods=["GET"])
         def get_status_handler():
             print("Status sent to GCOM")
-            s = get_status(self.mav_connection).as_dictionary()
+            s = get_status(self.status_cache).as_dictionary()
             return s, 200
 
         @app.route("/takeoff", methods=["POST"])
@@ -188,33 +194,59 @@ class HTTP_Server:
             print(f"Taking off to altitude {altitude}")
 
             try:
-                result = takeoff(self.mav_connection, altitude)
+                result = takeoff(self.handler, altitude)
 
                 if result == 0:
                     return "Takeoff command successful", 200
 
                 # see https://mavlink.io/en/messages/common.html#MAV_RESULT for MAV_RESULT code interpretation
-                print("[ERROR] Takeoff unsuccessful - MAVLink MAV_RESULT code: ", result)
+                print(
+                    "[ERROR] Takeoff unsuccessful - MAVLink MAV_RESULT code: ", result
+                )
                 return "Takeoff unsuccessful", 400
 
             except ValueError:
-                print('[ERROR] Takeoff failed - invalid params')
-                return "Takeoff failed - autopilot not supported for this mavlink connection", 400
+                print("[ERROR] Takeoff failed - invalid params")
+                return (
+                    "Takeoff failed - autopilot not supported for this mavlink connection",
+                    400,
+                )
             except Exception as e:
                 print(f"[ERROR] Takeoff failed - {type(e).__name__}: {str(e)}")
                 return "Takeoff failed - unknown error", 500
 
+        @app.route("/prepare_takeoff", methods=["POST"])
+        def post_prepare_takeoff():
+            payload = request.get_json()
+
+            if not ("altitude" in payload):
+                return "Altitude cannot be null", 400
+
+            altitude = float(payload["altitude"])
+            print(f"Preparing takeoff sequence with waypoint at altitude {altitude}")
+
+            try:
+                result = prepare_takeoff(self.handler, self.status_cache, altitude)
+
+                if result:
+                    return "Takeoff sequence prepared successfully", 200
+                else:
+                    return "Failed to prepare takeoff sequence", 400
+
+            except Exception as e:
+                print(f"[ERROR] Prepare takeoff failed - {type(e).__name__}: {str(e)}")
+                return "Prepare takeoff failed - unknown error", 500
 
         @app.route("/arm", methods=["PUT"])
         def put_arm_disarm_drone():
             input = request.get_json()
 
             if input["arm"] in [1, 0]:
-                arm = bool(input['arm'])
+                arm = bool(input["arm"])
 
                 print("ARMING drone" if arm else "DISARMING drone")
-                
-                result = arm_disarm(self.mav_connection, arm)
+
+                result = arm_disarm(self.handler, arm)
 
                 if result == 0:
                     return (
@@ -241,11 +273,11 @@ class HTTP_Server:
             # set RTL altitude parameter
             alt_cm = altitude * 100
 
-            if not set_parameter(self.mav_connection, "RTL_ALT", alt_cm):
+            if not set_parameter(self.handler, "RTL_ALT", alt_cm):
                 return "Failed to set RTL altitude parameter", 400
 
             success = change_flight_mode(
-                self.mav_connection,
+                self.handler,
                 self.mav_connection.target_system,
                 self.mav_connection.target_component,
                 "RTL",
@@ -259,10 +291,15 @@ class HTTP_Server:
         @app.route("/land", methods=["GET"])
         def get_land():
             print("Landing")
-            if not change_flight_mode(self.mav_connection, "LOITER"):
+            if not change_flight_mode(
+                self.handler,
+                self.mav_connection.target_system,
+                self.mav_connection.target_component,
+                "LOITER",
+            ):
                 return "Failed to set drone into LOITER mode", 400
 
-            if land_in_place(self.mav_connection) == 0:
+            if land_in_place(self.handler) == 0:
                 return "Landing Immediately", 200
             else:
                 return "Landing failed", 400
@@ -275,12 +312,24 @@ class HTTP_Server:
             land = request.get_json()
             if "latitude" not in land or "longitude" not in land:
                 return "Latitude and Longitude cannot be null", 400
-            
-            landing_mission = WaypointQueue()
-            landing_mission.push(Waypoint(0, "Approach", land.get('latitude'), land.get('longitude'), land.get('altitude', 35)))
-            landing_mission.push(Waypoint(1, "Landing", land.get('latitude'), land.get('longitude'), 0, "LAND"))
 
-            if new_mission(self.mav_connection, landing_mission):
+            landing_mission = WaypointQueue()
+            landing_mission.push(
+                Waypoint(
+                    0,
+                    "Approach",
+                    land.get("latitude"),
+                    land.get("longitude"),
+                    land.get("altitude", 35),
+                )
+            )
+            landing_mission.push(
+                Waypoint(
+                    1, "Landing", land.get("latitude"), land.get("longitude"), 0, "LAND"
+                )
+            )
+
+            if new_mission(self.handler, landing_mission):
                 return "Landing at Specified Location", 200
             else:
                 return "Landing failed", 400
@@ -296,7 +345,15 @@ class HTTP_Server:
             ):
                 return "Long/lat/alt cannot be null", 400
 
-            if set_home(self.mav_connection, home.get("latitude"), home.get("longitude"), home.get("altitude")) == 0:
+            if (
+                set_home(
+                    self.handler,
+                    home.get("latitude"),
+                    home.get("longitude"),
+                    home.get("altitude"),
+                )
+                == 0
+            ):
                 return "Setting New Home", 200
             else:
                 return "New Home NOT set", 400
@@ -306,7 +363,7 @@ class HTTP_Server:
             input = request.get_json()
 
             success = change_flight_mode(
-                self.mav_connection,
+                self.handler,
                 self.mav_connection.target_system,
                 self.mav_connection.target_component,
                 input["mode"],
@@ -316,46 +373,68 @@ class HTTP_Server:
                 return f"OK! Changed mode: {input['mode']}", 200
             else:
                 return f"Unrecognized mode: {input['mode']}", 400
-            
+
         @app.route("/aeac_scan", methods=["POST"])
         def generate_scan_points():
             input = request.get_json()
 
             # TODO Trigger CameraVision system to begin scanning
-            if (input["center_lat"] and input["center_lng"] and
-                input["altitude"] and input["target_area_radius"]):
-                wpq = scan_area(center_lat=input["center_lat"], center_lng=input["center_lng"],
-                            altitude=input["altitude"], target_area_radius=input["target_area_radius"])
-                
-                if new_mission(self.mav_connection, wpq):
+            if (
+                input["center_lat"]
+                and input["center_lng"]
+                and input["altitude"]
+                and input["target_area_radius"]
+            ):
+                wpq = scan_area(
+                    center_lat=input["center_lat"],
+                    center_lng=input["center_lng"],
+                    altitude=input["altitude"],
+                    target_area_radius=input["target_area_radius"],
+                )
+
+                if new_mission(self.handler, wpq):
                     return f"Scan Mission Set", 200
                 else:
                     return "Mission request failed", 400
             else:
                 return f"Invalid input, missing a parameter.", 400
-        
+
         @app.route("/aeac_deliver", methods=["POST"])
         def deliver_water_down():
             input = request.get_json()
 
-            if ("current_alt" in input and "deliver_alt" in input and 
-                "deliver_duration_secs" in input and "curr_lat" in input and "curr_lon" in input):
-        
+            if (
+                "current_alt" in input
+                and "deliver_alt" in input
+                and "deliver_duration_secs" in input
+                and "curr_lat" in input
+                and "curr_lon" in input
+            ):
                 # Extract values from JSON input
                 current_alt = input["current_alt"]
                 deliver_alt = input["deliver_alt"]
                 deliver_duration_secs = input["deliver_duration_secs"]
                 curr_lat = input["curr_lat"]
                 curr_lon = input["curr_lon"]
-                wpq = generate_water_wps(current_alt, deliver_alt, deliver_duration_secs, curr_lat, curr_lon)
-                
-                
-                if new_mission(self.mav_connection, wpq):
+                wpq = generate_water_wps(
+                    current_alt, deliver_alt, deliver_duration_secs, curr_lat, curr_lon
+                )
+
+                if new_mission(self.handler, wpq):
                     return f"Commencing Deliver operation", 200
                 else:
                     return "Mission request failed", 400
             else:
                 return f"Invalid input, missing a parameter.", 400
 
+        try:
+            socketio.run(
+                app, host=host, port=port, debug=(not production), use_reloader=False
+            )
+        finally:
+            # Ensure handler thread stops cleanly
+            self.shutdown()
 
-        socketio.run(app, host=host, port=port, debug=(not production), use_reloader=False)
+    def shutdown(self):
+        """Shutdown the HTTP server."""
+        print("HTTP Server shutdown")

@@ -7,6 +7,7 @@ from pymavlink import mavutil
 utilities_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(utilities_path)
 from get_autopilot_info import get_autopilot_info
+from server.services.mavlink_handler import MavlinkHandler
 
 
 def get_enum_value_by_name(enum_dict, name):
@@ -29,12 +30,12 @@ def get_enum_value_by_name(enum_dict, name):
     raise ValueError("No enum entry with name: " + name)
 
 
-def wait_until_position_aiding(mav_connection, timeout=120):
+def wait_until_position_aiding(handler: MavlinkHandler, timeout=120):
     """
     Wait until the MAVLink connection has EKF position aiding.
 
     Args:
-        mav_connection (mavutil.mavlink_connection): The MAVLink connection to check.
+        handler: The MavlinkHandler instance
         timeout (int, optional): The maximum time to wait for EKF position aiding in seconds. Defaults to 120.
 
     Raises:
@@ -43,7 +44,7 @@ def wait_until_position_aiding(mav_connection, timeout=120):
     Returns:
         None
     """
-    autopilot_info = get_autopilot_info(mav_connection)
+    autopilot_info = get_autopilot_info(handler)
     if autopilot_info["autopilot"] == "ardupilotmega":
         estimator_status_msg = "EKF_STATUS_REPORT"
     elif autopilot_info["autopilot"] == "px4":
@@ -54,7 +55,7 @@ def wait_until_position_aiding(mav_connection, timeout=120):
     flags = ["EKF_PRED_POS_HORIZ_REL", "EKF_PRED_POS_HORIZ_REL"]
     time_start = time.time()
     while True:
-        if ekf_pos_aiding(mav_connection, flags, estimator_status_msg) or time.time() - time_start > timeout:
+        if ekf_pos_aiding(handler, flags, estimator_status_msg) or time.time() - time_start > timeout:
             break
         print(f"Waiting for position aiding: {time.time() - time_start} seconds elapsed")
 
@@ -63,19 +64,19 @@ def wait_until_position_aiding(mav_connection, timeout=120):
 
 
 
-def ekf_pos_aiding(mav_connection, flags, estimator_status_msg="ESTIMATOR_STATUS"):
+def ekf_pos_aiding(handler: MavlinkHandler, flags, estimator_status_msg="ESTIMATOR_STATUS"):
     """
     Check the EKF position aiding status of a MAVLink connection.
 
     Args:
-        mav_connection (mavutil.mavlink_connection): The MAVLink connection to check.
+        handler: The MavlinkHandler instance
         flags (List[str]): The flags to check in the EKF status.
         estimator_status_msg (str, optional): The name of the estimator status message. Defaults to "ESTIMATOR_STATUS".
 
     Returns:
         bool: True if all flags are present in the EKF status, False otherwise.
     """
-    msg = mav_connection.recv_match(type=estimator_status_msg, blocking=True, timeout=3)
+    msg = handler.wait_for_message(estimator_status_msg, timeout=3.0)
     if not msg:
         raise ValueError(f"No message of type {estimator_status_msg} received within the timeout")
 

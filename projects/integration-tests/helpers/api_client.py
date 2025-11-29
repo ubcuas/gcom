@@ -88,6 +88,26 @@ class APIClient:
         )
         return response
 
+    def prepare_takeoff(self, altitude: float) -> Response:
+        """Prepare takeoff sequence via web-backend.
+
+        Clears the waypoint queue and adds a single waypoint at current position
+        with the specified altitude. When the drone is armed and switched to AUTO
+        mode by the pilot, it will automatically takeoff to this waypoint.
+
+        Args:
+            altitude: Target altitude in meters
+
+        Returns:
+            Response object
+        """
+        response = requests.post(
+            f"{self.web_backend_url}/api/drone/prepare_takeoff",
+            json={"altitude": altitude},
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+
     def arm(self, arm_value: bool) -> Response:
         """Arm or disarm motors via web-backend.
 
@@ -326,6 +346,27 @@ class APIClient:
     # ==================== Mission-Planner Direct Access ====================
     # These methods bypass web-backend and hit mission-planner directly.
     # Use sparingly - only for verification or debugging, not primary test flow.
+
+    def set_flight_mode_direct(self, mode: str) -> Response:
+        """Set flight mode directly via mission-planner (bypasses web-backend).
+
+        Use this method when you need to emulate pilot actions that would normally
+        be performed via the physical controller (e.g., switching to AUTO mode to
+        initiate a prepared mission). For standard flight mode changes during tests,
+        prefer using the web-backend API.
+
+        Args:
+            mode: Flight mode string (e.g., "AUTO", "GUIDED", "LOITER", "RTL")
+
+        Returns:
+            Response object
+        """
+        response = requests.put(
+            f"{self.mission_planner_url}/flightmode",
+            json={"mode": mode},
+            headers={"Content-Type": "application/json"},
+        )
+        return response
 
     def get_mission_planner_queue(self) -> List[Dict[str, Any]]:
         """Get queue directly from mission-planner (for verification).

@@ -9,25 +9,26 @@ from connect_to_sysid import connect_to_sysid
 
 from pymavlink import mavutil
 from connect_to_sysid import connect_to_sysid
+from server.services.mavlink_handler import MavlinkHandler
 
 
-def get_autopilot_info(connection, sysid=1):
+def get_autopilot_info(handler: MavlinkHandler, sysid=1):
     """
     Get the autopilot information for the MAVLink connection.
 
     Args:
-        connection (mavutil.mavlink_connection): The MAVLink connection.
+        handler: The MavlinkHandler instance
         sysid (int, optional): System ID to search for. Defaults to 1.
 
     Returns:
-        dict: A dictionary containing autopilot info. 
+        dict: A dictionary containing autopilot info.
               Includes "autopilot", "type", and "version".
     """
     # Initialize dictionary to hold autopilot info
     autopilot_info = {"autopilot": "", "type": "", "version": ""}
-    
+
     # Receive 'HEARTBEAT' message from MAVLink connection
-    msg = wait_for_heartbeat(connection, sysid)
+    msg = wait_for_heartbeat(handler, sysid)
     # If no message received, return empty autopilot_info
     if not msg:
         return autopilot_info
@@ -39,39 +40,37 @@ def get_autopilot_info(connection, sysid=1):
 
     # If autopilot type is ArduPilot Mega, request autopilot version and add to autopilot_info. I don't think this is implemented for PX4.
     if autopilot_info["autopilot"] == "ardupilotmega":
-        msg = request_autopilot_version(connection)
+        msg = request_autopilot_version(handler)
         if msg:
             autopilot_info["version"] = get_fc_version_from_msg(msg)
 
     # Return the autopilot information
     return autopilot_info
 
-def wait_for_heartbeat(connection, sysid, timeout=3):
+def wait_for_heartbeat(handler: MavlinkHandler, sysid, timeout=3):
     """
     Waits for a HEARTBEAT message from the given sysid
-    
+
     Arguments:
-    connection -- pymavlink connection object
-    sysid      -- system id to search for
-    timeout    -- time to wait for the message in seconds
-    
+    handler -- MavlinkHandler instance
+    sysid   -- system id to search for
+    timeout -- time to wait for the message in seconds
+
     Returns:
     The HEARTBEAT message or None if timeout is reached
     """
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        msg = connection.recv_match(type='HEARTBEAT', blocking=True, timeout=timeout)
-        if msg is None:
-            continue
-        if msg.get_srcSystem() == sysid:
-            return msg
-    return None
+    msg = handler.wait_for_message(
+        'HEARTBEAT',
+        timeout=timeout,
+        filter_func=lambda m: m.get_srcSystem() == sysid
+    )
+    return msg
 
-def request_autopilot_version(connection):
+def request_autopilot_version(handler: MavlinkHandler):
     """Request and return an AUTOPILOT_VERSION message from a mavlink connection"""
-    connection.mav.send(mavutil.mavlink.MAVLink_autopilot_version_request_message(
-        connection.target_system, connection.target_component))
-    return connection.recv_match(type='AUTOPILOT_VERSION', blocking=True, timeout=3)
+    handler.mav.send(mavutil.mavlink.MAVLink_autopilot_version_request_message(
+        handler.target_system, handler.target_component))
+    return handler.wait_for_message('AUTOPILOT_VERSION', timeout=3.0)
 
 
 def get_fc_version_from_msg(msg):

@@ -5,6 +5,7 @@ urlpatterns = [
     path("status", views.get_current_status, name="get_current_status"),
     path("status/history", views.get_status_history, name="get_status_history"),
     path("takeoff", views.takeoff, name="takeoff"),
+    path("prepare_takeoff", views.prepare_takeoff, name="prepare_takeoff"),
     path("arm", views.arm, name="arm"),
     path("land", views.land, name="land"),
     path("rtl", views.get_rtl, name="rtl"),
