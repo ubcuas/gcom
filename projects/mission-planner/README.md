@@ -84,6 +84,24 @@ mavproxy --master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14550 --out=udp:127.0.0
 
 When running mavproxy, point master to the SITL instance connection and specify 2 outputs, one to interface with pymavlink and one for connecting with Mission Planner for visualization. Optionally, omit the second output if Mission Planner visualization is not needed.
 
+#### Connecting Mavproxy to the Drone
+
+##### Mac
+To connect to the drone, you'll want to specify the baudrate and serial port: 
+
+```
+sudo mavproxy.py --master=/dev/tty.usbserial-AI06JFYT   --out=udp:127.0.0.1:14550 \
+  --out=udp:127.0.0.1:14551 --baudrate=115000
+```
+
+##### Windows
+
+Have not tested on this yet, but should be simpler than mac – you'd just need to do 
+```
+mavproxy.py --out=udp:127.0.0.1:14550 \
+  --out=udp:127.0.0.1:14551
+```
+
 ### Using MPS
 
 1. Create and activate a virtual environment
