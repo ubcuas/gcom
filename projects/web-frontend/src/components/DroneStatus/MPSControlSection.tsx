@@ -88,7 +88,7 @@ export default function MPSControlSection() {
                 <Button
                     variant="contained"
                     color={preparingTakeoff ? "inherit" : "error"}
-                    disabled={preparingTakeoff}
+                    disabled={preparingTakeoff || takeoffAltitude <= 0}
                     onClick={() => {
                         setPreparingTakeoff(true);
                         prepareTakeoffDrone(takeoffAltitude)
