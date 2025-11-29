@@ -70,10 +70,8 @@ class DroneApiClient:
         return DroneApiClient._fetch_from_mission_planner("rtl")
 
     @staticmethod
-    def post_rtl(altitude):
-        return DroneApiClient._fetch_from_mission_planner(
-            "rtl", method="POST", data={"altitude": altitude}
-        )
+    def post_rtl():
+        return DroneApiClient._fetch_from_mission_planner("rtl", method="POST")
 
     @staticmethod
     def lock():

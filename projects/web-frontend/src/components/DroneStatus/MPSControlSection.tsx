@@ -10,8 +10,8 @@ export default function MPSControlSection() {
     const dispatch = useAppDispatch();
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const [takeoffAltitude, setTakeoffAltitude] = useState(0);
-    const [rtlAltitude, setRtlAltitude] = useState(0);
-    const [modalState, setModalState] = useState(false);
+    const [armModalState, setArmModalState] = useState(false);
+    const [rtlModalState, setRtlModalState] = useState(false);
     const [preparingTakeoff, setPreparingTakeoff] = useState(false);
     const [preparingRtl, setPreparingRtl] = useState(false);
     const [armingInProgress, setArmingInProgress] = useState(false);
@@ -61,7 +61,7 @@ export default function MPSControlSection() {
                         variant="outlined"
                         color="error"
                         onClick={() => {
-                            setModalState(true);
+                            setArmModalState(true);
                         }}
                     >
                         Arm Drone
@@ -121,52 +121,17 @@ export default function MPSControlSection() {
                     Prepare for Takeoff
                 </Button>
             </Box>
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "stretch",
-                    gap: 2,
-                }}
-            >
-                <TextField
-                    size="small"
-                    required
-                    id="rtlAltitude"
-                    type="number"
-                    label="RTL Altitude (ft)"
-                    onChange={(e) => {
-                        setRtlAltitude(parseFloat(e.target.value));
-                    }}
-                    value={rtlAltitude === 0 ? "" : rtlAltitude}
-                />
+            <Box>
                 <Button
+                    fullWidth
                     variant="contained"
                     color={preparingRtl ? "inherit" : "warning"}
                     disabled={preparingRtl}
                     onClick={() => {
-                        setPreparingRtl(true);
-                        returnToLaunch(rtlAltitude)
-                            .then((response) => {
-                                if (response.status === 200) {
-                                    dispatch(
-                                        openSnackbar({
-                                            message: "Return to launch initiated successfully",
-                                            severity: "success",
-                                        }),
-                                    );
-                                } else {
-                                    dispatch(
-                                        openSnackbar({
-                                            message: "Failed to initiate return to launch",
-                                        }),
-                                    );
-                                }
-                            })
-                            .finally(() => setPreparingRtl(false));
+                        setRtlModalState(true);
                     }}
                     endIcon={
-                        <Tooltip title="Sets the RTL altitude parameter. Switch drone to RTL mode to execute">
+                        <Tooltip title="Switches the drone to RTL mode using the current RTL_ALT parameter">
                             <InfoIcon fontSize="small" />
                         </Tooltip>
                     }
@@ -222,7 +187,7 @@ export default function MPSControlSection() {
                     </Box> */}
                 </Box>
             </Box>
-            <Modal open={modalState} onClose={() => setModalState(false)}>
+            <Modal open={armModalState} onClose={() => setArmModalState(false)}>
                 <Paper
                     elevation={2}
                     sx={{
@@ -241,7 +206,7 @@ export default function MPSControlSection() {
                         variant="contained"
                         color="error"
                         onClick={() => {
-                            setModalState(false);
+                            setArmModalState(false);
                             setArmingInProgress(true);
                             armDrone(true)
                                 .then((response) => {
@@ -261,6 +226,51 @@ export default function MPSControlSection() {
                                     }
                                 })
                                 .finally(() => setArmingInProgress(false));
+                        }}
+                    >
+                        Yes
+                    </Button>
+                </Paper>
+            </Modal>
+            <Modal open={rtlModalState} onClose={() => setRtlModalState(false)}>
+                <Paper
+                    elevation={2}
+                    sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        p: 4,
+                    }}
+                >
+                    <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
+                        Are you sure you want to return to launch?
+                    </Typography>
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        color="warning"
+                        onClick={() => {
+                            setRtlModalState(false);
+                            setPreparingRtl(true);
+                            returnToLaunch()
+                                .then((response) => {
+                                    if (response.status === 200) {
+                                        dispatch(
+                                            openSnackbar({
+                                                message: "Return to launch initiated successfully",
+                                                severity: "success",
+                                            }),
+                                        );
+                                    } else {
+                                        dispatch(
+                                            openSnackbar({
+                                                message: "Failed to initiate return to launch",
+                                            }),
+                                        );
+                                    }
+                                })
+                                .finally(() => setPreparingRtl(false));
                         }}
                     >
                         Yes

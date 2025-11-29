@@ -128,9 +128,7 @@ def land(request):
 @require_http_methods(["POST"])
 def post_rtl(request):
     try:
-        data = json.loads(request.body)
-        altitude = data.get("altitude")
-        response = DroneApiClient.post_rtl(altitude)
+        response = DroneApiClient.post_rtl()
         return HttpResponse(status=response.status_code)
     except (KeyError, ValueError, TypeError):
         return JsonResponse({"error": "Invalid input"}, status=400)
