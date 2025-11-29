@@ -5,6 +5,7 @@ import { armDrone, prepareTakeoffDrone, returnToLaunch } from "../../api/endpoin
 import { openSnackbar } from "../../store/slices/appSlice";
 import { selectAircraftStatus } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
+import DebugPanel from "./DebugPanel";
 
 export default function MPSControlSection() {
     const dispatch = useAppDispatch();
@@ -12,6 +13,7 @@ export default function MPSControlSection() {
     const [takeoffAltitude, setTakeoffAltitude] = useState(0);
     const [armModalState, setArmModalState] = useState(false);
     const [rtlModalState, setRtlModalState] = useState(false);
+    const [debugPanelOpen, setDebugPanelOpen] = useState(false);
     const [preparingTakeoff, setPreparingTakeoff] = useState(false);
     const [preparingRtl, setPreparingRtl] = useState(false);
     const [armingInProgress, setArmingInProgress] = useState(false);
@@ -137,6 +139,17 @@ export default function MPSControlSection() {
                     }
                 >
                     Return to Launch
+                </Button>
+            </Box>
+            <Box>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => {
+                        setDebugPanelOpen(true);
+                    }}
+                >
+                    Open Debug Panel
                 </Button>
             </Box>
             <Box
@@ -277,6 +290,7 @@ export default function MPSControlSection() {
                     </Button>
                 </Paper>
             </Modal>
+            <DebugPanel open={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
         </Box>
     );
 }
