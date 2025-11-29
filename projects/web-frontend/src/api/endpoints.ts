@@ -31,7 +31,6 @@ export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
 // not the ones stored in the backend which may or may not have been posted to the drone
 export const getCurrentMissionRaw = async (): Promise<object[]> => {
     const response = await api.get("/drone/queue");
-    console.log("Received waypoint queue from API", response.data);
     return response.data;
 };
 
