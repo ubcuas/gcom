@@ -21,6 +21,7 @@ const initialState: DataState = {
         speed: 100,
         heading: 90,
         voltage: 9,
+        armed: false,
     },
     availableRoutes: [],
     currentRouteId: null,

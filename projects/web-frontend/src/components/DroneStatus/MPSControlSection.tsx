@@ -3,14 +3,13 @@ import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
 import { armDrone, prepareTakeoffDrone } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
-import { useAppDispatch } from "../../store/store";
+import { selectAircraftStatus } from "../../store/slices/dataSlice";
+import { useAppDispatch, useAppSelector } from "../../store/store";
 
 export default function MPSControlSection() {
     const dispatch = useAppDispatch();
-    const [clientSideState, setClientSideState] = useState({
-        armed: false,
-        takeoffAltitude: 0,
-    });
+    const aircraftStatus = useAppSelector(selectAircraftStatus);
+    const [takeoffAltitude, setTakeoffAltitude] = useState(0);
     const [modalState, setModalState] = useState(false);
     const [preparingTakeoff, setPreparingTakeoff] = useState(false);
     const [armingInProgress, setArmingInProgress] = useState(false);
@@ -24,7 +23,7 @@ export default function MPSControlSection() {
             }}
         >
             <Box>
-                {clientSideState.armed ? (
+                {aircraftStatus.armed ? (
                     <Button
                         fullWidth
                         variant="outlined"
@@ -35,10 +34,6 @@ export default function MPSControlSection() {
                             armDrone(false)
                                 .then((response) => {
                                     if (response.status === 200) {
-                                        setClientSideState((prevState) => ({
-                                            ...prevState,
-                                            armed: false,
-                                        }));
                                         dispatch(
                                             openSnackbar({
                                                 message: "Drone disarmed successfully",
@@ -86,12 +81,9 @@ export default function MPSControlSection() {
                     type="number"
                     label="Take Off Altitude (ft)"
                     onChange={(e) => {
-                        setClientSideState((prevState) => ({
-                            ...prevState,
-                            takeoffAltitude: parseFloat(e.target.value),
-                        }));
+                        setTakeoffAltitude(parseFloat(e.target.value));
                     }}
-                    value={clientSideState.takeoffAltitude === 0 ? "" : clientSideState.takeoffAltitude}
+                    value={takeoffAltitude === 0 ? "" : takeoffAltitude}
                 />
                 <Button
                     variant="contained"
@@ -99,7 +91,7 @@ export default function MPSControlSection() {
                     disabled={preparingTakeoff}
                     onClick={() => {
                         setPreparingTakeoff(true);
-                        prepareTakeoffDrone(clientSideState.takeoffAltitude)
+                        prepareTakeoffDrone(takeoffAltitude)
                             .then((response) => {
                                 if (response.status === 200) {
                                     dispatch(
@@ -199,10 +191,6 @@ export default function MPSControlSection() {
                             armDrone(true)
                                 .then((response) => {
                                     if (response.status === 200) {
-                                        setClientSideState((prevState) => ({
-                                            ...prevState,
-                                            armed: true,
-                                        }));
                                         dispatch(
                                             openSnackbar({
                                                 message: "Drone armed successfully",
