@@ -1,7 +1,7 @@
 import { Box, Button, Modal, Paper, TextField, Tooltip, Typography } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
-import { armDrone, prepareTakeoffDrone, prepareRtlParams } from "../../api/endpoints.ts";
+import { prepareTakeoffDrone, prepareRtlParams } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
 import { selectAircraftStatus } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
@@ -24,7 +24,7 @@ export default function MPSControlSection() {
                 gap: 2,
             }}
         >
-            <Box>
+            {/* <Box>
                 {aircraftStatus.armed ? (
                     <Button
                         fullWidth
@@ -67,7 +67,7 @@ export default function MPSControlSection() {
                         Arm Drone
                     </Button>
                 )}
-            </Box>
+            </Box> */}
             <Box
                 sx={{
                     display: "flex",
@@ -187,7 +187,7 @@ export default function MPSControlSection() {
                 <Button variant="outlined" onClick={() => {}}>
                     Hide All Waypoints
                 </Button>
-                <Box
+                {/*<Box
                     sx={{
                         display: "flex",
                         gap: 2,
@@ -195,7 +195,7 @@ export default function MPSControlSection() {
                     }}
                 >
                     {/* Routes already get fetched on load, we don't have a situation where we need to refetch */}
-                    {/* <Button
+                {/* <Button
                         sx={{
                             flexGrow: 1,
                         }}
@@ -207,7 +207,7 @@ export default function MPSControlSection() {
                     >
                         Fetch MPS Data
                     </Button> */}
-                    {/* <Box
+                {/* <Box
                         sx={{
                             display: "flex",
                             alignItems: "center",
@@ -219,10 +219,10 @@ export default function MPSControlSection() {
                                 // Functionality to auto fetch the mps queue on an interval, not sure if needed so commented out for now.
                             }}
                         />
-                    </Box> */}
-                </Box>
+                    </Box>
+                </Box>*/}
             </Box>
-            <Modal open={modalState} onClose={() => setModalState(false)}>
+            {/*<Modal open={modalState} onClose={() => setModalState(false)}>
                 <Paper
                     elevation={2}
                     sx={{
@@ -266,7 +266,7 @@ export default function MPSControlSection() {
                         Yes
                     </Button>
                 </Paper>
-            </Modal>
+            </Modal>*/}
         </Box>
     );
 }
