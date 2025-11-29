@@ -72,22 +72,6 @@ class APIClient:
         response = requests.get(f"{self.web_backend_url}/api/drone/clear")
         return response
 
-    def takeoff(self, altitude: float) -> Response:
-        """Send takeoff command via web-backend.
-
-        Args:
-            altitude: Target altitude in meters
-
-        Returns:
-            Response object
-        """
-        response = requests.post(
-            f"{self.web_backend_url}/api/drone/takeoff",
-            json={"altitude": altitude},
-            headers={"Content-Type": "application/json"},
-        )
-        return response
-
     def prepare_takeoff(self, altitude: float) -> Response:
         """Prepare takeoff sequence via web-backend.
 

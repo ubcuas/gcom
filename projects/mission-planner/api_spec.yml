@@ -14,8 +14,6 @@ tags:
     description: Access to aircraft status
   - name: feature
     description: Access to competition-specific behaviour
-  - name: takeoff
-    description: Access to takeoff and arming motors
   - name: landing
     description: Access to landing, RTL, and home waypoint
   - name: options
@@ -112,29 +110,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Status"
-  /takeoff:
-    post:
-      tags:
-        - takeoff
-      summary: Lift off to a given altitude
-      description: >-
-        POST request containing an altitude to take off to.
-        Don't put an altitude that would be underground.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                altitude:
-                  type: number
-                  format: float64
-      responses:
-        "200":
-          description: Successful operation
-        "400":
-          description: Takeoff unsuccessful or motors disarmed
   /rtl:
     get:
       tags:
@@ -274,8 +249,6 @@ paths:
           description: Unrecognized mode
   /arm:
     put:
-      tags:
-        - takeoff
       summary: Arm or disarm the motors. Take care.
       description: >-
         Call this endpoint to arm or disarm the drone.

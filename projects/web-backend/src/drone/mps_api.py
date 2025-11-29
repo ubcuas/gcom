@@ -36,12 +36,6 @@ class DroneApiClient:
         return DroneApiClient._fetch_from_mission_planner("status/history")
 
     @staticmethod
-    def takeoff(altitude):
-        return DroneApiClient._fetch_from_mission_planner(
-            "takeoff", method="POST", data={"altitude": altitude}
-        )
-
-    @staticmethod
     def prepare_takeoff(altitude):
         return DroneApiClient._fetch_from_mission_planner(
             "prepare_takeoff", method="POST", data={"altitude": altitude}
