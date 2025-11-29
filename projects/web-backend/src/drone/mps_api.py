@@ -18,7 +18,9 @@ class DroneApiClient:
                 response = requests.put(url, headers=headers, data=json.dumps(data))
 
             if response.status_code >= 400:
-                print(f"[ERROR] Mission-planner {method} {endpoint} returned {response.status_code}")
+                print(
+                    f"[ERROR] Mission-planner {method} {endpoint} returned {response.status_code}"
+                )
                 print(f"[ERROR] Response body: {response.text}")
 
             return response

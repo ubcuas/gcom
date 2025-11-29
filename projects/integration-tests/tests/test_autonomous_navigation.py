@@ -16,6 +16,7 @@ from helpers import (
 
 @pytest.mark.slow
 @pytest.mark.critical
+@pytest.mark.timeout(240)
 def test_autonomous_navigation(api_client, flight_cleanup):
     """Test autonomous waypoint navigation with air start.
 
