@@ -2,7 +2,7 @@ import { Box, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableRo
 import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/store";
 import { selectAircraftStatus, selectCurrentRouteWaypoints } from "../../store/slices/dataSlice";
-import { getDroneParameter } from "../../api/endpoints";
+import { getDroneParameter, getFlightMode } from "../../api/endpoints";
 
 type DebugPanelProps = {
     open: boolean;
@@ -39,7 +39,7 @@ export default function DebugPanel({ open, onClose }: DebugPanelProps) {
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const waypoints = useAppSelector(selectCurrentRouteWaypoints);
 
-    const flightMode = "GUIDED";
+    const [flightMode, setFlightMode] = useState<string>("loading...");
 
     const [droneParams, setDroneParams] = useState<DroneParam[]>(
         DRONE_PARAM_NAMES.map((name) => ({ param: name, value: "loading..." })),
@@ -47,6 +47,10 @@ export default function DebugPanel({ open, onClose }: DebugPanelProps) {
 
     useEffect(() => {
         if (open) {
+            getFlightMode()
+                .then((result) => setFlightMode(result.mode))
+                .catch(() => setFlightMode("error"));
+
             DRONE_PARAM_NAMES.forEach(async (paramName) => {
                 try {
                     const result = await getDroneParameter(paramName);

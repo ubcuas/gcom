@@ -100,3 +100,8 @@ export const getDroneParameter = async (
     const response = await api.get(`/drone/parameters/${paramId}`);
     return response.data;
 };
+
+export const getFlightMode = async (): Promise<{ mode: string }> => {
+    const response = await api.get("/drone/flightmode");
+    return response.data;
+};
