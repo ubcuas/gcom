@@ -84,7 +84,6 @@ export default function DebugPanel({ open, onClose }: DebugPanelProps) {
                     transform: "translate(-50%, -50%)",
                     width: "90%",
                     maxWidth: "600px",
-                    maxHeight: "80vh",
                     overflow: "auto",
                     p: 3,
                 }}
