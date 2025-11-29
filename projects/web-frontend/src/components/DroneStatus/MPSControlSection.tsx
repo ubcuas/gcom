@@ -1,7 +1,7 @@
 import { Box, Button, Modal, Paper, TextField, Tooltip, Typography } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
-import { armDrone, prepareTakeoffDrone } from "../../api/endpoints.ts";
+import { armDrone, prepareTakeoffDrone, prepareRtlParams } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
 import { selectAircraftStatus } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
@@ -10,8 +10,10 @@ export default function MPSControlSection() {
     const dispatch = useAppDispatch();
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const [takeoffAltitude, setTakeoffAltitude] = useState(0);
+    const [rtlAltitude, setRtlAltitude] = useState(0);
     const [modalState, setModalState] = useState(false);
     const [preparingTakeoff, setPreparingTakeoff] = useState(false);
+    const [preparingRtl, setPreparingRtl] = useState(false);
     const [armingInProgress, setArmingInProgress] = useState(false);
 
     return (
@@ -117,6 +119,59 @@ export default function MPSControlSection() {
                     }
                 >
                     Prepare for Takeoff
+                </Button>
+            </Box>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "stretch",
+                    gap: 2,
+                }}
+            >
+                <TextField
+                    size="small"
+                    required
+                    id="rtlAltitude"
+                    type="number"
+                    label="RTL Altitude (ft)"
+                    onChange={(e) => {
+                        setRtlAltitude(parseFloat(e.target.value));
+                    }}
+                    value={rtlAltitude === 0 ? "" : rtlAltitude}
+                />
+                <Button
+                    variant="contained"
+                    color={preparingRtl ? "inherit" : "warning"}
+                    disabled={preparingRtl}
+                    onClick={() => {
+                        setPreparingRtl(true);
+                        prepareRtlParams(rtlAltitude)
+                            .then((response) => {
+                                if (response.status === 200) {
+                                    dispatch(
+                                        openSnackbar({
+                                            message: "RTL parameters prepared successfully",
+                                            severity: "success",
+                                        }),
+                                    );
+                                } else {
+                                    dispatch(
+                                        openSnackbar({
+                                            message: "Failed to prepare RTL parameters",
+                                        }),
+                                    );
+                                }
+                            })
+                            .finally(() => setPreparingRtl(false));
+                    }}
+                    endIcon={
+                        <Tooltip title="Sets the RTL altitude parameter. Switch drone to RTL mode to execute">
+                            <InfoIcon fontSize="small" />
+                        </Tooltip>
+                    }
+                >
+                    Prepare RTL
                 </Button>
             </Box>
             <Box
