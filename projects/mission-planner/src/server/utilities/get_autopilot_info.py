@@ -10,6 +10,7 @@ from connect_to_sysid import connect_to_sysid
 from pymavlink import mavutil
 from connect_to_sysid import connect_to_sysid
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 
 def get_autopilot_info(handler: MavlinkHandler, sysid=1):
@@ -92,4 +93,4 @@ if __name__ == "__main__":
 
     # Get autopilot information
     autopilot_info = get_autopilot_info(connection, args.sysid)
-    print(autopilot_info)
+    logger.info(autopilot_info)

@@ -8,6 +8,7 @@ utilities_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(utilities_path)
 from get_autopilot_info import get_autopilot_info
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 
 def get_enum_value_by_name(enum_dict, name):
@@ -57,7 +58,7 @@ def wait_until_position_aiding(handler: MavlinkHandler, timeout=120):
     while True:
         if ekf_pos_aiding(handler, flags, estimator_status_msg) or time.time() - time_start > timeout:
             break
-        print(f"Waiting for position aiding: {time.time() - time_start} seconds elapsed")
+        logger.debug(f"Waiting for position aiding: {time.time() - time_start} seconds elapsed")
 
     if time.time() - time_start > timeout:
         raise TimeoutError(f"Position aiding did not become available within {timeout} seconds")
@@ -80,7 +81,7 @@ def ekf_pos_aiding(handler: MavlinkHandler, flags, estimator_status_msg="ESTIMAT
     if not msg:
         raise ValueError(f"No message of type {estimator_status_msg} received within the timeout")
 
-    print(f"from sysid {msg.get_srcSystem()} {msg}")
+    logger.debug(f"from sysid {msg.get_srcSystem()} {msg}")
     ekf_flags = msg.flags
 
     for flag in flags:

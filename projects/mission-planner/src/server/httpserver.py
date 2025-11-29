@@ -20,6 +20,7 @@ from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.status import Status
 from server.common.encoders import command_string_to_int, command_int_to_string
 from server.services import StatusCache, MavlinkHandler
+from server.logging_config import logger
 
 
 class HTTP_Server:
@@ -32,7 +33,7 @@ class HTTP_Server:
 
     # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
     def serve_forever(self, production: bool, host: str, port: int):
-        print("GCOM HTTP Server starting...")
+        logger.info("GCOM HTTP Server starting...")
         app = Flask(__name__)
         socketio = SocketIO(app)
 
@@ -56,11 +57,11 @@ class HTTP_Server:
 
                 remaining = json.dumps(formatted[curr:])
 
-                print("Queue sent to GCOM")
+                logger.info("Queue sent to GCOM")
 
                 return remaining, 200
             except TimeoutError as e:
-                print(f"[ERROR] Failed to retrieve mission: {str(e)}")
+                logger.error(f"Failed to retrieve mission: {str(e)}")
                 return "Failed to retrieve mission from drone", 400
 
         @app.route("/queue", methods=["POST"])
@@ -165,7 +166,7 @@ class HTTP_Server:
                 else:
                     return "Failed to set new mission", 400
             except TimeoutError as e:
-                print(f"[ERROR] Failed to retrieve current mission: {str(e)}")
+                logger.error(f"Failed to retrieve current mission: {str(e)}")
                 return "Failed to retrieve current mission from drone", 400
 
         @app.route("/clear", methods=["GET"])
@@ -179,7 +180,7 @@ class HTTP_Server:
 
         @app.route("/status", methods=["GET"])
         def get_status_handler():
-            print("Status sent to GCOM")
+            logger.info("Status sent to GCOM")
             s = get_status(self.status_cache).as_dictionary()
             return s, 200
 
@@ -191,7 +192,7 @@ class HTTP_Server:
                 return "Altitude cannot be null", 400
 
             altitude = int(payload["altitude"])
-            print(f"Taking off to altitude {altitude}")
+            logger.info(f"Taking off to altitude {altitude}")
 
             try:
                 result = takeoff(self.handler, altitude)
@@ -200,19 +201,19 @@ class HTTP_Server:
                     return "Takeoff command successful", 200
 
                 # see https://mavlink.io/en/messages/common.html#MAV_RESULT for MAV_RESULT code interpretation
-                print(
-                    "[ERROR] Takeoff unsuccessful - MAVLink MAV_RESULT code: ", result
+                logger.error(
+                    f"Takeoff unsuccessful - MAVLink MAV_RESULT code: {result}"
                 )
                 return "Takeoff unsuccessful", 400
 
             except ValueError:
-                print("[ERROR] Takeoff failed - invalid params")
+                logger.error("Takeoff failed - invalid params")
                 return (
                     "Takeoff failed - autopilot not supported for this mavlink connection",
                     400,
                 )
             except Exception as e:
-                print(f"[ERROR] Takeoff failed - {type(e).__name__}: {str(e)}")
+                logger.error(f"Takeoff failed - {type(e).__name__}: {str(e)}")
                 return "Takeoff failed - unknown error", 500
 
         @app.route("/prepare_takeoff", methods=["POST"])
@@ -223,7 +224,7 @@ class HTTP_Server:
                 return "Altitude cannot be null", 400
 
             altitude = float(payload["altitude"])
-            print(f"Preparing takeoff sequence with waypoint at altitude {altitude}")
+            logger.info(f"Preparing takeoff sequence with waypoint at altitude {altitude}")
 
             try:
                 result = prepare_takeoff(self.handler, self.status_cache, altitude)
@@ -234,7 +235,7 @@ class HTTP_Server:
                     return "Failed to prepare takeoff sequence", 400
 
             except Exception as e:
-                print(f"[ERROR] Prepare takeoff failed - {type(e).__name__}: {str(e)}")
+                logger.error(f"Prepare takeoff failed - {type(e).__name__}: {str(e)}")
                 return "Prepare takeoff failed - unknown error", 500
 
         @app.route("/arm", methods=["PUT"])
@@ -244,7 +245,7 @@ class HTTP_Server:
             if input["arm"] in [1, 0]:
                 arm = bool(input["arm"])
 
-                print("ARMING drone" if arm else "DISARMING drone")
+                logger.info("ARMING drone" if arm else "DISARMING drone")
 
                 result = arm_disarm(self.handler, arm)
 
@@ -268,7 +269,7 @@ class HTTP_Server:
             else:
                 altitude = request.get_json().get("altitude", 50)
 
-            print(f"RTL at {altitude}")
+            logger.info(f"RTL at {altitude}")
 
             # set RTL altitude parameter
             alt_cm = altitude * 100
@@ -290,7 +291,7 @@ class HTTP_Server:
 
         @app.route("/land", methods=["GET"])
         def get_land():
-            print("Landing")
+            logger.info("Landing")
             if not change_flight_mode(
                 self.handler,
                 self.mav_connection.target_system,
@@ -437,4 +438,4 @@ class HTTP_Server:
 
     def shutdown(self):
         """Shutdown the HTTP server."""
-        print("HTTP Server shutdown")
+        logger.info("HTTP Server shutdown")

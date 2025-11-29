@@ -7,6 +7,7 @@ from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_int_to_string
 from server.services.status_cache import StatusCache
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 """
     Get current status of a drone
@@ -81,7 +82,7 @@ def get_current_mission(handler: MavlinkHandler) -> WaypointQueue:
     if not msg:
         raise TimeoutError('No MISSION_COUNT received within timeout period')
     if msg and msg.get_type() != "BAD_DATA":
-        print(f"Recieved {msg}")
+        logger.debug(f"Recieved {msg}")
 
     # use MISSION_REQUEST_INT for all mission items
     for current in range(msg.count):
@@ -94,9 +95,9 @@ def get_current_mission(handler: MavlinkHandler) -> WaypointQueue:
 
         # receive MISSION_ITEM_INT
         msg = handler.wait_for_message('MISSION_ITEM_INT', timeout=3.0)
-        print(f"Received MISSION_ITEM_INT: {msg}")
+        logger.debug(f"Received MISSION_ITEM_INT: {msg}")
         if msg and msg.get_type() != "BAD_DATA":
-            # print(f"Recieved the {current}th Mission Item: {msg}")
+            # logger.debug(f"Recieved the {current}th Mission Item: {msg}")
 
             ret.push(Waypoint(msg.seq, f"Mission Waypoint {msg.seq}" if msg.seq != 0 else "Home Waypoint",
                             msg.x / 10000000,
