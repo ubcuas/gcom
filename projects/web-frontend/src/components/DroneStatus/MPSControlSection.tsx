@@ -27,6 +27,18 @@ export default function MPSControlSection() {
             }}
         >
             <Box>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    color="info"
+                    onClick={() => {
+                        setDebugPanelOpen(true);
+                    }}
+                >
+                    Open Debug Panel
+                </Button>
+            </Box>
+            <Box>
                 {aircraftStatus.armed ? (
                     <Button
                         fullWidth
@@ -141,18 +153,6 @@ export default function MPSControlSection() {
                     Return to Launch
                 </Button>
             </Box>
-            <Box>
-                <Button
-                    fullWidth
-                    variant="outlined"
-                    color="warning"
-                    onClick={() => {
-                        setDebugPanelOpen(true);
-                    }}
-                >
-                    Open Debug Panel
-                </Button>
-            </Box>
             <Box
                 sx={{
                     display: "flex",
@@ -160,12 +160,6 @@ export default function MPSControlSection() {
                     gap: 1,
                 }}
             >
-                <Button variant="outlined" onClick={() => {}}>
-                    Show All Waypoints
-                </Button>
-                <Button variant="outlined" onClick={() => {}}>
-                    Hide All Waypoints
-                </Button>
                 <Box
                     sx={{
                         display: "flex",
