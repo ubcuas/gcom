@@ -219,19 +219,15 @@ def diversion(request):
 
 
 @csrf_exempt
-@require_http_methods(["GET", "PUT"])
+@require_http_methods(["PUT"])
 def flightmode(request):
-    if request.method == "GET":
-        response = DroneApiClient.get_flightmode()
-        return JsonResponse(response.json(), safe=False, status=response.status_code)
-    else:  # PUT
-        try:
-            data = json.loads(request.body)
-            mode = data.get("mode")
-            response = DroneApiClient.put_flightmode(mode)
-            return HttpResponse(status=response.status_code)
-        except (KeyError, ValueError, TypeError):
-            return JsonResponse({"error": "Invalid input"}, status=400)
+    try:
+        data = json.loads(request.body)
+        mode = data.get("mode")
+        response = DroneApiClient.put_flightmode(mode)
+        return HttpResponse(status=response.status_code)
+    except (KeyError, ValueError, TypeError):
+        return JsonResponse({"error": "Invalid input"}, status=400)
 
 
 @csrf_exempt

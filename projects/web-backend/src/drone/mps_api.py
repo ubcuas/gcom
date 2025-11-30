@@ -116,10 +116,6 @@ class DroneApiClient:
         )
 
     @staticmethod
-    def get_flightmode():
-        return DroneApiClient._fetch_from_mission_planner("flightmode")
-
-    @staticmethod
     def put_flightmode(mode):
         return DroneApiClient._fetch_from_mission_planner(
             "flightmode", method="PUT", data={"mode": mode}
