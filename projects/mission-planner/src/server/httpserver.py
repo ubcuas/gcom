@@ -282,18 +282,7 @@ class HTTP_Server:
 
         @app.route("/rtl", methods=["GET", "POST"])
         def get_post_rtl():
-            if request.method == "GET":
-                altitude = 50
-            else:
-                altitude = request.get_json().get("altitude", 50)
-
-            logger.info(f"RTL at {altitude}")
-
-            # set RTL altitude parameter
-            alt_cm = altitude * 100
-
-            if not set_parameter(self.handler, "RTL_ALT", alt_cm):
-                return "Failed to set RTL altitude parameter", 400
+            logger.info("RTL initiated")
 
             success = change_flight_mode(
                 self.handler,
