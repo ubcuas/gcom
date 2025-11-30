@@ -81,7 +81,7 @@ export default function MPSControlSection() {
                     required
                     id="takeoffAltitude"
                     type="number"
-                    label="Take Off Altitude (ft)"
+                    label="Take Off Altitude (m)"
                     onChange={(e) => {
                         setTakeoffAltitude(parseFloat(e.target.value));
                     }}
@@ -134,7 +134,7 @@ export default function MPSControlSection() {
                     required
                     id="rtlAltitude"
                     type="number"
-                    label="RTL Altitude (ft)"
+                    label="RTL Altitude (m)"
                     onChange={(e) => {
                         setRtlAltitude(parseFloat(e.target.value));
                     }}
