@@ -75,6 +75,7 @@ export default function StatusIndicators({ flightMode, armed, voltage }: StatusI
             <Typography
                 variant="body2"
                 color="text.secondary"
+                fontSize={14}
                 sx={{
                     mt: 1,
                 }}
