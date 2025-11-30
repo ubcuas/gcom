@@ -23,9 +23,10 @@ const getArmedColor = (armed: boolean) => {
 type StatusIndicatorsProps = {
     flightMode: string;
     armed: boolean;
+    voltage: number;
 };
 
-export default function StatusIndicators({ flightMode, armed }: StatusIndicatorsProps) {
+export default function StatusIndicators({ flightMode, armed, voltage }: StatusIndicatorsProps) {
     return (
         <Box>
             <Typography
@@ -71,6 +72,15 @@ export default function StatusIndicators({ flightMode, armed }: StatusIndicators
                     }
                 />
             </Box>
+            <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                    mt: 1,
+                }}
+            >
+                Battery: {voltage}V
+            </Typography>
         </Box>
     );
 }
