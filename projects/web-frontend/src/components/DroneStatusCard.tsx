@@ -11,9 +11,10 @@ import { AircraftStatus } from "../types/AircraftStatus";
 import { Paper } from "@mui/material";
 
 const roundValues = (
-    data: Omit<AircraftStatus, "verticalSpeed" | "speed" | "armed"> & {
+    data: Omit<AircraftStatus, "verticalSpeed" | "speed" | "voltage" | "armed"> & {
         vertical_velocity: number;
         velocity: number;
+        battery_voltage: number;
         armed: boolean;
     },
 ) => {
@@ -25,7 +26,7 @@ const roundValues = (
         verticalSpeed: Math.round(data.vertical_velocity * 100) / 100,
         speed: Math.round(data.velocity * 100) / 100,
         heading: Math.round(data.heading),
-        voltage: Math.round(data.voltage * 100) / 100,
+        voltage: Math.round((data.battery_voltage / 1000) * 100) / 100,
         armed: data.armed,
         flightmode: data.flightmode,
     } satisfies AircraftStatus;
