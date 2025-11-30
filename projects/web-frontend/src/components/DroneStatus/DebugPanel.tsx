@@ -2,7 +2,7 @@ import { Box, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableRo
 import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/store";
 import { selectAircraftStatus } from "../../store/slices/dataSlice";
-import { getDroneParameter, getFlightMode, getCurrentMissionRaw } from "../../api/endpoints";
+import { getDroneParameter, getCurrentMissionRaw } from "../../api/endpoints";
 import { Waypoint } from "../../types/Waypoint";
 
 type DebugPanelProps = {
@@ -39,19 +39,16 @@ const getArmedColor = (armed: boolean) => {
 export default function DebugPanel({ open, onClose }: DebugPanelProps) {
     const aircraftStatus = useAppSelector(selectAircraftStatus);
 
-    const [flightMode, setFlightMode] = useState<string>("loading...");
     const [waypointQueue, setWaypointQueue] = useState<object[] | string>("loading...");
 
     const [droneParams, setDroneParams] = useState<DroneParam[]>(
         DRONE_PARAM_NAMES.map((name) => ({ param: name, value: "loading..." })),
     );
 
+    const flightMode = aircraftStatus.flightmode || "UNKNOWN";
+
     useEffect(() => {
         if (open) {
-            getFlightMode()
-                .then((result) => setFlightMode(result.mode))
-                .catch(() => setFlightMode("error"));
-
             getCurrentMissionRaw()
                 .then((result) => setWaypointQueue(result))
                 .catch((e) => {

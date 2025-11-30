@@ -22,6 +22,7 @@ const initialState: DataState = {
         heading: 90,
         voltage: 9,
         armed: false,
+        flightmode: null,
     },
     availableRoutes: [],
     currentRouteId: null,

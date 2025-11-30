@@ -4,6 +4,8 @@ import PositionSection from "./DroneStatus/PositionSection";
 import SpeedSection from "./DroneStatus/SpeedSection";
 import TimeStamp from "./DroneStatus/TimeStamp";
 import MPSControlSection from "./DroneStatus/MPSControlSection";
+import BatterySection from "./DroneStatus/BatterySection";
+import StatusIndicators from "./DroneStatus/StatusIndicators";
 import { useEffect } from "react";
 import { socket } from "../api/socket";
 import { AircraftStatus } from "../types/AircraftStatus";
@@ -26,6 +28,7 @@ const roundValues = (
         heading: Math.round(data.heading),
         voltage: Math.round(data.voltage * 100) / 100,
         armed: data.armed,
+        flightmode: data.flightmode,
     } satisfies AircraftStatus;
 };
 
@@ -51,6 +54,7 @@ export default function DroneStatusCard() {
                 gap: 4,
             }}
         >
+            <StatusIndicators flightMode={droneState.flightmode || "UNKNOWN"} armed={droneState.armed} />
             <PositionSection
                 latitude={droneState.latitude}
                 longitude={droneState.longitude}
@@ -58,6 +62,7 @@ export default function DroneStatusCard() {
                 heading={droneState.heading}
             />
             <SpeedSection speed={droneState.speed} verticalSpeed={droneState.verticalSpeed} />
+            <BatterySection voltage={droneState.voltage} />
             <TimeStamp time={droneState.timestamp} />
             <MPSControlSection />
         </Paper>
