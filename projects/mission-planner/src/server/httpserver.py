@@ -371,9 +371,7 @@ class HTTP_Server:
         @app.route("/flightmode", methods=["GET", "PUT"])
         def flight_mode():
             if request.method == "GET":
-                flight_mode = self.status_cache.get_flight_mode(
-                    self.mav_connection.mode_mapping()
-                )
+                flight_mode = self.status_cache.get_flight_mode()
 
                 if flight_mode is not None:
                     return {"mode": flight_mode}, 200

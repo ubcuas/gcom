@@ -6,7 +6,8 @@ class Status():
                  roll = 0, pitch = 0, yaw = 0,
                  airspeed = 0, groundspeed = 0, verticalspeed = 0,
                  battery_voltage = 0,
-                 wind_direction = 0, wind_velocity = 0, armed = False):
+                 wind_direction = 0, wind_velocity = 0, armed = False,
+                 flight_mode = None):
 
         self._timestamp: float = timestamp
         self._wpn: int = waypoint_number
@@ -29,6 +30,7 @@ class Status():
         self._wvl: float = wind_velocity
 
         self._armed: bool = armed
+        self._flight_mode: str | None = flight_mode
     
     def encoded_status(self) -> bytes:
         return struct.pack('Qi12f?',
@@ -73,6 +75,7 @@ class Status():
             'winddirection' : self._wdr,
             'windvelocity'  : self._wvl,
             'armed'         : self._armed,
+            'flightmode'    : self._flight_mode,
         }
     
     def as_reduced_status(self) -> dict:
@@ -85,6 +88,7 @@ class Status():
             'velocity': self._gsp,
             'heading': self._yaw,
             'battery_voltage' : self._btv,
-            'armed' : self._armed
+            'armed' : self._armed,
+            'flightmode' : self._flight_mode
         }
     

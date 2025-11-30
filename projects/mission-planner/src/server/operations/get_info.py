@@ -49,6 +49,9 @@ def get_status(status_cache: StatusCache) -> Status:
     # Check if armed by checking MAV_MODE_FLAG_SAFETY_ARMED bit in base_mode
     armed = bool(heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
 
+    # Get flight mode
+    flight_mode = status_cache.get_flight_mode()
+
     return Status(
         system_time.time_unix_usec / 1000000, # seconds
 
@@ -70,7 +73,8 @@ def get_status(status_cache: StatusCache) -> Status:
 
         winddirection,
         windvelocity,
-        armed
+        armed,
+        flight_mode
     )
 
 def get_current_mission(handler: MavlinkHandler) -> WaypointQueue:
