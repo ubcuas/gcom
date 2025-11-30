@@ -38,7 +38,6 @@ export default function DroneStatusCard() {
 
     useEffect(() => {
         socket.on("drone_update", (data) => {
-            console.log(data);
             dispatch(updateAircraftStatus(roundValues(data)));
         });
         return () => {
