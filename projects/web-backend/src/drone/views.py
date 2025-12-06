@@ -52,14 +52,29 @@ def prepare_takeoff(request):
         altitude = data.get("altitude")
         response = DroneApiClient.prepare_takeoff(altitude)
 
+        # get current position from the drone
+        status = DroneApiClient.get_current_status().json()
+        takeoff_latitude = status.get("latitude")
+        takeoff_longitude = status.get("longitude")
+
         if response.status_code >= 400:
             print(f"[ERROR] Mission-planner response: {response.text}")
             return JsonResponse(
                 {"error": "Mission-planner error", "details": response.text},
                 status=response.status_code,
             )
-
-        return HttpResponse(status=response.status_code)
+       
+        # Return the takeoff waypoint data
+        return JsonResponse({
+            "status": "success",
+            "waypoint": {
+                "latitude": takeoff_latitude,
+                "longitude": takeoff_longitude,
+                "altitude": altitude,
+                "type": "takeoff"
+            }
+        }, status=200)
+        # return HttpResponse(status=response.status_code)
     except (KeyError, ValueError, TypeError) as e:
         print(f"[ERROR] Invalid input for prepare_takeoff: {type(e).__name__}: {str(e)}")
         return JsonResponse({"error": "Invalid input"}, status=400)
