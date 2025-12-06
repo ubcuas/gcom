@@ -224,7 +224,9 @@ class HTTP_Server:
                 return "Altitude cannot be null", 400
 
             altitude = float(payload["altitude"])
-            logger.info(f"Preparing takeoff sequence with waypoint at altitude {altitude}")
+            logger.info(
+                f"Preparing takeoff sequence with waypoint at altitude {altitude}"
+            )
 
             try:
                 result = prepare_takeoff(self.handler, self.status_cache, altitude)
@@ -280,20 +282,9 @@ class HTTP_Server:
 
             return "RTL parameters prepared successfully", 200
 
-        @app.route("/rtl", methods=["GET", "POST"])
-        def get_post_rtl():
-            if request.method == "GET":
-                altitude = 50
-            else:
-                altitude = request.get_json().get("altitude", 50)
-
-            logger.info(f"RTL at {altitude}")
-
-            # set RTL altitude parameter
-            alt_cm = altitude * 100
-
-            if not set_parameter(self.handler, "RTL_ALT", alt_cm):
-                return "Failed to set RTL altitude parameter", 400
+        @app.route("/rtl", methods=["POST"])
+        def post_rtl():
+            logger.info("RTL initiated")
 
             success = change_flight_mode(
                 self.handler,
