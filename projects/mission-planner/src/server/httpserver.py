@@ -282,8 +282,8 @@ class HTTP_Server:
 
             return "RTL parameters prepared successfully", 200
 
-        @app.route("/rtl", methods=["GET", "POST"])
-        def get_post_rtl():
+        @app.route("/rtl", methods=["POST"])
+        def post_rtl():
             logger.info("RTL initiated")
 
             success = change_flight_mode(

@@ -1,7 +1,7 @@
 import { Box, Button, Modal, Paper, TextField, Tooltip, Typography } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
-import { armDrone, prepareTakeoffDrone, returnToLaunch } from "../../api/endpoints.ts";
+import { prepareTakeoffDrone, returnToLaunch } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
 import { selectAircraftStatus } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
@@ -11,12 +11,10 @@ export default function MPSControlSection() {
     const dispatch = useAppDispatch();
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const [takeoffAltitude, setTakeoffAltitude] = useState(0);
-    const [armModalState, setArmModalState] = useState(false);
     const [rtlModalState, setRtlModalState] = useState(false);
     const [debugPanelOpen, setDebugPanelOpen] = useState(false);
     const [preparingTakeoff, setPreparingTakeoff] = useState(false);
     const [preparingRtl, setPreparingRtl] = useState(false);
-    const [armingInProgress, setArmingInProgress] = useState(false);
 
     return (
         <Box
@@ -38,50 +36,6 @@ export default function MPSControlSection() {
                     Open Debug Panel
                 </Button>
             </Box>
-            <Box>
-                {aircraftStatus.armed ? (
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        color={armingInProgress ? "inherit" : "success"}
-                        disabled={armingInProgress}
-                        onClick={() => {
-                            setArmingInProgress(true);
-                            armDrone(false)
-                                .then((response) => {
-                                    if (response.status === 200) {
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Drone disarmed successfully",
-                                                severity: "success",
-                                            }),
-                                        );
-                                    } else {
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Failed to disarm drone",
-                                            }),
-                                        );
-                                    }
-                                })
-                                .finally(() => setArmingInProgress(false));
-                        }}
-                    >
-                        Disarm Drone
-                    </Button>
-                ) : (
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        color="error"
-                        onClick={() => {
-                            setArmModalState(true);
-                        }}
-                    >
-                        Arm Drone
-                    </Button>
-                )}
-            </Box>
             <Box
                 sx={{
                     display: "flex",
@@ -95,7 +49,7 @@ export default function MPSControlSection() {
                     required
                     id="takeoffAltitude"
                     type="number"
-                    label="Take Off Altitude (ft)"
+                    label="Take Off Altitude (m)"
                     onChange={(e) => {
                         setTakeoffAltitude(parseFloat(e.target.value));
                     }}
@@ -192,100 +146,56 @@ export default function MPSControlSection() {
                                 // Functionality to auto fetch the mps queue on an interval, not sure if needed so commented out for now.
                             }}
                         />
-                    </Box> */}
+                    </Box>
+                </Box>*/}
                 </Box>
+                <Modal open={rtlModalState} onClose={() => setRtlModalState(false)}>
+                    <Paper
+                        elevation={2}
+                        sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            p: 4,
+                        }}
+                    >
+                        <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
+                            Are you sure you want to return to launch?
+                        </Typography>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            color="warning"
+                            onClick={() => {
+                                setRtlModalState(false);
+                                setPreparingRtl(true);
+                                returnToLaunch()
+                                    .then((response) => {
+                                        if (response.status === 200) {
+                                            dispatch(
+                                                openSnackbar({
+                                                    message: "Return to launch initiated successfully",
+                                                    severity: "success",
+                                                }),
+                                            );
+                                        } else {
+                                            dispatch(
+                                                openSnackbar({
+                                                    message: "Failed to initiate return to launch",
+                                                }),
+                                            );
+                                        }
+                                    })
+                                    .finally(() => setPreparingRtl(false));
+                            }}
+                        >
+                            Yes
+                        </Button>
+                    </Paper>
+                </Modal>
+                <DebugPanel open={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
             </Box>
-            <Modal open={armModalState} onClose={() => setArmModalState(false)}>
-                <Paper
-                    elevation={2}
-                    sx={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        p: 4,
-                    }}
-                >
-                    <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
-                        Are you sure you are ready to arm?
-                    </Typography>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        color="error"
-                        onClick={() => {
-                            setArmModalState(false);
-                            setArmingInProgress(true);
-                            armDrone(true)
-                                .then((response) => {
-                                    if (response.status === 200) {
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Drone armed successfully",
-                                                severity: "success",
-                                            }),
-                                        );
-                                    } else {
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Failed to arm drone",
-                                            }),
-                                        );
-                                    }
-                                })
-                                .finally(() => setArmingInProgress(false));
-                        }}
-                    >
-                        Yes
-                    </Button>
-                </Paper>
-            </Modal>
-            <Modal open={rtlModalState} onClose={() => setRtlModalState(false)}>
-                <Paper
-                    elevation={2}
-                    sx={{
-                        position: "absolute",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        p: 4,
-                    }}
-                >
-                    <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
-                        Are you sure you want to return to launch?
-                    </Typography>
-                    <Button
-                        fullWidth
-                        variant="contained"
-                        color="warning"
-                        onClick={() => {
-                            setRtlModalState(false);
-                            setPreparingRtl(true);
-                            returnToLaunch()
-                                .then((response) => {
-                                    if (response.status === 200) {
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Return to launch initiated successfully",
-                                                severity: "success",
-                                            }),
-                                        );
-                                    } else {
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Failed to initiate return to launch",
-                                            }),
-                                        );
-                                    }
-                                })
-                                .finally(() => setPreparingRtl(false));
-                        }}
-                    >
-                        Yes
-                    </Button>
-                </Paper>
-            </Modal>
-            <DebugPanel open={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
         </Box>
     );
 }
