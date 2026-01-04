@@ -391,7 +391,7 @@ class HTTP_Server:
 
                 if result is None:
                     logger.error(f"Failed to get parameter {param_id}")
-                    return f"Parameter {param_id} not found or request timed out", 404
+                    return f"Parameter {param_id} not found or request timed out", 500
 
                 logger.info(f"Retrieved parameter {param_id}: {result['param_value']}")
                 return result, 200
