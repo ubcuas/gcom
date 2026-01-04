@@ -418,7 +418,7 @@ class HTTP_Server:
                     return f"Parameter {param_id} set to {param_value}", 200
                 else:
                     logger.error(f"Failed to set parameter {param_id}")
-                    return f"Failed to set parameter {param_id}", 400
+                    return f"Failed to set parameter {param_id}", 500
             except Exception as e:
                 logger.error(
                     f"Error setting parameter {param_id}: {type(e).__name__}: {str(e)}"
