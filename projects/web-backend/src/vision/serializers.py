@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from .models import GroundObject
-from .models import Image
+from .models import GroundObject, Image
 
 
 class ImageSerializer(serializers.ModelSerializer):

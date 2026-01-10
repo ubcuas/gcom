@@ -1,16 +1,15 @@
-from pymavlink import mavutil
-import time
 import argparse
 import os
 import sys
+
+from pymavlink import mavutil
+
 utilities_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(utilities_path)
 from connect_to_sysid import connect_to_sysid
 
-from pymavlink import mavutil
-from connect_to_sysid import connect_to_sysid
-from server.services.mavlink_handler import MavlinkHandler
 from server.logging_config import logger
+from server.services.mavlink_handler import MavlinkHandler
 
 
 def get_autopilot_info(handler: MavlinkHandler, sysid=1):
@@ -35,9 +34,17 @@ def get_autopilot_info(handler: MavlinkHandler, sysid=1):
         return autopilot_info
 
     # Get autopilot type and MAV type from message and add to autopilot_info
-    autopilot = mavutil.mavlink.enums['MAV_AUTOPILOT'][msg.autopilot].name.replace("MAV_AUTOPILOT_", "").lower()
+    autopilot = (
+        mavutil.mavlink.enums["MAV_AUTOPILOT"][msg.autopilot]
+        .name.replace("MAV_AUTOPILOT_", "")
+        .lower()
+    )
     autopilot_info["autopilot"] = autopilot
-    autopilot_info["type"] = mavutil.mavlink.enums['MAV_TYPE'][msg.type].name.replace("MAV_TYPE_", "").lower()
+    autopilot_info["type"] = (
+        mavutil.mavlink.enums["MAV_TYPE"][msg.type]
+        .name.replace("MAV_TYPE_", "")
+        .lower()
+    )
 
     # If autopilot type is ArduPilot Mega, request autopilot version and add to autopilot_info. I don't think this is implemented for PX4.
     if autopilot_info["autopilot"] == "ardupilotmega":
@@ -47,6 +54,7 @@ def get_autopilot_info(handler: MavlinkHandler, sysid=1):
 
     # Return the autopilot information
     return autopilot_info
+
 
 def wait_for_heartbeat(handler: MavlinkHandler, sysid, timeout=3):
     """
@@ -61,17 +69,19 @@ def wait_for_heartbeat(handler: MavlinkHandler, sysid, timeout=3):
     The HEARTBEAT message or None if timeout is reached
     """
     msg = handler.wait_for_message(
-        'HEARTBEAT',
-        timeout=timeout,
-        filter_func=lambda m: m.get_srcSystem() == sysid
+        "HEARTBEAT", timeout=timeout, filter_func=lambda m: m.get_srcSystem() == sysid
     )
     return msg
 
+
 def request_autopilot_version(handler: MavlinkHandler):
     """Request and return an AUTOPILOT_VERSION message from a mavlink connection"""
-    handler.mav.send(mavutil.mavlink.MAVLink_autopilot_version_request_message(
-        handler.target_system, handler.target_component))
-    return handler.wait_for_message('AUTOPILOT_VERSION', timeout=3.0)
+    handler.mav.send(
+        mavutil.mavlink.MAVLink_autopilot_version_request_message(
+            handler.target_system, handler.target_component
+        )
+    )
+    return handler.wait_for_message("AUTOPILOT_VERSION", timeout=3.0)
 
 
 def get_fc_version_from_msg(msg):
@@ -81,11 +91,24 @@ def get_fc_version_from_msg(msg):
     rev = str(msg.flight_sw_version >> 8 & 0xFF)
     return f"{major}.{sub}.{rev}"
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Get autopilot info')
-    parser.add_argument('--sysid', type=int, default=1, help='System ID to search for (default: 1)')
-    parser.add_argument('--timeout', type=int, default=120, help='Maximum wait time for position aiding (default: 120 seconds)')
-    parser.add_argument('--connection_str', type=str, default='udpin:localhost:14551', help='Connection string (default: udpin:localhost:14551)')
+    parser = argparse.ArgumentParser(description="Get autopilot info")
+    parser.add_argument(
+        "--sysid", type=int, default=1, help="System ID to search for (default: 1)"
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        help="Maximum wait time for position aiding (default: 120 seconds)",
+    )
+    parser.add_argument(
+        "--connection_str",
+        type=str,
+        default="udpin:localhost:14551",
+        help="Connection string (default: udpin:localhost:14551)",
+    )
     args = parser.parse_args()
 
     # Connect to specified sysid

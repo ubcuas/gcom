@@ -1,25 +1,26 @@
-import sys
-import signal
-from threading import Thread, Event
+from threading import Event, Thread
 
-from server.utilities.connect_to_sysid import connect_to_sysid
 from server.httpserver import HTTP_Server
-from server.status_wsclient import Status_Client
-from server.services import StatusCache, MavlinkHandler
 from server.logging_config import logger
+from server.services import MavlinkHandler, StatusCache
+from server.status_wsclient import Status_Client
+from server.utilities.connect_to_sysid import connect_to_sysid
 
 stop_event = Event()
+
 
 def run_http_server(http_server, production, host, port):
     http_server.serve_forever(production, host, port)
 
+
 def run_status_client(ws_client, production, host, port):
     while not stop_event.is_set():
         ws_client.connect_to(production, host, port)
-    
+
     # for some reason, only after hitting keyboard interrupt ctrl-c THREE times to interupt sio
     # not a clean disconnect, not calling this code for some reason
     ws_client.stop()
+
 
 # def signal_handler(sig, frame):
 #     print("Caught Ctrl+C, shutting down...")
@@ -31,12 +32,12 @@ if __name__ == "__main__":
     HOST, PORT = "localhost", 9000
     STATUS_HOST, STATUS_PORT = "localhost", 8000
     DISABLE_STATUS = False
-    MAVLINK_CONNECTION_STRING = 'udpin:localhost:14551'
+    MAVLINK_CONNECTION_STRING = "udpin:localhost:14551"
 
     mav_connection = connect_to_sysid(MAVLINK_CONNECTION_STRING, 1)
-    if mav_connection == None:
+    if mav_connection is None:
         # Often this can be fixed by restarting mavproxy
-        raise ConnectionError(f"MAV connection failed. Is mavproxy running?")
+        raise ConnectionError("MAV connection failed. Is mavproxy running?")
     else:
         logger.info("MAV connection successful")
 
@@ -54,13 +55,18 @@ if __name__ == "__main__":
     ws_client = Status_Client(status_cache) if not DISABLE_STATUS else None
 
     # Start HTTP server thread
-    http_thread = Thread(target=run_http_server, args=(http_server, production, HOST, PORT))
+    http_thread = Thread(
+        target=run_http_server, args=(http_server, production, HOST, PORT)
+    )
     http_thread.start()
 
     # Start status websocket client thread if enabled
     status_thread = None
     if not DISABLE_STATUS:
-        status_thread = Thread(target=run_status_client, args=(ws_client, production, STATUS_HOST, STATUS_PORT))
+        status_thread = Thread(
+            target=run_status_client,
+            args=(ws_client, production, STATUS_HOST, STATUS_PORT),
+        )
         status_thread.start()
 
     try:

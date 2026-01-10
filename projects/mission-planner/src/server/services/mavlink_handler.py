@@ -1,12 +1,13 @@
-import threading
 import queue
+import threading
 import time
-from typing import Optional, Callable, List, Any, Dict
 from collections import defaultdict
+from typing import Any, Callable, Dict, List, Optional
 
 from pymavlink import mavutil
-from server.services.status_cache import StatusCache
+
 from server.logging_config import logger
+from server.services.status_cache import StatusCache
 
 
 class MavlinkHandler:

@@ -5,8 +5,9 @@ and mission-planner APIs. All integration tests should go through web-backend
 to test the full stack.
 """
 
+from typing import Any
+
 import requests
-from typing import List, Dict, Optional, Any
 from requests import Response
 
 
@@ -27,7 +28,7 @@ class APIClient:
     # These are the primary methods for integration tests - they hit web-backend
     # which then forwards to mission-planner, testing the full integration.
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get current drone status via web-backend.
 
         Returns:
@@ -37,7 +38,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
-    def get_queue(self) -> List[Dict[str, Any]]:
+    def get_queue(self) -> list[dict[str, Any]]:
         """Get current waypoint queue via web-backend.
 
         Returns:
@@ -47,7 +48,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
-    def post_queue(self, waypoints: List[Dict[str, Any]]) -> Response:
+    def post_queue(self, waypoints: list[dict[str, Any]]) -> Response:
         """Upload waypoint queue via web-backend.
 
         Args:
@@ -117,7 +118,7 @@ class APIClient:
         response = requests.get(f"{self.web_backend_url}/api/drone/land")
         return response
 
-    def rtl(self, altitude: Optional[float] = None) -> Response:
+    def rtl(self, altitude: float | None = None) -> Response:
         """Send return-to-launch command via web-backend.
 
         Args:
@@ -155,7 +156,7 @@ class APIClient:
         )
         return response
 
-    def post_home(self, waypoint: Dict[str, Any]) -> Response:
+    def post_home(self, waypoint: dict[str, Any]) -> Response:
         """Set home position via web-backend.
 
         Args:
@@ -171,7 +172,7 @@ class APIClient:
         )
         return response
 
-    def insert_waypoints(self, waypoints: List[Dict[str, Any]]) -> Response:
+    def insert_waypoints(self, waypoints: list[dict[str, Any]]) -> Response:
         """Insert waypoints before current position via web-backend.
 
         Args:
@@ -217,7 +218,7 @@ class APIClient:
     # These methods interact with the web-backend's database for mission planning.
     # Waypoints stored here are for planning and can be loaded to the drone later.
 
-    def create_waypoint(self, waypoint_data: Dict[str, Any]) -> Response:
+    def create_waypoint(self, waypoint_data: dict[str, Any]) -> Response:
         """Create a waypoint in the database.
 
         Args:
@@ -233,7 +234,7 @@ class APIClient:
         )
         return response
 
-    def list_waypoints(self) -> List[Dict[str, Any]]:
+    def list_waypoints(self) -> list[dict[str, Any]]:
         """List all waypoints from the database.
 
         Returns:
@@ -243,7 +244,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
-    def get_waypoint(self, waypoint_id: str) -> Dict[str, Any]:
+    def get_waypoint(self, waypoint_id: str) -> dict[str, Any]:
         """Get a specific waypoint from the database by ID.
 
         Args:
@@ -256,7 +257,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
-    def update_waypoint(self, waypoint_id: str, data: Dict[str, Any]) -> Response:
+    def update_waypoint(self, waypoint_id: str, data: dict[str, Any]) -> Response:
         """Update a waypoint in the database (full update).
 
         Args:
@@ -274,7 +275,7 @@ class APIClient:
         return response
 
     def partial_update_waypoint(
-        self, waypoint_id: str, data: Dict[str, Any]
+        self, waypoint_id: str, data: dict[str, Any]
     ) -> Response:
         """Partially update a waypoint in the database.
 
@@ -308,7 +309,7 @@ class APIClient:
 
     # ==================== Database Route API Methods ====================
 
-    def create_route(self, route_data: Dict[str, Any]) -> Response:
+    def create_route(self, route_data: dict[str, Any]) -> Response:
         """Create a route in the database.
 
         Args:
@@ -324,7 +325,7 @@ class APIClient:
         )
         return response
 
-    def list_routes(self) -> List[Dict[str, Any]]:
+    def list_routes(self) -> list[dict[str, Any]]:
         """List all routes from the database.
 
         Returns:
@@ -334,7 +335,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
-    def get_route(self, route_id: int) -> Dict[str, Any]:
+    def get_route(self, route_id: int) -> dict[str, Any]:
         """Get a specific route from the database by ID.
 
         Args:
@@ -360,7 +361,7 @@ class APIClient:
         return response
 
     def reorder_route_waypoints(
-        self, route_id: int, waypoint_ids: List[str]
+        self, route_id: int, waypoint_ids: list[str]
     ) -> Response:
         """Reorder waypoints within a route.
 
@@ -403,7 +404,7 @@ class APIClient:
         )
         return response
 
-    def get_mission_planner_queue(self) -> List[Dict[str, Any]]:
+    def get_mission_planner_queue(self) -> list[dict[str, Any]]:
         """Get queue directly from mission-planner (for verification).
 
         Returns:
@@ -413,7 +414,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
-    def get_mission_planner_status(self) -> Dict[str, Any]:
+    def get_mission_planner_status(self) -> dict[str, Any]:
         """Get status directly from mission-planner (for verification).
 
         Returns:

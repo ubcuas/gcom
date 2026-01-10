@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Dict, Tuple, Optional, Any
+from typing import Any, Dict, Optional, Tuple
 
 
 class StatusCache:

@@ -1,8 +1,9 @@
-from unittest.mock import MagicMock, patch
-from django.test import TestCase, Client
-from django.urls import reverse
-import os
 import json
+import os
+from unittest.mock import MagicMock, patch
+
+from django.test import Client, TestCase
+from django.urls import reverse
 
 
 class MapTilesViewsTest(TestCase):
@@ -18,7 +19,7 @@ class MapTilesViewsTest(TestCase):
         data = response.json()
 
         metadata_path = os.path.join(self.base_dir, "metadata.json")
-        with open(metadata_path, "r") as f:
+        with open(metadata_path) as f:
             expected_metadata = json.load(f)
 
         expected_metadata["tiles"] = [
@@ -36,7 +37,7 @@ class MapTilesViewsTest(TestCase):
 
         # Load the expected osmbright.json
         style_json_path = os.path.join(self.base_dir, "osmbright.json")
-        with open(style_json_path, "r") as f:
+        with open(style_json_path) as f:
             expected_style = json.load(f)
 
         # Modify the expected style JSON as per the view logic

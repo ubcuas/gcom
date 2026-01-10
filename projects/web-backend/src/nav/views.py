@@ -1,9 +1,9 @@
-from rest_framework import viewsets
-from .models import Route, OrderedWaypoint
-from .serializers import RouteSerializer, OrderedWaypointSerializer
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
+
+from .models import OrderedWaypoint, Route
+from .serializers import OrderedWaypointSerializer, RouteSerializer
 
 
 # Create your views here.
