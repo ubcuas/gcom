@@ -5,7 +5,9 @@ These utilities help tests wait for conditions to be met with proper timeouts.
 """
 
 import time
-from typing import Callable, Any, Optional
+from collections.abc import Callable
+from typing import Any
+
 from .api_client import APIClient
 
 
@@ -135,7 +137,7 @@ def wait_for_status_field(
     field_name: str,
     expected_value: Any,
     timeout: float = 30.0,
-    tolerance: Optional[float] = None,
+    tolerance: float | None = None,
 ) -> None:
     """Wait for a specific status field to reach expected value.
 

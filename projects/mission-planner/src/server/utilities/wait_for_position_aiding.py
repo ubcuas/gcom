@@ -1,14 +1,16 @@
-import time
-import sys
 import os
+import sys
+import time
+
 from pymavlink import mavutil
 
 # add this folder to the path
 utilities_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(utilities_path)
 from get_autopilot_info import get_autopilot_info
-from server.services.mavlink_handler import MavlinkHandler
+
 from server.logging_config import logger
+from server.services.mavlink_handler import MavlinkHandler
 
 
 def get_enum_value_by_name(enum_dict, name):
@@ -56,16 +58,24 @@ def wait_until_position_aiding(handler: MavlinkHandler, timeout=120):
     flags = ["EKF_PRED_POS_HORIZ_REL", "EKF_PRED_POS_HORIZ_REL"]
     time_start = time.time()
     while True:
-        if ekf_pos_aiding(handler, flags, estimator_status_msg) or time.time() - time_start > timeout:
+        if (
+            ekf_pos_aiding(handler, flags, estimator_status_msg)
+            or time.time() - time_start > timeout
+        ):
             break
-        logger.debug(f"Waiting for position aiding: {time.time() - time_start} seconds elapsed")
+        logger.debug(
+            f"Waiting for position aiding: {time.time() - time_start} seconds elapsed"
+        )
 
     if time.time() - time_start > timeout:
-        raise TimeoutError(f"Position aiding did not become available within {timeout} seconds")
+        raise TimeoutError(
+            f"Position aiding did not become available within {timeout} seconds"
+        )
 
 
-
-def ekf_pos_aiding(handler: MavlinkHandler, flags, estimator_status_msg="ESTIMATOR_STATUS"):
+def ekf_pos_aiding(
+    handler: MavlinkHandler, flags, estimator_status_msg="ESTIMATOR_STATUS"
+):
     """
     Check the EKF position aiding status of a MAVLink connection.
 
@@ -79,13 +89,17 @@ def ekf_pos_aiding(handler: MavlinkHandler, flags, estimator_status_msg="ESTIMAT
     """
     msg = handler.wait_for_message(estimator_status_msg, timeout=3.0)
     if not msg:
-        raise ValueError(f"No message of type {estimator_status_msg} received within the timeout")
+        raise ValueError(
+            f"No message of type {estimator_status_msg} received within the timeout"
+        )
 
     logger.debug(f"from sysid {msg.get_srcSystem()} {msg}")
     ekf_flags = msg.flags
 
     for flag in flags:
-        flag_val = get_enum_value_by_name(mavutil.mavlink.enums["EKF_STATUS_FLAGS"], flag)
+        flag_val = get_enum_value_by_name(
+            mavutil.mavlink.enums["EKF_STATUS_FLAGS"], flag
+        )
         if not ekf_flags & flag_val:
             return False
 

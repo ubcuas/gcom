@@ -1,7 +1,9 @@
-from django.test import TestCase
-from .serializers import AreaOfInterestSerializer
-from rest_framework.test import APITestCase
 import json
+
+from django.test import TestCase
+from rest_framework.test import APITestCase
+
+from .serializers import AreaOfInterestSerializer
 
 
 class AreaOfInterestValidationTest(TestCase):
@@ -9,7 +11,6 @@ class AreaOfInterestValidationTest(TestCase):
         pass
 
     def test_expected(self):
-
         # test for proper input
         test_object = {
             "area_of_interest": [
@@ -36,7 +37,6 @@ class AreaOfInterestValidationTest(TestCase):
         self.assertEqual(valid_ser.is_valid(), True)
 
     def test_missing_attribute(self):
-
         # test for missing area_of_interest
         test_object = {}
         valid_ser = AreaOfInterestSerializer(data=test_object)
