@@ -80,11 +80,16 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
 
     const createNewWaypoint = (event: MapLayerMouseEvent) => {
         if (event.originalEvent.detail !== 2) return;
+
+        const unnamedCount = clientWPQueue.filter((wp) => wp.name?.startsWith("Unnamed Waypoint")).length;
+        const newName = `Unnamed Waypoint ${unnamedCount + 1}`;
+
         dispatch(
             addWaypointToCurrentRoute({
                 id: "-1",
                 latitude: roundTo(event.lngLat.lat, 7),
                 longitude: roundTo(event.lngLat.lng, 7),
+                name: newName,
             }),
         );
         dispatch(saveCurrentRouteToBackend());
