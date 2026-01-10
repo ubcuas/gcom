@@ -1,21 +1,22 @@
 // Honestly its just easier to have this in a separate file rather than having it be in with MapView.tsx
 
-import { Place } from "@mui/icons-material";
-import { Fragment, useState } from "react";
-import { Layer, LayerProps, Map, MapLayerMouseEvent, Marker, Source } from "react-map-gl/maplibre";
+import { CropFree, Flight, MyLocation, Place } from "@mui/icons-material";
+import { Box, IconButton, Tooltip } from "@mui/material";
+import { Fragment, useRef, useState } from "react";
+import { Layer, LayerProps, Map, MapRef, MapLayerMouseEvent, Marker, Source } from "react-map-gl/maplibre";
 import { selectMapCenterCoords } from "../../store/slices/appSlice";
 import {
     addWaypointToCurrentRoute,
     editWaypointInCurrentRoute,
+    selectAircraftStatus,
     selectCurrentRouteWaypoints,
 } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
 import { roundTo } from "../../utils/routeTo";
-import { Box } from "@mui/material";
-import { WaypointEditState } from "../../types/Waypoint";
 import { MAPTILER_API_KEY } from "../../constants";
 import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
+import { WaypointEditState } from "../../types/Waypoint";
 
 type DraggedMarker = {
     long: number;
@@ -32,9 +33,37 @@ type CreationMapProps = {
 export default function WaypointCreationMap({ handleDelete, handleEdit, editState }: CreationMapProps) {
     const coords = useAppSelector(selectMapCenterCoords);
     const clientWPQueue = useAppSelector(selectCurrentRouteWaypoints);
+    const aircraftStatus = useAppSelector(selectAircraftStatus);
     const dispatch = useAppDispatch();
+    const mapRef = useRef<MapRef>(null);
     const [selectedWaypoints, setSelectedWaypoints] = useState<boolean[]>(clientWPQueue.map(() => false));
     const [draggedMarkerData, setDraggedMarkerData] = useState<DraggedMarker | null>(null);
+
+    const fitToWaypoints = () => {
+        if (clientWPQueue.length === 0) return;
+        const longitudes = clientWPQueue.map((wp) => wp.longitude);
+        const latitudes = clientWPQueue.map((wp) => wp.latitude);
+        const minLng = Math.min(...longitudes);
+        const maxLng = Math.max(...longitudes);
+        const minLat = Math.min(...latitudes);
+        const maxLat = Math.max(...latitudes);
+
+        mapRef.current?.fitBounds(
+            [
+                [minLng, minLat],
+                [maxLng, maxLat],
+            ],
+            { padding: 100, duration: 1000 },
+        );
+    };
+
+    const centerOnDrone = () => {
+        mapRef.current?.flyTo({
+            center: [aircraftStatus.longitude, aircraftStatus.latitude],
+            zoom: 16,
+            duration: 1000,
+        });
+    };
 
     const routeData: GeoJSON.GeoJSON = {
         type: "LineString",
@@ -72,6 +101,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
 
     return (
         <Map
+            ref={mapRef}
             initialViewState={{
                 longitude: coords.long,
                 latitude: coords.lat,
@@ -88,6 +118,44 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                 minHeight: "500px",
             }}
         >
+            <Box
+                sx={{
+                    position: "absolute",
+                    top: 10,
+                    right: 10,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                    zIndex: 1,
+                }}
+            >
+                <Tooltip title="Center on Drone">
+                    <IconButton
+                        onClick={centerOnDrone}
+                        sx={{ bgcolor: "background.paper", "&:hover": { bgcolor: "background.paper" } }}
+                    >
+                        <MyLocation />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Fit to Waypoints">
+                    <IconButton
+                        onClick={fitToWaypoints}
+                        sx={{ bgcolor: "background.paper", "&:hover": { bgcolor: "background.paper" } }}
+                    >
+                        <CropFree />
+                    </IconButton>
+                </Tooltip>
+            </Box>
+            <Marker latitude={aircraftStatus.latitude} longitude={aircraftStatus.longitude}>
+                <Flight
+                    sx={{
+                        color: "primary.main",
+                        rotate: `${aircraftStatus.heading}deg`,
+                        fontSize: "48px",
+                        filter: "drop-shadow(0px 0px 2px white)",
+                    }}
+                />
+            </Marker>
             {clientWPQueue.map((waypoint, i) => {
                 return (
                     <Fragment key={i}>
@@ -139,6 +207,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                                     position: "absolute",
                                     top: "-46px",
                                     left: "-24px",
+                                    filter: "drop-shadow(0px 0px 2px white)",
                                 }}
                             />
                             <Box

@@ -1,7 +1,7 @@
-import { Flight, Place } from "@mui/icons-material";
-import { Box } from "@mui/material";
-import { Fragment, useEffect } from "react";
-import Map, { Layer, LayerProps, Marker, Source } from "react-map-gl/maplibre";
+import { CropFree, Flight, MyLocation, Place } from "@mui/icons-material";
+import { Box, IconButton, Tooltip } from "@mui/material";
+import { Fragment, useEffect, useRef } from "react";
+import Map, { Layer, LayerProps, MapRef, Marker, Source } from "react-map-gl/maplibre";
 import {
     initializeMpsWaypointMapState,
     selectMapCenterCoords,
@@ -19,10 +19,37 @@ export default function MapView() {
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const coords = useAppSelector(selectMapCenterCoords);
     const dispatch = useAppDispatch();
+    const mapRef = useRef<MapRef>(null);
 
     useEffect(() => {
         dispatch(initializeMpsWaypointMapState(mpsWaypoints.length));
     }, []);
+
+    const fitToWaypoints = () => {
+        if (mpsWaypoints.length === 0) return;
+        const longitudes = mpsWaypoints.map((wp) => wp.longitude);
+        const latitudes = mpsWaypoints.map((wp) => wp.latitude);
+        const minLng = Math.min(...longitudes);
+        const maxLng = Math.max(...longitudes);
+        const minLat = Math.min(...latitudes);
+        const maxLat = Math.max(...latitudes);
+
+        mapRef.current?.fitBounds(
+            [
+                [minLng, minLat],
+                [maxLng, maxLat],
+            ],
+            { padding: 100, duration: 1000 },
+        );
+    };
+
+    const centerOnDrone = () => {
+        mapRef.current?.flyTo({
+            center: [aircraftStatus.longitude, aircraftStatus.latitude],
+            zoom: 16,
+            duration: 1000,
+        });
+    };
 
     const routeData: GeoJSON.GeoJSON = {
         type: "LineString",
@@ -45,6 +72,7 @@ export default function MapView() {
             }}
         >
             <Map
+                ref={mapRef}
                 initialViewState={{
                     longitude: coords.long,
                     latitude: coords.lat,
@@ -57,64 +85,96 @@ export default function MapView() {
                 }
                 doubleClickZoom={false}
             >
-                {mpsWaypoints.map((waypoint, i) => (
-                    <Fragment key={i}>
-                        <Marker
-                            latitude={waypoint.latitude}
-                            longitude={waypoint.longitude}
-                            onClick={() => dispatch(toggleMpsWaypointMapState(i))}
-                            style={{
-                                cursor: "pointer",
-                            }}
+                <Box
+                    sx={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        zIndex: 1,
+                    }}
+                >
+                    <Tooltip title="Center on Drone">
+                        <IconButton
+                            onClick={centerOnDrone}
+                            sx={{ bgcolor: "background.paper", "&:hover": { bgcolor: "background.paper" } }}
                         >
-                            <Place
-                                sx={{
-                                    color: "#ee4455",
-                                    fontSize: "48px",
-                                    position: "absolute",
-                                    top: "-46px",
-                                    left: "-24px",
-                                }}
-                            />
-                            <Box
-                                sx={{
-                                    background: "#ee4455",
-                                    height: "18px",
-                                    width: "12px",
-                                    position: "absolute",
-                                    left: "-6px",
-                                    top: "-36px",
-                                    textAlign: "center",
-                                    fontWeight: "bold",
-                                    fontSize: "18px",
+                            <MyLocation />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Fit to Waypoints">
+                        <IconButton
+                            onClick={fitToWaypoints}
+                            sx={{ bgcolor: "background.paper", "&:hover": { bgcolor: "background.paper" } }}
+                        >
+                            <CropFree />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+                {mpsWaypoints.map((waypoint, i) => {
+                    return (
+                        <Fragment key={i}>
+                            <Marker
+                                latitude={waypoint.latitude}
+                                longitude={waypoint.longitude}
+                                onClick={() => dispatch(toggleMpsWaypointMapState(i))}
+                                style={{
+                                    cursor: "pointer",
                                 }}
                             >
-                                {i + 1}
-                            </Box>
-                        </Marker>
-                        {mpsWaypointMapState[i] && (
-                            <Marker latitude={waypoint.latitude} longitude={waypoint.longitude}>
-                                <WaypointItem
+                                <Place
                                     sx={{
+                                        color: "#ee4455",
+                                        fontSize: "48px",
                                         position: "absolute",
-                                        width: "180px",
-                                        top: "10px",
+                                        top: "-46px",
+                                        left: "-24px",
                                     }}
-                                    waypoint={waypoint}
                                 />
+                                <Box
+                                    sx={{
+                                        background: "#ee4455",
+                                        height: "18px",
+                                        width: "12px",
+                                        position: "absolute",
+                                        left: "-6px",
+                                        top: "-36px",
+                                        textAlign: "center",
+                                        fontWeight: "bold",
+                                        fontSize: "18px",
+                                    }}
+                                >
+                                    {i + 1}
+                                </Box>
                             </Marker>
-                        )}
-                    </Fragment>
-                ))}
-                <Marker latitude={aircraftStatus.latitude} longitude={aircraftStatus.longitude}>
-                    <Flight
-                        sx={{
-                            color: "primary.main",
-                            rotate: `${aircraftStatus.heading}deg`,
-                            fontSize: "48px",
-                        }}
-                    />
-                </Marker>
+                            {mpsWaypointMapState[i] && (
+                                <Marker latitude={waypoint.latitude} longitude={waypoint.longitude}>
+                                    <WaypointItem
+                                        sx={{
+                                            position: "absolute",
+                                            width: "180px",
+                                            top: "10px",
+                                        }}
+                                        waypoint={waypoint}
+                                    />
+                                </Marker>
+                            )}
+                        </Fragment>
+                    );
+                })}
+                {
+                    <Marker latitude={aircraftStatus.latitude} longitude={aircraftStatus.longitude}>
+                        <Flight
+                            sx={{
+                                color: "primary.main",
+                                rotate: `${aircraftStatus.heading}deg`,
+                                fontSize: "48px",
+                            }}
+                        />
+                    </Marker>
+                }
                 <Source type="geojson" data={routeData}>
                     <Layer {...routeStyle} />
                 </Source>
