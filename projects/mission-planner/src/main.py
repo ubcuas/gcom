@@ -6,6 +6,7 @@ from server.utilities.connect_to_sysid import connect_to_sysid
 from server.httpserver import HTTP_Server
 from server.status_wsclient import Status_Client
 from server.services import StatusCache, MavlinkHandler
+from server.logging_config import logger
 
 stop_event = Event()
 
@@ -37,16 +38,16 @@ if __name__ == "__main__":
         # Often this can be fixed by restarting mavproxy
         raise ConnectionError(f"MAV connection failed. Is mavproxy running?")
     else:
-        print(f"MAV connection successful")
+        logger.info("MAV connection successful")
 
     # set_message_streaming_rates(mav_connection) # optional - set update rate (applies to both MissionPlanner and this server)
 
     # Create global MAVLink services
-    print("Creating MAVLink handler and status cache...")
+    logger.info("Creating MAVLink handler and status cache...")
     status_cache = StatusCache()
     handler = MavlinkHandler(mav_connection, status_cache)
     handler.start()
-    print("MAVLink handler started")
+    logger.info("MAVLink handler started")
 
     # Create server instances
     http_server = HTTP_Server(mav_connection, status_cache, handler)
@@ -69,10 +70,10 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         stop_event.set()
 
-    print("Shutting down threads...")
+    logger.info("Shutting down threads...")
 
     # Stop the MAVLink handler
-    print("Stopping MAVLink handler...")
+    logger.info("Stopping MAVLink handler...")
     handler.stop()
 
     # Flask's server doesn't provide a clean stop API,
@@ -83,4 +84,4 @@ if __name__ == "__main__":
     if status_thread:
         status_thread.join(timeout=3)
 
-    print("Exited cleanly.")
+    logger.info("Exited cleanly.")

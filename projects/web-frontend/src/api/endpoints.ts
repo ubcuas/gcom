@@ -13,6 +13,10 @@ export const prepareTakeoffDrone = async (altitude: number) => {
     return await api.post("/drone/prepare_takeoff", { altitude });
 };
 
+export const returnToLaunch = async () => {
+    return await api.post("/drone/rtl");
+};
+
 export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
     console.log("Preparing to post waypoints to drone via API", waypoints);
     return await api.post("/drone/queue", waypoints);

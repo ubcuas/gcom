@@ -1,5 +1,6 @@
 from pymavlink.mavutil import mavfile, mavlink
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 
 def change_flight_mode(
@@ -50,8 +51,8 @@ def verify_ack(handler: MavlinkHandler, error_msg: str) -> bool:
         bool: True if ack verification successful, False otherwise.
     """
     ack = handler.wait_for_message("COMMAND_ACK", timeout=3.0)
-    print("ack:", ack)
+    logger.debug(f"ACK: {ack}")
     # if ack.type != 0:
-    #     print(f'{error_msg}: {ack.type}')
+    #     logger.error(f'{error_msg}: {ack.type}')
     #     return False
     return True

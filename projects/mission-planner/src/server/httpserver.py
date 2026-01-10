@@ -20,6 +20,7 @@ from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.status import Status
 from server.common.encoders import command_string_to_int, command_int_to_string
 from server.services import StatusCache, MavlinkHandler
+from server.logging_config import logger
 
 
 class HTTP_Server:
@@ -32,7 +33,7 @@ class HTTP_Server:
 
     # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
     def serve_forever(self, production: bool, host: str, port: int):
-        print("GCOM HTTP Server starting...")
+        logger.info("GCOM HTTP Server starting...")
         app = Flask(__name__)
         socketio = SocketIO(app)
 
@@ -56,11 +57,11 @@ class HTTP_Server:
 
                 remaining = json.dumps(formatted[curr:])
 
-                print("Queue sent to GCOM")
+                logger.info("Queue sent to GCOM")
 
                 return remaining, 200
             except TimeoutError as e:
-                print(f"[ERROR] Failed to retrieve mission: {str(e)}")
+                logger.error(f"Failed to retrieve mission: {str(e)}")
                 return "Failed to retrieve mission from drone", 400
 
         @app.route("/queue", methods=["POST"])
@@ -165,7 +166,7 @@ class HTTP_Server:
                 else:
                     return "Failed to set new mission", 400
             except TimeoutError as e:
-                print(f"[ERROR] Failed to retrieve current mission: {str(e)}")
+                logger.error(f"Failed to retrieve current mission: {str(e)}")
                 return "Failed to retrieve current mission from drone", 400
 
         @app.route("/clear", methods=["GET"])
@@ -179,7 +180,7 @@ class HTTP_Server:
 
         @app.route("/status", methods=["GET"])
         def get_status_handler():
-            print("Status sent to GCOM")
+            logger.info("Status sent to GCOM")
             s = get_status(self.status_cache).as_dictionary()
             return s, 200
 
@@ -191,7 +192,9 @@ class HTTP_Server:
                 return "Altitude cannot be null", 400
 
             altitude = float(payload["altitude"])
-            print(f"Preparing takeoff sequence with waypoint at altitude {altitude}")
+            logger.info(
+                f"Preparing takeoff sequence with waypoint at altitude {altitude}"
+            )
 
             try:
                 result = prepare_takeoff(self.handler, self.status_cache, altitude)
@@ -202,7 +205,7 @@ class HTTP_Server:
                     return "Failed to prepare takeoff sequence", 400
 
             except Exception as e:
-                print(f"[ERROR] Prepare takeoff failed - {type(e).__name__}: {str(e)}")
+                logger.error(f"Prepare takeoff failed - {type(e).__name__}: {str(e)}")
                 return "Prepare takeoff failed - unknown error", 500
 
         @app.route("/arm", methods=["PUT"])
@@ -212,7 +215,7 @@ class HTTP_Server:
             if input["arm"] in [1, 0]:
                 arm = bool(input["arm"])
 
-                print("ARMING drone" if arm else "DISARMING drone")
+                logger.info("ARMING drone" if arm else "DISARMING drone")
 
                 result = arm_disarm(self.handler, arm)
 
@@ -229,20 +232,27 @@ class HTTP_Server:
             else:
                 return f"Unrecognized arm/disarm command parameter", 400
 
-        @app.route("/rtl", methods=["GET", "POST"])
-        def get_post_rtl():
-            if request.method == "GET":
-                altitude = 50
-            else:
-                altitude = request.get_json().get("altitude", 50)
+        @app.route("/prepare_rtl_params", methods=["POST"])
+        def post_prepare_rtl_params():
+            payload = request.get_json()
 
-            print(f"RTL at {altitude}")
+            if not ("altitude" in payload):
+                return "Altitude cannot be null", 400
+
+            altitude = payload["altitude"]
+            print(f"Preparing RTL params with altitude {altitude}")
 
             # set RTL altitude parameter
             alt_cm = altitude * 100
 
             if not set_parameter(self.handler, "RTL_ALT", alt_cm):
                 return "Failed to set RTL altitude parameter", 400
+
+            return "RTL parameters prepared successfully", 200
+
+        @app.route("/rtl", methods=["POST"])
+        def post_rtl():
+            logger.info("RTL initiated")
 
             success = change_flight_mode(
                 self.handler,
@@ -258,7 +268,7 @@ class HTTP_Server:
 
         @app.route("/land", methods=["GET"])
         def get_land():
-            print("Landing")
+            logger.info("Landing")
             if not change_flight_mode(
                 self.handler,
                 self.mav_connection.target_system,
@@ -326,21 +336,32 @@ class HTTP_Server:
             else:
                 return "New Home NOT set", 400
 
-        @app.route("/flightmode", methods=["PUT"])
-        def put_flight_mode():
-            input = request.get_json()
+        @app.route("/flightmode", methods=["GET", "PUT"])
+        def flight_mode():
+            if request.method == "GET":
+                flight_mode = self.status_cache.get_flight_mode(
+                    self.mav_connection.mode_mapping()
+                )
 
-            success = change_flight_mode(
-                self.handler,
-                self.mav_connection.target_system,
-                self.mav_connection.target_component,
-                input["mode"],
-            )
+                if flight_mode is not None:
+                    return {"mode": flight_mode}, 200
+                else:
+                    return "Flight mode not available", 503
 
-            if success:
-                return f"OK! Changed mode: {input['mode']}", 200
-            else:
-                return f"Unrecognized mode: {input['mode']}", 400
+            else:  # PUT
+                input = request.get_json()
+
+                success = change_flight_mode(
+                    self.handler,
+                    self.mav_connection.target_system,
+                    self.mav_connection.target_component,
+                    input["mode"],
+                )
+
+                if success:
+                    return f"OK! Changed mode: {input['mode']}", 200
+                else:
+                    return f"Unrecognized mode: {input['mode']}", 400
 
         @app.route("/aeac_scan", methods=["POST"])
         def generate_scan_points():
@@ -405,4 +426,4 @@ class HTTP_Server:
 
     def shutdown(self):
         """Shutdown the HTTP server."""
-        print("HTTP Server shutdown")
+        logger.info("HTTP Server shutdown")

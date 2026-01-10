@@ -7,6 +7,7 @@ from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_int_to_string
 from server.services.status_cache import StatusCache
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 """
     Get current status of a drone
@@ -39,10 +40,14 @@ def get_status(status_cache: StatusCache) -> Status:
     status_sys = status_cache.get_message('SYS_STATUS') or Object(voltage_battery=0)
     status_wpn = status_cache.get_message('MISSION_CURRENT') or Object(seq=0, total=0, mission_state=0, mission_mode=0, mission_id=0)
     status_wind = status_cache.get_message('WIND_COV') or Object(wind_x=0, wind_y=0)
+    heartbeat = status_cache.get_message('HEARTBEAT') or Object(base_mode=0)
 
     # wind calculations in the horizontal plane TODO determine if vertical windspeed is needed
     winddirection = math.degrees(math.atan(status_wind.wind_x / status_wind.wind_y)) if status_wind.wind_y != 0 else (0 if status_wind.wind_x > 0 else 180)
     windvelocity = math.sqrt(status_wind.wind_x * status_wind.wind_x + status_wind.wind_y * status_wind.wind_y)
+
+    # Check if armed by checking MAV_MODE_FLAG_SAFETY_ARMED bit in base_mode
+    armed = bool(heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
 
     return Status(
         system_time.time_unix_usec / 1000000, # seconds
@@ -64,7 +69,8 @@ def get_status(status_cache: StatusCache) -> Status:
         status_sys.voltage_battery,
 
         winddirection,
-        windvelocity
+        windvelocity,
+        armed
     )
 
 def get_current_mission(handler: MavlinkHandler) -> WaypointQueue:
@@ -81,7 +87,7 @@ def get_current_mission(handler: MavlinkHandler) -> WaypointQueue:
     if not msg:
         raise TimeoutError('No MISSION_COUNT received within timeout period')
     if msg and msg.get_type() != "BAD_DATA":
-        print(f"Recieved {msg}")
+        logger.debug(f"Recieved {msg}")
 
     # use MISSION_REQUEST_INT for all mission items
     for current in range(msg.count):
@@ -94,9 +100,9 @@ def get_current_mission(handler: MavlinkHandler) -> WaypointQueue:
 
         # receive MISSION_ITEM_INT
         msg = handler.wait_for_message('MISSION_ITEM_INT', timeout=3.0)
-        print(f"Received MISSION_ITEM_INT: {msg}")
+        logger.debug(f"Received MISSION_ITEM_INT: {msg}")
         if msg and msg.get_type() != "BAD_DATA":
-            # print(f"Recieved the {current}th Mission Item: {msg}")
+            # logger.debug(f"Recieved the {current}th Mission Item: {msg}")
 
             ret.push(Waypoint(msg.seq, f"Mission Waypoint {msg.seq}" if msg.seq != 0 else "Home Waypoint",
                             msg.x / 10000000,

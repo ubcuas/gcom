@@ -116,7 +116,6 @@ def wait_for_drone_armed(
     def check_armed() -> bool:
         try:
             status = api_client.get_status()
-            # Check if status has armed field - may vary by implementation
             is_armed = status.get("armed", False)
             return is_armed == armed
         except:
@@ -171,4 +170,155 @@ def wait_for_status_field(
         timeout=timeout,
         poll_interval=1.0,
         error_message=f"Status field '{field_name}' did not reach value {expected_value}",
+    )
+
+
+def wait_for_flight_mode(
+    api_client: APIClient, mode: str, timeout: float = 30.0
+) -> None:
+    """Wait for drone to enter specified flight mode.
+
+    Args:
+        api_client: API client instance
+        mode: Expected flight mode (e.g., "GUIDED", "AUTO", "LOITER")
+        timeout: Maximum time to wait in seconds
+
+    Raises:
+        TimeoutError: If mode not reached within timeout
+    """
+
+    def check_mode() -> bool:
+        try:
+            current_mode = api_client.get_flight_mode()
+            print(f"Current flight mode: {current_mode}, Target: {mode}")
+            return current_mode == mode
+        except:
+            return False
+
+    wait_for_condition(
+        check_mode,
+        timeout=timeout,
+        poll_interval=1.0,
+        error_message=f"Drone did not enter {mode} mode",
+    )
+
+
+def wait_for_position(
+    api_client: APIClient,
+    target_lat: float,
+    target_lon: float,
+    timeout: float = 60.0,
+    tolerance_meters: float = 10.0,
+) -> None:
+    """Wait for drone to reach target position.
+
+    Args:
+        api_client: API client instance
+        target_lat: Target latitude
+        target_lon: Target longitude
+        timeout: Maximum time to wait in seconds
+        tolerance_meters: Acceptable distance from target in meters
+
+    Raises:
+        TimeoutError: If position not reached within timeout
+    """
+
+    def check_position() -> bool:
+        try:
+            status = api_client.get_status()
+            current_lat = status.get("latitude")
+            current_lon = status.get("longitude")
+
+            if current_lat is None or current_lon is None:
+                return False
+
+            # Rough conversion: 1 degree lat/lon ≈ 111km at equator
+            lat_diff_m = abs(current_lat - target_lat) * 111000
+            lon_diff_m = abs(current_lon - target_lon) * 111000
+            distance = (lat_diff_m**2 + lon_diff_m**2) ** 0.5
+
+            print(
+                f"Current position: ({current_lat:.6f}, {current_lon:.6f}), "
+                f"Target: ({target_lat:.6f}, {target_lon:.6f}), "
+                f"Distance: {distance:.1f}m"
+            )
+
+            return distance <= tolerance_meters
+        except:
+            return False
+
+    wait_for_condition(
+        check_position,
+        timeout=timeout,
+        poll_interval=2.0,
+        error_message=f"Drone did not reach position ({target_lat}, {target_lon}) within {tolerance_meters}m",
+    )
+
+
+def wait_for_stationary(
+    api_client: APIClient,
+    duration: float = 10.0,
+    speed_threshold: float = 0.5,
+    vertical_speed_threshold: float = 0.5,
+    timeout: float = 60.0,
+) -> None:
+    """Wait for drone to be stationary (hovering).
+
+    Verifies drone maintains low speed for specified duration.
+
+    Args:
+        api_client: API client instance
+        duration: How long drone must remain stationary in seconds
+        speed_threshold: Maximum groundspeed in m/s to be considered stationary
+        vertical_speed_threshold: Maximum vertical speed in m/s
+        timeout: Maximum time to wait in seconds
+
+    Raises:
+        TimeoutError: If drone doesn't become stationary within timeout
+    """
+    stationary_start = None
+
+    def check_stationary() -> bool:
+        nonlocal stationary_start
+        try:
+            status = api_client.get_status()
+            groundspeed = status.get("groundspeed", float("inf"))
+            verticalspeed = abs(status.get("verticalspeed", float("inf")))
+
+            is_stationary = (
+                groundspeed < speed_threshold
+                and verticalspeed < vertical_speed_threshold
+            )
+
+            if is_stationary:
+                if stationary_start is None:
+                    stationary_start = time.time()
+                    print(f"Drone stationary, monitoring for {duration}s...")
+
+                elapsed = time.time() - stationary_start
+                print(
+                    f"Stationary for {elapsed:.1f}s (groundspeed: {groundspeed:.2f} m/s, "
+                    f"verticalspeed: {verticalspeed:.2f} m/s)"
+                )
+
+                if elapsed >= duration:
+                    return True
+            else:
+                if stationary_start is not None:
+                    print(
+                        f"Drone moving (groundspeed: {groundspeed:.2f} m/s, "
+                        f"verticalspeed: {verticalspeed:.2f} m/s), resetting timer..."
+                    )
+                stationary_start = None
+
+            return False
+        except:
+            stationary_start = None
+            return False
+
+    wait_for_condition(
+        check_stationary,
+        timeout=timeout,
+        poll_interval=1.0,
+        error_message=f"Drone did not remain stationary for {duration}s",
     )

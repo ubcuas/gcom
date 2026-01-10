@@ -18,7 +18,9 @@ class DroneApiClient:
                 response = requests.put(url, headers=headers, data=json.dumps(data))
 
             if response.status_code >= 400:
-                print(f"[ERROR] Mission-planner {method} {endpoint} returned {response.status_code}")
+                print(
+                    f"[ERROR] Mission-planner {method} {endpoint} returned {response.status_code}"
+                )
                 print(f"[ERROR] Response body: {response.text}")
 
             return response
@@ -42,6 +44,12 @@ class DroneApiClient:
         )
 
     @staticmethod
+    def prepare_rtl_params(altitude):
+        return DroneApiClient._fetch_from_mission_planner(
+            "prepare_rtl_params", method="POST", data={"altitude": altitude}
+        )
+
+    @staticmethod
     def arm(arm_value):
         return DroneApiClient._fetch_from_mission_planner(
             "arm", method="PUT", data={"arm": arm_value}
@@ -56,10 +64,8 @@ class DroneApiClient:
         return DroneApiClient._fetch_from_mission_planner("rtl")
 
     @staticmethod
-    def post_rtl(altitude):
-        return DroneApiClient._fetch_from_mission_planner(
-            "rtl", method="POST", data={"altitude": altitude}
-        )
+    def post_rtl():
+        return DroneApiClient._fetch_from_mission_planner("rtl", method="POST")
 
     @staticmethod
     def lock():
@@ -104,7 +110,11 @@ class DroneApiClient:
         )
 
     @staticmethod
-    def flightmode(mode):
+    def get_flightmode():
+        return DroneApiClient._fetch_from_mission_planner("flightmode")
+
+    @staticmethod
+    def put_flightmode(mode):
         return DroneApiClient._fetch_from_mission_planner(
             "flightmode", method="PUT", data={"mode": mode}
         )

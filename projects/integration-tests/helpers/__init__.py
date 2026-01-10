@@ -7,6 +7,9 @@ from .waiters import (
     wait_for_waypoint_count,
     wait_for_drone_armed,
     wait_for_status_field,
+    wait_for_flight_mode,
+    wait_for_position,
+    wait_for_stationary,
 )
 from .assertions import (
     assert_waypoint_match,
@@ -35,6 +38,9 @@ __all__ = [
     "wait_for_waypoint_count",
     "wait_for_drone_armed",
     "wait_for_status_field",
+    "wait_for_flight_mode",
+    "wait_for_position",
+    "wait_for_stationary",
     "assert_waypoint_match",
     "assert_waypoints_match",
     "assert_status_valid",

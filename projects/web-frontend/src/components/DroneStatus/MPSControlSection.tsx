@@ -1,19 +1,18 @@
 import { Box, Button, Modal, Paper, TextField, Tooltip, Typography } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
-import { armDrone, prepareTakeoffDrone } from "../../api/endpoints.ts";
+import { prepareTakeoffDrone, returnToLaunch } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
-import { useAppDispatch } from "../../store/store";
+import { selectAircraftStatus } from "../../store/slices/dataSlice";
+import { useAppDispatch, useAppSelector } from "../../store/store";
 
 export default function MPSControlSection() {
     const dispatch = useAppDispatch();
-    const [clientSideState, setClientSideState] = useState({
-        armed: false,
-        takeoffAltitude: 0,
-    });
-    const [modalState, setModalState] = useState(false);
+    const aircraftStatus = useAppSelector(selectAircraftStatus);
+    const [takeoffAltitude, setTakeoffAltitude] = useState(0);
+    const [rtlModalState, setRtlModalState] = useState(false);
     const [preparingTakeoff, setPreparingTakeoff] = useState(false);
-    const [armingInProgress, setArmingInProgress] = useState(false);
+    const [preparingRtl, setPreparingRtl] = useState(false);
 
     return (
         <Box
@@ -23,54 +22,6 @@ export default function MPSControlSection() {
                 gap: 2,
             }}
         >
-            <Box>
-                {clientSideState.armed ? (
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        color={armingInProgress ? "inherit" : "success"}
-                        disabled={armingInProgress}
-                        onClick={() => {
-                            setArmingInProgress(true);
-                            armDrone(false)
-                                .then((response) => {
-                                    if (response.status === 200) {
-                                        setClientSideState((prevState) => ({
-                                            ...prevState,
-                                            armed: false,
-                                        }));
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Drone disarmed successfully",
-                                                severity: "success",
-                                            }),
-                                        );
-                                    } else {
-                                        dispatch(
-                                            openSnackbar({
-                                                message: "Failed to disarm drone",
-                                            }),
-                                        );
-                                    }
-                                })
-                                .finally(() => setArmingInProgress(false));
-                        }}
-                    >
-                        Disarm Drone
-                    </Button>
-                ) : (
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        color="error"
-                        onClick={() => {
-                            setModalState(true);
-                        }}
-                    >
-                        Arm Drone
-                    </Button>
-                )}
-            </Box>
             <Box
                 sx={{
                     display: "flex",
@@ -84,22 +35,19 @@ export default function MPSControlSection() {
                     required
                     id="takeoffAltitude"
                     type="number"
-                    label="Take Off Altitude (ft)"
+                    label="Take Off Altitude (m)"
                     onChange={(e) => {
-                        setClientSideState((prevState) => ({
-                            ...prevState,
-                            takeoffAltitude: parseFloat(e.target.value),
-                        }));
+                        setTakeoffAltitude(parseFloat(e.target.value));
                     }}
-                    value={clientSideState.takeoffAltitude === 0 ? "" : clientSideState.takeoffAltitude}
+                    value={takeoffAltitude === 0 ? "" : takeoffAltitude}
                 />
                 <Button
                     variant="contained"
                     color={preparingTakeoff ? "inherit" : "error"}
-                    disabled={preparingTakeoff}
+                    disabled={preparingTakeoff || takeoffAltitude <= 0}
                     onClick={() => {
                         setPreparingTakeoff(true);
-                        prepareTakeoffDrone(clientSideState.takeoffAltitude)
+                        prepareTakeoffDrone(takeoffAltitude)
                             .then((response) => {
                                 if (response.status === 200) {
                                     dispatch(
@@ -127,6 +75,24 @@ export default function MPSControlSection() {
                     Prepare for Takeoff
                 </Button>
             </Box>
+            <Box>
+                <Button
+                    fullWidth
+                    variant="contained"
+                    color={preparingRtl ? "inherit" : "warning"}
+                    disabled={preparingRtl}
+                    onClick={() => {
+                        setRtlModalState(true);
+                    }}
+                    endIcon={
+                        <Tooltip title="Switches the drone to RTL mode using the current RTL_ALT parameter">
+                            <InfoIcon fontSize="small" />
+                        </Tooltip>
+                    }
+                >
+                    Return to Launch
+                </Button>
+            </Box>
             <Box
                 sx={{
                     display: "flex",
@@ -140,7 +106,7 @@ export default function MPSControlSection() {
                 <Button variant="outlined" onClick={() => {}}>
                     Hide All Waypoints
                 </Button>
-                <Box
+                {/*<Box
                     sx={{
                         display: "flex",
                         gap: 2,
@@ -148,7 +114,7 @@ export default function MPSControlSection() {
                     }}
                 >
                     {/* Routes already get fetched on load, we don't have a situation where we need to refetch */}
-                    {/* <Button
+                {/* <Button
                         sx={{
                             flexGrow: 1,
                         }}
@@ -160,7 +126,7 @@ export default function MPSControlSection() {
                     >
                         Fetch MPS Data
                     </Button> */}
-                    {/* <Box
+                {/* <Box
                         sx={{
                             display: "flex",
                             alignItems: "center",
@@ -172,10 +138,10 @@ export default function MPSControlSection() {
                                 // Functionality to auto fetch the mps queue on an interval, not sure if needed so commented out for now.
                             }}
                         />
-                    </Box> */}
-                </Box>
+                    </Box>
+                </Box>*/}
             </Box>
-            <Modal open={modalState} onClose={() => setModalState(false)}>
+            <Modal open={rtlModalState} onClose={() => setRtlModalState(false)}>
                 <Paper
                     elevation={2}
                     sx={{
@@ -187,37 +153,33 @@ export default function MPSControlSection() {
                     }}
                 >
                     <Typography variant="body1" sx={{ mb: 2, textAlign: "center" }}>
-                        Are you sure you are ready to arm?
+                        Are you sure you want to return to launch?
                     </Typography>
                     <Button
                         fullWidth
                         variant="contained"
-                        color="error"
+                        color="warning"
                         onClick={() => {
-                            setModalState(false);
-                            setArmingInProgress(true);
-                            armDrone(true)
+                            setRtlModalState(false);
+                            setPreparingRtl(true);
+                            returnToLaunch()
                                 .then((response) => {
                                     if (response.status === 200) {
-                                        setClientSideState((prevState) => ({
-                                            ...prevState,
-                                            armed: true,
-                                        }));
                                         dispatch(
                                             openSnackbar({
-                                                message: "Drone armed successfully",
+                                                message: "Return to launch initiated successfully",
                                                 severity: "success",
                                             }),
                                         );
                                     } else {
                                         dispatch(
                                             openSnackbar({
-                                                message: "Failed to arm drone",
+                                                message: "Failed to initiate return to launch",
                                             }),
                                         );
                                     }
                                 })
-                                .finally(() => setArmingInProgress(false));
+                                .finally(() => setPreparingRtl(false));
                         }}
                     >
                         Yes

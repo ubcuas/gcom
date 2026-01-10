@@ -12,6 +12,7 @@ export type AircraftStatus = {
     speed: number;
     heading: number;
     voltage: number;
+    armed: boolean;
     // payload is currently TBD on backend
     payload?: Payload[];
 };

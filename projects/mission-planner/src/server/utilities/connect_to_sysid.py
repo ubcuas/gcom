@@ -1,6 +1,7 @@
 from pymavlink import mavutil
 from pymavlink.mavutil import mavfile
 import time
+from server.logging_config import logger
 
 
 def connect_to_sysid(connection_str: str, sysid: int, timeout: float = 3) -> mavfile:
@@ -22,17 +23,17 @@ def connect_to_sysid(connection_str: str, sysid: int, timeout: float = 3) -> mav
     while time.time() - time_start < timeout:
         try:
             the_connection.wait_heartbeat(timeout=1)
-            print(
+            logger.debug(
                 f"Heartbeat from system {the_connection.target_system} component {the_connection.target_component}"
             )
             if the_connection.target_system == sysid:
-                print(f"Now connected to SYSID {sysid}")
+                logger.info(f"Now connected to SYSID {sysid}")
                 return the_connection
         except Exception as e:
             elapsed = time.time() - time_start
-            print(f"Waiting for heartbeat... ({elapsed:.1f}s elapsed)")
+            logger.debug(f"Waiting for heartbeat... ({elapsed:.1f}s elapsed)")
             if elapsed >= timeout:
                 break
 
-    print(f"Connection timeout after {timeout} seconds")
+    logger.error(f"Connection timeout after {timeout} seconds")
     return None

@@ -3,6 +3,7 @@ from pymavlink import mavutil
 from server.common.wpqueue import WaypointQueue, Waypoint
 from server.common.encoders import command_string_to_int, command_int_to_string
 from server.services.mavlink_handler import MavlinkHandler
+from server.logging_config import logger
 
 def set_home(handler: MavlinkHandler, latitude: float, longitude: float, altitude: float): # -> int | None:
     # Send a set home command
@@ -16,14 +17,14 @@ def set_home(handler: MavlinkHandler, latitude: float, longitude: float, altitud
     # Wait for the acknowledgment
     ack = handler.wait_for_message('COMMAND_ACK', timeout=5.0)
     if ack is None:
-        print('No acknowledgment received within the timeout period.')
+        logger.warning('No acknowledgment received within the timeout period.')
         return None
 
     return ack.result
 
 def new_mission(handler: MavlinkHandler, waypoint_queue: WaypointQueue) -> bool:
     # Clear any existing mission from vehicle
-    print('Clearing mission')
+    logger.info('Clearing mission')
     handler.mav.mission_clear_all_send(handler.target_system, handler.target_component)
 
     if not verify_ack(handler, 'Error clearing mission'):
@@ -71,9 +72,9 @@ def send_waypoints(handler: MavlinkHandler, wp_list: list) -> bool:
     for i in range(len(wp_list)):
         msg = handler.wait_for_any_message(['MISSION_REQUEST_INT', 'MISSION_REQUEST'], timeout=3.0)
         if not msg:
-            print('No waypoint request received')
+            logger.warning('No waypoint request received')
             return False
-        print(f'Sending waypoint {msg.seq}/{len(wp_list)-1}')
+        logger.info(f'Sending waypoint {msg.seq}/{len(wp_list)-1}')
         handler.mav.send(wp_list[msg.seq])
 
         if msg.seq == len(wp_list)-1:
@@ -93,11 +94,11 @@ def verify_ack(handler: MavlinkHandler, error_msg: str) -> bool:
         bool: True if ack verification successful, False otherwise.
     """
     ack = handler.wait_for_message('MISSION_ACK', timeout=3.0)
-    print(ack)
+    logger.debug(f"Mission ACK: {ack}")
     if (ack is None):
-        print(f'{error_msg}: No ACK received')
+        logger.error(f'{error_msg}: No ACK received')
     elif (ack.type != 0):
-        print(f'{error_msg}: {ack.type}')
+        logger.error(f'{error_msg}: {ack.type}')
         return False
     return True
 
