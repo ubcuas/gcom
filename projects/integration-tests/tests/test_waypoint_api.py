@@ -5,11 +5,12 @@ as well as integration between database waypoints and drone queue operations.
 """
 
 import pytest
+
 from helpers import (
-    assert_waypoint_db_match,
     assert_route_contains_waypoints,
-    assert_waypoints_ordered,
+    assert_waypoint_db_match,
     assert_waypoints_match,
+    assert_waypoints_ordered,
     filter_home_waypoint,
     transform_db_waypoints_to_drone_format,
 )
@@ -26,7 +27,9 @@ def test_create_single_waypoint(api_client, sample_waypoint_db_data, sample_rout
     """
     # Create a route first (waypoints need to belong to a route)
     route_response = api_client.create_route(sample_route_data)
-    assert route_response.status_code == 201, f"Failed to create route: {route_response.text}"
+    assert (
+        route_response.status_code == 201
+    ), f"Failed to create route: {route_response.text}"
     route = route_response.json()
 
     # Add route to waypoint data
@@ -79,15 +82,19 @@ def test_create_multiple_waypoints(api_client, sample_route_data):
     created_waypoints = []
     for wp_data in waypoints_data:
         response = api_client.create_waypoint(wp_data)
-        assert response.status_code == 201, f"Failed to create waypoint: {response.text}"
+        assert (
+            response.status_code == 201
+        ), f"Failed to create waypoint: {response.text}"
         created_waypoints.append(response.json())
 
     # Verify all waypoints exist
     all_waypoints = api_client.list_waypoints()
-    assert len(all_waypoints) >= 3, f"Expected at least 3 waypoints, found {len(all_waypoints)}"
+    assert (
+        len(all_waypoints) >= 3
+    ), f"Expected at least 3 waypoints, found {len(all_waypoints)}"
 
     # Verify each created waypoint
-    for created, expected in zip(created_waypoints, waypoints_data):
+    for created, expected in zip(created_waypoints, waypoints_data, strict=False):
         assert_waypoint_db_match(created, expected)
 
 
@@ -120,7 +127,9 @@ def test_list_waypoints(api_client, sample_route_data):
     waypoints = api_client.list_waypoints()
 
     # Assert: Verify all are present
-    assert len(waypoints) >= num_waypoints, f"Expected at least {num_waypoints} waypoints"
+    assert (
+        len(waypoints) >= num_waypoints
+    ), f"Expected at least {num_waypoints} waypoints"
     waypoint_names = [wp["name"] for wp in waypoints]
     for i in range(num_waypoints):
         assert f"ListWP{i}" in waypoint_names
@@ -178,7 +187,9 @@ def test_update_waypoint(api_client, sample_waypoint_db_data, sample_route_data)
     update_response = api_client.partial_update_waypoint(waypoint["id"], updated_data)
 
     # Assert: Verify update succeeded
-    assert update_response.status_code == 200, f"Failed to update waypoint: {update_response.text}"
+    assert (
+        update_response.status_code == 200
+    ), f"Failed to update waypoint: {update_response.text}"
 
     # Verify changes persisted
     retrieved_waypoint = api_client.get_waypoint(waypoint["id"])
@@ -207,7 +218,9 @@ def test_delete_waypoint(api_client, sample_waypoint_db_data, sample_route_data)
     delete_response = api_client.delete_waypoint(waypoint["id"])
 
     # Assert: Verify deletion
-    assert delete_response.status_code == 204, f"Failed to delete waypoint: {delete_response.text}"
+    assert (
+        delete_response.status_code == 204
+    ), f"Failed to delete waypoint: {delete_response.text}"
 
     # Verify waypoint no longer exists (should get 404)
     try:
@@ -249,6 +262,7 @@ def test_create_route_with_waypoints(api_client, sample_route_data):
     # Assert: Verify route contains waypoints
     assert_route_contains_waypoints(retrieved_route, num_waypoints)
     assert_waypoints_ordered(retrieved_route["waypoints"])
+
 
 def test_delete_route_cascades_to_waypoints(api_client, sample_route_data):
     """Test that deleting a route also deletes its waypoints (cascade).
@@ -359,13 +373,19 @@ def test_load_saved_route_to_drone(api_client, sample_route_data):
 
     # Step 4: Load to drone queue
     upload_response = api_client.post_queue(drone_waypoints)
-    assert upload_response.status_code == 200, f"Failed to upload to drone: {upload_response.text}"
+    assert (
+        upload_response.status_code == 200
+    ), f"Failed to upload to drone: {upload_response.text}"
 
     # Step 5: Verify drone queue (filter out home waypoint)
     # Note: Don't check names as /api/drone/queue doesn't preserve them
     drone_queue = api_client.get_queue()
     filtered_queue = filter_home_waypoint(drone_queue)
-    assert_waypoints_match(filtered_queue, drone_waypoints, check_fields=["latitude", "longitude", "altitude"])
+    assert_waypoints_match(
+        filtered_queue,
+        drone_waypoints,
+        check_fields=["latitude", "longitude", "altitude"],
+    )
 
 
 def test_load_empty_route_to_drone(api_client, sample_route_data):
@@ -393,7 +413,9 @@ def test_load_empty_route_to_drone(api_client, sample_route_data):
     # Verify drone queue is empty (excluding home waypoint)
     drone_queue = api_client.get_queue()
     filtered_queue = filter_home_waypoint(drone_queue)
-    assert len(filtered_queue) == 0, "Drone queue should be empty (excluding home waypoint)"
+    assert (
+        len(filtered_queue) == 0
+    ), "Drone queue should be empty (excluding home waypoint)"
 
 
 def test_waypoint_not_found_error(api_client):
@@ -413,7 +435,9 @@ def test_waypoint_not_found_error(api_client):
 
     # Test DELETE
     delete_response = api_client.delete_waypoint(fake_uuid)
-    assert delete_response.status_code == 404, "Expected 404 for delete on non-existent waypoint"
+    assert (
+        delete_response.status_code == 404
+    ), "Expected 404 for delete on non-existent waypoint"
 
     # Test UPDATE
     update_data = {
@@ -423,4 +447,6 @@ def test_waypoint_not_found_error(api_client):
         "altitude": 50.0,
     }
     update_response = api_client.partial_update_waypoint(fake_uuid, update_data)
-    assert update_response.status_code == 404, "Expected 404 for update on non-existent waypoint"
+    assert (
+        update_response.status_code == 404
+    ), "Expected 404 for update on non-existent waypoint"
