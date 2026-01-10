@@ -1,0 +1,42 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: check-added-large-files
+        args: ['--maxkb=500']
+    -   id: check-merge-conflict
+    -   id: debug-statements
+    -   id: check-case-conflict
+-   repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+    -   id: black
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+    -   id: ruff
+        args: [ --fix ]
+    -   id: ruff-format
+-   repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.17.0
+    hooks:
+    -   id: eslint
+        files: projects/web-frontend/.*\.[jt]sx?$
+        types: [file]
+        args: [--fix]
+        additional_dependencies:
+        - eslint@8.50.0
+        - '@typescript-eslint/eslint-plugin@6.7.3'
+        - '@typescript-eslint/parser@6.7.3'
+        - eslint-config-prettier@9.0.0
+        - eslint-plugin-prettier@5.0.0
+        - eslint-plugin-react-hooks@4.6.0
+        - eslint-plugin-react-refresh@0.4.3
+-   repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+    -   id: prettier
+        files: projects/web-frontend/.*\.[jt]sx?$
+        types: [file]
