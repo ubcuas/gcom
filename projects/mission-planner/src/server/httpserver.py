@@ -4,7 +4,7 @@ from flask_socketio import SocketIO
 
 from pymavlink.mavutil import mavfile
 
-from server.operations.takeoff import takeoff, arm_disarm
+from server.operations.takeoff import arm_disarm
 from server.operations.prepare_takeoff import prepare_takeoff
 from server.operations.queue import new_mission, set_home, clear_mission
 from server.operations.get_info import get_status, get_current_mission
@@ -183,38 +183,6 @@ class HTTP_Server:
             logger.info("Status sent to GCOM")
             s = get_status(self.status_cache).as_dictionary()
             return s, 200
-
-        @app.route("/takeoff", methods=["POST"])
-        def post_takeoff():
-            payload = request.get_json()
-
-            if not ("altitude" in payload):
-                return "Altitude cannot be null", 400
-
-            altitude = int(payload["altitude"])
-            logger.info(f"Taking off to altitude {altitude}")
-
-            try:
-                result = takeoff(self.handler, altitude)
-
-                if result == 0:
-                    return "Takeoff command successful", 200
-
-                # see https://mavlink.io/en/messages/common.html#MAV_RESULT for MAV_RESULT code interpretation
-                logger.error(
-                    f"Takeoff unsuccessful - MAVLink MAV_RESULT code: {result}"
-                )
-                return "Takeoff unsuccessful", 400
-
-            except ValueError:
-                logger.error("Takeoff failed - invalid params")
-                return (
-                    "Takeoff failed - autopilot not supported for this mavlink connection",
-                    400,
-                )
-            except Exception as e:
-                logger.error(f"Takeoff failed - {type(e).__name__}: {str(e)}")
-                return "Takeoff failed - unknown error", 500
 
         @app.route("/prepare_takeoff", methods=["POST"])
         def post_prepare_takeoff():

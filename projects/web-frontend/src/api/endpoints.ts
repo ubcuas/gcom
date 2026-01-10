@@ -9,10 +9,6 @@ export const armDrone = async (arm: boolean) => {
     return await api.put("/drone/arm", { arm });
 };
 
-export const takeoffDrone = async (altitude?: number) => {
-    return await api.post("/drone/takeoff", { altitude });
-};
-
 export const prepareTakeoffDrone = async (altitude: number) => {
     return await api.post("/drone/prepare_takeoff", { altitude });
 };
