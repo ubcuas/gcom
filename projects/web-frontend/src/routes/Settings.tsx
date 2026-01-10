@@ -29,9 +29,6 @@ export default function Settings() {
     const handleThemeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         dispatch(setPreferredTheme(event.target.checked ? "dark" : "light"));
     };
-    const handleParamDisplay = (event: React.ChangeEvent<HTMLInputElement>) => {
-        // Placeholder
-    };
     const handleSocketChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         dispatch(setSocketStatus(event.target.checked));
     };
