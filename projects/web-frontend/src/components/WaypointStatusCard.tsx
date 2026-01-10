@@ -1,13 +1,15 @@
 import { Box, Button, Grid, Modal, Paper, Stack, Typography } from "@mui/material";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { postWaypointsToDrone } from "../api/endpoints";
 import { openSnackbar, selectMapViewOpen, setMapViewOpen } from "../store/slices/appSlice";
 import {
+    addWaypointToCurrentRoute,
     deleteWaypointFromCurrentRoute,
     selectCurrentRouteWaypoints,
-    updateCurrentRouteWaypoints,
     selectCurrentRoute,
+    updateCurrentRouteWaypoints,
 } from "../store/slices/dataSlice";
+import { createWaypointsBlob, parseWaypointsFromJsonText, triggerDownloadBlob } from "../utils/parseWaypointForm.ts";
 import { saveCurrentRouteToBackend } from "../store/thunks/dataThunks";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import { WaypointEditState } from "../types/Waypoint";
@@ -27,6 +29,7 @@ export default function WaypointStatusCard() {
         index: -1,
         waypoint: undefined,
     });
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const handlePost = async () => {
         if (waypointQueue.length === 0) {
@@ -60,6 +63,65 @@ export default function WaypointStatusCard() {
         });
     };
 
+    const handleExportWaypoints = () => {
+        if (waypointQueue.length === 0) {
+            dispatch(openSnackbar({ message: "No waypoints to export" }));
+            return;
+        }
+        try {
+            const blob = createWaypointsBlob(waypointQueue);
+            const filename = `${currentRoute?.name || "waypoints"}-waypoints.json`;
+            triggerDownloadBlob(blob, filename);
+            dispatch(openSnackbar({ message: "Waypoints exported", severity: "success" }));
+        } catch (error) {
+            const message = createErrorMessage(error);
+            dispatch(openSnackbar({ message, severity: "error" }));
+        }
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            return;
+        }
+        try {
+            const text = await file.text();
+            const parsedWaypoints = parseWaypointsFromJsonText(text);
+
+            dispatch(updateCurrentRouteWaypoints([]));
+            dispatch(saveCurrentRouteToBackend());
+            for (const wp of parsedWaypoints) {
+                await dispatch(
+                    addWaypointToCurrentRoute({
+                        id: "-1",
+                        latitude: wp.latitude,
+                        longitude: wp.longitude,
+                        name: wp.name,
+                        altitude: wp.altitude,
+                        command: wp.command,
+                        param1: wp.param1,
+                        param2: wp.param2,
+                        param3: wp.param3,
+                        param4: wp.param4,
+                        remarks: wp.remarks,
+                    }) as any,
+                );
+                await dispatch(saveCurrentRouteToBackend() as any);
+            }
+
+            dispatch(openSnackbar({ message: "Waypoints imported", severity: "success" }));
+        } catch (error) {
+            const message = createErrorMessage(error);
+            dispatch(openSnackbar({ message, severity: "error" }));
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
     const rightButtons = (
         <Box
             sx={{
@@ -77,6 +139,12 @@ export default function WaypointStatusCard() {
             </Button>
             <Button sx={{ fontSize: 16, fontWeight: "bold", px: 4 }} variant="outlined" onClick={handlePost}>
                 Post Route to Drone
+            </Button>
+            <Button sx={{ fontSize: 16, fontWeight: "bold", px: 4 }} variant="outlined" onClick={handleExportWaypoints}>
+                Export Waypoints
+            </Button>
+            <Button sx={{ fontSize: 16, fontWeight: "bold", px: 4 }} variant="outlined" onClick={handleImportClick}>
+                Import Waypoints
             </Button>
         </Box>
     );
@@ -155,6 +223,16 @@ export default function WaypointStatusCard() {
                     </Grid>
                 </Grid>
             </InfoCard>
+
+            {/* Hidden file input for importing waypoints */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                style={{ display: "none" }}
+                onChange={handleImportFile}
+            />
+
             <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
                 <Paper
                     elevation={2}
