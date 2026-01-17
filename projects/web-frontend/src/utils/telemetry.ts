@@ -17,5 +17,6 @@ export const roundValues = (
         heading: Math.round(data.heading),
         voltage: Math.round(data.voltage * 100) / 100,
         armed: data.armed,
+        flightmode: data.flightmode,
     } satisfies AircraftStatus;
 };
