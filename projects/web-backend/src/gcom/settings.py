@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "mapping.apps.MappingConfig",
     "map_tiles.apps.MapTilesConfig",
     "vision.apps.VisionConfig",
+    "ground_control.apps.MqttConfig"
 ]
 
 MIDDLEWARE = [
