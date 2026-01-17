@@ -7,7 +7,6 @@ import {
     editWaypointInCurrentRoute,
     selectCurrentRouteWaypoints,
 } from "../../store/slices/dataSlice";
-import { addWaypointToCurrentRoute, editWaypointInCurrentRoute } from "../../store/slices/dataSlice";
 import { FormErrors, FormKeys, FormState } from "../../types/WaypointForm";
 import parseWaypointForm from "../../utils/parseWaypointForm";
 import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
@@ -68,9 +67,23 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     }, [editState.index]);
 
     const checkReqFields = (keys: FormKeys[]): boolean => {
-        // TODO: This function (and FormError) can be updated so that it also checks Lat/Long are within correct bounds.
         const newFormErrors = keys.reduce((acc, key) => {
-            const hasError = formState[key].trim() === "";
+            const value = formState[key].trim();
+            let hasError = value === "";
+
+            if (!hasError) {
+                if (key === "latitude") {
+                    const num = Number(value);
+                    hasError = Number.isNaN(num) || num < -90 || num > 90;
+                } else if (key === "longitude") {
+                    const num = Number(value);
+                    hasError = Number.isNaN(num) || num < -180 || num > 180;
+                } else if (key === "altitude") {
+                    const num = Number(value);
+                    hasError = Number.isNaN(num) || num <= 0;
+                }
+            }
+
             return { ...acc, [key]: hasError };
         }, formErrors);
 
@@ -143,7 +156,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                     onWheel={preventScroll}
                     value={formState.latitude}
                     error={formErrors.latitude}
-                    helperText={formErrors.latitude && "Latitude is required."}
+                    helperText={formErrors.latitude && "Latitude is required to be between -90 and 90."}
                 />
             </Grid>
             <Grid item xs={12} lg={6}>
@@ -157,7 +170,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                     onWheel={preventScroll}
                     value={formState.longitude}
                     error={formErrors.longitude}
-                    helperText={formErrors.longitude && "Longitude is required."}
+                    helperText={formErrors.longitude && "Longitude is required to be between -180 and 180."}
                 />
             </Grid>
             <Grid item xs={12} lg={6}>
@@ -171,7 +184,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                     onWheel={preventScroll}
                     value={formState.altitude}
                     error={formErrors.altitude}
-                    helperText={formErrors.altitude && "Altitude is required."}
+                    helperText={formErrors.altitude && "Altitude is required to be above 0."}
                 />
             </Grid>
             <Grid item xs={12} lg={6}>
