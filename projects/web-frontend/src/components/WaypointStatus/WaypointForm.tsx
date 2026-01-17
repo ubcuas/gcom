@@ -2,6 +2,11 @@ import { Button, Grid, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { WaypointEditState } from "../../types/Waypoint";
 import { useAppDispatch, useAppSelector } from "../../store/store";
+import {
+    addWaypointToCurrentRoute,
+    editWaypointInCurrentRoute,
+    selectCurrentRouteWaypoints,
+} from "../../store/slices/dataSlice";
 import { addWaypointToCurrentRoute, editWaypointInCurrentRoute } from "../../store/slices/dataSlice";
 import { FormErrors, FormKeys, FormState } from "../../types/WaypointForm";
 import parseWaypointForm from "../../utils/parseWaypointForm";
@@ -31,6 +36,7 @@ const defaultFormState: FormState = {
 
 export default function WaypointForm({ editState, clearEditState }: WaypointFormProps) {
     const dispatch = useAppDispatch();
+    const waypoints = useAppSelector(selectCurrentRouteWaypoints);
     const settings = useAppSelector(selectAppSlice);
     const [formState, setFormState] = useState<FormState>(defaultFormState);
 
@@ -95,6 +101,10 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
     const handleFormSubmit = () => {
         if (checkReqFields(["latitude", "longitude", "altitude"])) {
             const waypoint = parseWaypointForm(formState);
+            if (!waypoint.name) {
+                const unnamedCount = waypoints.filter((wp) => wp.name?.startsWith("Unnamed Waypoint")).length;
+                waypoint.name = `Unnamed Waypoint ${unnamedCount + 1}`;
+            }
             dispatch(addWaypointToCurrentRoute(waypoint));
             dispatch(saveCurrentRouteToBackend());
         }

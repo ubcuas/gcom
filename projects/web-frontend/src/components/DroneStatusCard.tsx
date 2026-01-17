@@ -1,9 +1,11 @@
-import { useAppDispatch, useAppSelector } from "../store/store";
-import { selectAircraftStatus, updateAircraftStatus } from "../store/slices/dataSlice";
+import { useAppSelector } from "../store/store";
+import { selectAircraftStatus } from "../store/slices/dataSlice";
 import PositionSection from "./DroneStatus/PositionSection";
 import SpeedSection from "./DroneStatus/SpeedSection";
 import TimeStamp from "./DroneStatus/TimeStamp";
 import MPSControlSection from "./DroneStatus/MPSControlSection";
+import { Paper } from "@mui/material";
+
 import StatusIndicators from "./DroneStatus/StatusIndicators";
 import { useEffect } from "react";
 import { socket } from "../api/socket";
@@ -34,16 +36,6 @@ const roundValues = (
 
 export default function DroneStatusCard() {
     const droneState = useAppSelector(selectAircraftStatus);
-    const dispatch = useAppDispatch();
-
-    useEffect(() => {
-        socket.on("drone_update", (data) => {
-            dispatch(updateAircraftStatus(roundValues(data)));
-        });
-        return () => {
-            socket.off("drone_update");
-        };
-    }, []);
 
     return (
         <Paper

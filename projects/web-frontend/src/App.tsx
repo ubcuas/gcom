@@ -1,5 +1,5 @@
 import { Box, CssBaseline, ThemeProvider, createTheme, responsiveFontSizes } from "@mui/material";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Route, Switch } from "wouter";
 import ErrorSnackbar from "./components/ErrorSnackbar";
 import Nav from "./components/Nav";
@@ -8,10 +8,14 @@ import MapRoute from "./routes/MapRoute";
 import Queue from "./routes/Queue";
 import Settings from "./routes/Settings";
 import { selectPreferredTheme } from "./store/slices/appSlice";
-import { useAppSelector } from "./store/store";
+import { updateAircraftStatus } from "./store/slices/dataSlice";
+import { useAppDispatch, useAppSelector } from "./store/store";
+import { socket } from "./api/socket";
+import { roundValues } from "./utils/telemetry";
 
 function App() {
     const colorScheme = useAppSelector(selectPreferredTheme);
+    const dispatch = useAppDispatch();
     const isDark = colorScheme === "dark";
 
     const theme = useMemo(
@@ -77,6 +81,15 @@ function App() {
             ),
         [colorScheme],
     );
+
+    useEffect(() => {
+        socket.on("drone_update", (data) => {
+            dispatch(updateAircraftStatus(roundValues(data)));
+        });
+        return () => {
+            socket.off("drone_update");
+        };
+    }, []);
 
     return (
         <ThemeProvider theme={theme}>
