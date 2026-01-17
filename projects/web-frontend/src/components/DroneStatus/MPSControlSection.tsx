@@ -3,7 +3,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
 import { armDrone, prepareTakeoffDrone, prepareRtlParams } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
-import { selectAircraftStatus } from "../../store/slices/dataSlice";
+import { selectAircraftStatus, setTakeoffWaypoint } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 
 export default function MPSControlSection() {
@@ -102,6 +102,8 @@ export default function MPSControlSection() {
                                             severity: "success",
                                         }),
                                     );
+                                    // Store the takeoff waypoint in the redux store
+                                    dispatch(setTakeoffWaypoint(response.data));
                                 } else {
                                     dispatch(
                                         openSnackbar({
