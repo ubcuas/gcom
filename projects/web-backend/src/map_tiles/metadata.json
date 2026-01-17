@@ -1,12 +1,23 @@
 {
-  "tiles": ["<replaced with actual tile URL>"],
+  "tiles": [
+    "<replaced with actual tile URL>"
+  ],
   "name": "OpenMapTiles",
   "format": "pbf",
   "basename": "north-america_canada.mbtiles",
   "id": "openmaptiles",
   "attribution": "\u003Ca href=\"https://www.maptiler.com/copyright/\" target=\"_blank\"\u003E&copy; MapTiler\u003C/a\u003E \u003Ca href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\"\u003E&copy; OpenStreetMap contributors\u003C/a\u003E",
-  "bounds": [-141.7761, 41.6377, -44.17684, 85.04032],
-  "center": [-92.97647, 63.33901, 14],
+  "bounds": [
+    -141.7761,
+    41.6377,
+    -44.17684,
+    85.04032
+  ],
+  "center": [
+    -92.97647,
+    63.33901,
+    14
+  ],
   "description": "Region Canada extract from https://openmaptiles.com",
   "maxzoom": 14,
   "minzoom": 0,
