@@ -1,4 +1,4 @@
-import { Flight, Place } from "@mui/icons-material";
+import { Flight, Place, Home } from "@mui/icons-material";
 import { Box } from "@mui/material";
 import { Fragment, useEffect } from "react";
 import Map, { Layer, LayerProps, Marker, Source } from "react-map-gl/maplibre";
@@ -8,7 +8,7 @@ import {
     selectMpsWaypointMapState,
     toggleMpsWaypointMapState,
 } from "../../store/slices/appSlice";
-import { selectAircraftStatus, selectCurrentRouteWaypoints } from "../../store/slices/dataSlice";
+import { selectAircraftStatus, selectCurrentRouteWaypoints, selectTakeoffWaypoint } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
 import { MAPTILER_API_KEY } from "../../constants";
@@ -18,6 +18,7 @@ export default function MapView() {
     const mpsWaypointMapState = useAppSelector(selectMpsWaypointMapState);
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const coords = useAppSelector(selectMapCenterCoords);
+    const takeoffWaypoint = useAppSelector(selectTakeoffWaypoint);
     const dispatch = useAppDispatch();
 
     useEffect(() => {
@@ -106,6 +107,42 @@ export default function MapView() {
                         )}
                     </Fragment>
                 ))}
+
+                {takeoffWaypoint && (
+                    <Marker
+                        latitude={takeoffWaypoint.latitude}
+                        longitude={takeoffWaypoint.longitude}
+                        style={{
+                            cursor: "pointer",
+                        }}
+                    >
+                        <Home
+                            sx={{
+                                color: "#ff5722", // Distinct color for takeoff
+                                fontSize: "48px",
+                                position: "absolute",
+                                top: "-46px",
+                                left: "-24px",
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                background: "#ff5722",
+                                height: "18px",
+                                width: "12px",
+                                position: "absolute",
+                                left: "-6px",
+                                top: "-36px",
+                                textAlign: "center",
+                                fontWeight: "bold",
+                                fontSize: "18px",
+                            }}
+                        >
+                            T {/* Label for Takeoff */}
+                        </Box>
+                    </Marker>
+                )}
+
                 <Marker latitude={aircraftStatus.latitude} longitude={aircraftStatus.longitude}>
                     <Flight
                         sx={{
