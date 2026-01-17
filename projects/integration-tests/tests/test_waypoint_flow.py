@@ -10,14 +10,15 @@ Key considerations:
 """
 
 import pytest
+
 from helpers import (
-    create_route_with_waypoints,
-    transform_db_waypoints_to_drone_format,
+    assert_queue_empty,
+    assert_queue_upload_successful,
     assert_route_contains_waypoints,
     assert_waypoints_match,
+    create_route_with_waypoints,
     filter_home_waypoint,
-    assert_queue_upload_successful,
-    assert_queue_empty,
+    transform_db_waypoints_to_drone_format,
 )
 
 
@@ -42,9 +43,7 @@ def test_basic_route_to_drone_flow(api_client, sample_route_data):
     """
     # Step 1: Create route with waypoints
     route, waypoints = create_route_with_waypoints(
-        api_client,
-        sample_route_data["name"],
-        num_waypoints=3
+        api_client, sample_route_data["name"], num_waypoints=3
     )
 
     # Step 2: Retrieve route from database
@@ -64,9 +63,7 @@ def test_basic_route_to_drone_flow(api_client, sample_route_data):
     queue = api_client.get_queue()
     filtered = filter_home_waypoint(queue)
     assert_waypoints_match(
-        filtered,
-        drone_waypoints,
-        check_fields=["latitude", "longitude", "altitude"]
+        filtered, drone_waypoints, check_fields=["latitude", "longitude", "altitude"]
     )
 
 
@@ -123,6 +120,7 @@ def test_waypoint_queue_persists_across_requests(api_client, sample_waypoints):
 
     # Wait for waypoints to persist (home + uploaded waypoints)
     from helpers import wait_for_waypoint_count
+
     wait_for_waypoint_count(api_client, len(sample_waypoints) + 1, timeout=10)
 
     # Retrieve queue multiple times to verify persistence
@@ -134,14 +132,10 @@ def test_waypoint_queue_persists_across_requests(api_client, sample_waypoints):
     filtered1 = filter_home_waypoint(queue1)
     filtered2 = filter_home_waypoint(queue2)
     assert_waypoints_match(
-        filtered1,
-        sample_waypoints,
-        check_fields=["latitude", "longitude", "altitude"]
+        filtered1, sample_waypoints, check_fields=["latitude", "longitude", "altitude"]
     )
     assert_waypoints_match(
-        filtered2,
-        sample_waypoints,
-        check_fields=["latitude", "longitude", "altitude"]
+        filtered2, sample_waypoints, check_fields=["latitude", "longitude", "altitude"]
     )
 
 

@@ -1,6 +1,8 @@
+import time
+
 from pymavlink import mavutil
 from pymavlink.mavutil import mavfile
-import time
+
 from server.logging_config import logger
 
 
@@ -29,7 +31,7 @@ def connect_to_sysid(connection_str: str, sysid: int, timeout: float = 3) -> mav
             if the_connection.target_system == sysid:
                 logger.info(f"Now connected to SYSID {sysid}")
                 return the_connection
-        except Exception as e:
+        except Exception:
             elapsed = time.time() - time_start
             logger.debug(f"Waiting for heartbeat... ({elapsed:.1f}s elapsed)")
             if elapsed >= timeout:

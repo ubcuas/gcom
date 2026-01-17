@@ -4,7 +4,7 @@ These functions support the complete flow from route creation
 through database storage to drone queue operations.
 """
 
-from typing import Dict, Any, List, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .api_client import APIClient
@@ -14,7 +14,7 @@ def create_route_with_waypoints(
     api_client: "APIClient",
     route_name: str,
     num_waypoints: int = 3,
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Create a route with specified number of waypoints.
 
     Creates a route in the database and populates it with the specified
@@ -36,7 +36,9 @@ def create_route_with_waypoints(
     """
     # Create route
     route_response = api_client.create_route({"name": route_name})
-    assert route_response.status_code == 201, f"Failed to create route: {route_response.text}"
+    assert (
+        route_response.status_code == 201
+    ), f"Failed to create route: {route_response.text}"
     route = route_response.json()
 
     # Create waypoints
@@ -54,15 +56,17 @@ def create_route_with_waypoints(
             "pass_option": 0,
         }
         response = api_client.create_waypoint(waypoint_data)
-        assert response.status_code == 201, f"Failed to create waypoint {i}: {response.text}"
+        assert (
+            response.status_code == 201
+        ), f"Failed to create waypoint {i}: {response.text}"
         created_waypoints.append(response.json())
 
     return route, created_waypoints
 
 
 def transform_db_waypoints_to_drone_format(
-    db_waypoints: List[Dict[str, Any]]
-) -> List[Dict[str, Any]]:
+    db_waypoints: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Transform database waypoints to drone API format.
 
     Database waypoints include fields like UUID ids, route references,

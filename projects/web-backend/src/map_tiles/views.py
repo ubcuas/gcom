@@ -1,7 +1,8 @@
+import gzip
 import json
 import os
+
 from django.http import FileResponse, HttpResponse, JsonResponse
-import gzip
 
 
 def serve_metadata(request):
@@ -12,7 +13,7 @@ def serve_metadata(request):
     metadata_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "metadata.json"
     )
-    with open(metadata_path, "r") as f:
+    with open(metadata_path) as f:
         metadata_json = json.load(f)
         metadata_json["tiles"] = [
             request.build_absolute_uri("tiles/") + "{z}/{x}/{y}.pbf"
@@ -29,7 +30,7 @@ def serve_style_json(request):
     style_json_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "osmbright.json"
     )
-    with open(style_json_path, "r") as f:
+    with open(style_json_path) as f:
         style_json = json.load(f)
 
         # Sets the metadata file url under "sources"
@@ -68,7 +69,7 @@ def serve_glyphs(_, fontstack, fontrange):
             open(glyphs_path, "rb"), content_type="application/x-protobuf"
         )
         return response
-    except IOError:
+    except OSError:
         return JsonResponse({"message": "Error reading glyph file"}, status=500)
 
 
@@ -104,5 +105,5 @@ def serve_tiles(_, z, x, y):
         )
         return response
 
-    except IOError:
+    except OSError:
         return JsonResponse({"message": "Error reading tile file"}, status=500)

@@ -1,8 +1,10 @@
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from .serializers import AreaOfInterestSerializer
-from .models import AreaOfInterest
 import json
+
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+from .models import AreaOfInterest
+from .serializers import AreaOfInterestSerializer
 
 # pylint: disable=no-member
 

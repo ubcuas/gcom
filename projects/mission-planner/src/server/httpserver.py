@@ -1,26 +1,23 @@
 import json
+
 from flask import Flask, request
 from flask_socketio import SocketIO
-
 from pymavlink.mavutil import mavfile
 
-from server.operations.takeoff import arm_disarm
-from server.operations.prepare_takeoff import prepare_takeoff
-from server.operations.queue import new_mission, set_home, clear_mission
-from server.operations.get_info import get_status, get_current_mission
-from server.operations.change_modes import change_flight_mode
-from server.operations.land import land_in_place, land_at_position
-
+from server.common.encoders import command_int_to_string, command_string_to_int
+from server.common.status import Status
+from server.common.wpqueue import Waypoint, WaypointQueue
 from server.features.aeac_scan import scan_area
 from server.features.aeac_water_delivery import generate_water_wps
-
-from server.utilities.request_message_streaming import set_parameter
-
-from server.common.wpqueue import WaypointQueue, Waypoint
-from server.common.status import Status
-from server.common.encoders import command_string_to_int, command_int_to_string
-from server.services import StatusCache, MavlinkHandler
 from server.logging_config import logger
+from server.operations.change_modes import change_flight_mode
+from server.operations.get_info import get_current_mission, get_status
+from server.operations.land import land_in_place
+from server.operations.prepare_takeoff import prepare_takeoff
+from server.operations.queue import clear_mission, new_mission, set_home
+from server.operations.takeoff import arm_disarm
+from server.services import MavlinkHandler, StatusCache
+from server.utilities.request_message_streaming import get_parameter, set_parameter
 
 
 class HTTP_Server:
@@ -74,7 +71,7 @@ class HTTP_Server:
             wpq = []
             for wpdict in payload:
                 altitude = wpdict.get("altitude")
-                if altitude != None:
+                if altitude is not None:
                     last_altitude = altitude
                 else:
                     altitude = last_altitude
@@ -103,7 +100,6 @@ class HTTP_Server:
                 wpq.append(wp)
 
             success = new_mission(self.handler, WaypointQueue(wpq.copy()))
-            copy = WaypointQueue(wpq.copy()).aslist()
             wpq.clear()
 
             if success:
@@ -126,7 +122,7 @@ class HTTP_Server:
                 new_waypoints = []
                 for wpdict in payload:
                     altitude = wpdict.get("altitude")
-                    if altitude != None:
+                    if altitude is not None:
                         last_altitude = altitude
                     else:
                         altitude = last_altitude
@@ -158,7 +154,6 @@ class HTTP_Server:
                 new_waypoints.extend(curr_wpq.aslist()[curr:])
 
                 success = new_mission(self.handler, WaypointQueue(new_waypoints.copy()))
-                copy = WaypointQueue(new_waypoints.copy()).aslist()
                 new_waypoints.clear()
 
                 if success:
@@ -188,7 +183,7 @@ class HTTP_Server:
         def post_prepare_takeoff():
             payload = request.get_json()
 
-            if not ("altitude" in payload):
+            if "altitude" not in payload:
                 return "Altitude cannot be null", 400
 
             altitude = float(payload["altitude"])
@@ -226,17 +221,17 @@ class HTTP_Server:
                     )
                 else:
                     return (
-                        f"Arm/disarm failed - drone is NOT in the requested state",
+                        "Arm/disarm failed - drone is NOT in the requested state",
                         400,
                     )
             else:
-                return f"Unrecognized arm/disarm command parameter", 400
+                return "Unrecognized arm/disarm command parameter", 400
 
         @app.route("/prepare_rtl_params", methods=["POST"])
         def post_prepare_rtl_params():
             payload = request.get_json()
 
-            if not ("altitude" in payload):
+            if "altitude" not in payload:
                 return "Altitude cannot be null", 400
 
             altitude = payload["altitude"]
@@ -336,32 +331,62 @@ class HTTP_Server:
             else:
                 return "New Home NOT set", 400
 
-        @app.route("/flightmode", methods=["GET", "PUT"])
+        @app.route("/flightmode", methods=["PUT"])
         def flight_mode():
-            if request.method == "GET":
-                flight_mode = self.status_cache.get_flight_mode(
-                    self.mav_connection.mode_mapping()
+            input = request.get_json()
+
+            success = change_flight_mode(
+                self.handler,
+                self.mav_connection.target_system,
+                self.mav_connection.target_component,
+                input["mode"],
+            )
+
+            if success:
+                return f"OK! Changed mode: {input['mode']}", 200
+            else:
+                return f"Unrecognized mode: {input['mode']}", 400
+
+        @app.route("/parameters/<param_id>", methods=["GET"])
+        def get_param(param_id):
+            try:
+                result = get_parameter(self.handler, param_id)
+
+                if result is None:
+                    logger.error(f"Failed to get parameter {param_id}")
+                    return f"Parameter {param_id} not found or request timed out", 500
+
+                logger.info(f"Retrieved parameter {param_id}: {result['param_value']}")
+                return result, 200
+            except Exception as e:
+                logger.error(
+                    f"Error getting parameter {param_id}: {type(e).__name__}: {str(e)}"
                 )
+                return "Failed to get parameter", 500
 
-                if flight_mode is not None:
-                    return {"mode": flight_mode}, 200
-                else:
-                    return "Flight mode not available", 503
+        @app.route("/parameters/<param_id>", methods=["PUT"])
+        def set_param(param_id):
+            try:
+                payload = request.get_json()
 
-            else:  # PUT
-                input = request.get_json()
+                if "value" not in payload:
+                    return "Parameter value is required", 400
 
-                success = change_flight_mode(
-                    self.handler,
-                    self.mav_connection.target_system,
-                    self.mav_connection.target_component,
-                    input["mode"],
-                )
+                param_value = payload["value"]
+                logger.info(f"Setting parameter {param_id} to {param_value}")
+
+                success = set_parameter(self.handler, param_id, param_value)
 
                 if success:
-                    return f"OK! Changed mode: {input['mode']}", 200
+                    return f"Parameter {param_id} set to {param_value}", 200
                 else:
-                    return f"Unrecognized mode: {input['mode']}", 400
+                    logger.error(f"Failed to set parameter {param_id}")
+                    return f"Failed to set parameter {param_id}", 500
+            except Exception as e:
+                logger.error(
+                    f"Error setting parameter {param_id}: {type(e).__name__}: {str(e)}"
+                )
+                return "Failed to set parameter", 500
 
         @app.route("/aeac_scan", methods=["POST"])
         def generate_scan_points():
@@ -382,11 +407,11 @@ class HTTP_Server:
                 )
 
                 if new_mission(self.handler, wpq):
-                    return f"Scan Mission Set", 200
+                    return "Scan Mission Set", 200
                 else:
                     return "Mission request failed", 400
             else:
-                return f"Invalid input, missing a parameter.", 400
+                return "Invalid input, missing a parameter.", 400
 
         @app.route("/aeac_deliver", methods=["POST"])
         def deliver_water_down():
@@ -410,11 +435,11 @@ class HTTP_Server:
                 )
 
                 if new_mission(self.handler, wpq):
-                    return f"Commencing Deliver operation", 200
+                    return "Commencing Deliver operation", 200
                 else:
                     return "Mission request failed", 400
             else:
-                return f"Invalid input, missing a parameter.", 400
+                return "Invalid input, missing a parameter.", 400
 
         try:
             socketio.run(

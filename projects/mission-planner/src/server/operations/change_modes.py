@@ -1,6 +1,7 @@
 from pymavlink.mavutil import mavfile, mavlink
-from server.services.mavlink_handler import MavlinkHandler
+
 from server.logging_config import logger
+from server.services.mavlink_handler import MavlinkHandler
 
 
 def change_flight_mode(

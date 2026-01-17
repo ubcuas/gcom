@@ -1,7 +1,9 @@
+from collections.abc import Mapping
 from datetime import datetime, timedelta
-from typing import Any, List, Mapping
-from asgiref.sync import sync_to_async
+from typing import Any
+
 import socketio
+from asgiref.sync import sync_to_async
 
 sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 
@@ -28,7 +30,7 @@ async def disconnect(sid: str) -> None:
 
 
 @sio.on("message")
-async def log_message(sid: str, *args: List[str]) -> None:
+async def log_message(sid: str, *args: list[str]) -> None:
     """Runs whenever a message is sent to the server
 
     Args:
