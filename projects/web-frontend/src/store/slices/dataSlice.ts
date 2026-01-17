@@ -9,6 +9,7 @@ type DataState = {
     aircraftStatus: AircraftStatus;
     availableRoutes: Route[];
     currentRouteId: number | null;
+    takeoffWaypoint: Waypoint | null;
 };
 
 const initialState: DataState = {
@@ -25,6 +26,7 @@ const initialState: DataState = {
     },
     availableRoutes: [],
     currentRouteId: null,
+    takeoffWaypoint: null,
 };
 
 const dataSlice = createSlice({
@@ -101,6 +103,10 @@ const dataSlice = createSlice({
                 }
             }
         },
+        setTakeoffWaypoint: (state, action: PayloadAction<Waypoint | null>) => {
+            // Add this reducer
+            state.takeoffWaypoint = action.payload;
+        },
     },
 });
 
@@ -116,6 +122,7 @@ export const {
     addWaypointToCurrentRoute,
     editWaypointInCurrentRoute,
     deleteWaypointFromCurrentRoute,
+    setTakeoffWaypoint,
 } = dataSlice.actions;
 
 export const selectAircraftStatus = (state: RootState) => state.data.aircraftStatus;
@@ -124,6 +131,8 @@ export const selectCurrentRoute = (state: RootState) =>
     state.data.availableRoutes.find((r) => r.id === state.data.currentRouteId) ?? null;
 export const selectCurrentRouteWaypoints = (state: RootState) =>
     state.data.availableRoutes.find((r) => r.id === state.data.currentRouteId)?.waypoints ?? [];
+
+export const selectTakeoffWaypoint = (state: RootState) => state.data.takeoffWaypoint;
 
 const dataReducer = dataSlice.reducer;
 export default dataReducer;
