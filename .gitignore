@@ -7,3 +7,4 @@
 
 .DS_Store
 *.env
+projects/web-backend/src/db.sqlite3-journal
