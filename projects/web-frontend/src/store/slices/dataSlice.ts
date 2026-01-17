@@ -13,7 +13,7 @@ type DataState = {
 
 const initialState: DataState = {
     aircraftStatus: {
-        timestamp: new Date().getTime(),
+        timestamp: Date.now(),
         latitude: 0,
         longitude: 0,
         altitude: 100,

@@ -10,7 +10,7 @@ import {
 import { FormErrors, FormKeys, FormState } from "../../types/WaypointForm";
 import parseWaypointForm from "../../utils/parseWaypointForm";
 import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
-import { selectAppSlice } from "../../store/slices/appSlice.ts";
+import { openSnackbar, selectAppSlice } from "../../store/slices/appSlice.ts";
 
 // TODO: Needs a bit of cleaning up, im sure there are better logical flows for this form.
 
@@ -120,6 +120,8 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
             }
             dispatch(addWaypointToCurrentRoute(waypoint));
             dispatch(saveCurrentRouteToBackend());
+            const message = `Waypoint "${waypoint.name}" created at (${waypoint.latitude}, ${waypoint.longitude})`;
+            dispatch(openSnackbar({ message, severity: "success" }));
         }
     };
 
@@ -137,6 +139,8 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
             }),
         );
         dispatch(saveCurrentRouteToBackend());
+        const message = `Edited waypoint "${waypoint.name}" at (${waypoint.latitude}, ${waypoint.longitude})`;
+        dispatch(openSnackbar({ message, severity: "success" }));
         cancelEditing();
     };
 
