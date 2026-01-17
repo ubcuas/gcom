@@ -104,7 +104,6 @@ const dataSlice = createSlice({
             }
         },
         setTakeoffWaypoint: (state, action: PayloadAction<Waypoint | null>) => {
-            // Add this reducer
             state.takeoffWaypoint = action.payload;
         },
     },
