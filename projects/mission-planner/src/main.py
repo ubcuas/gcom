@@ -46,6 +46,7 @@ if __name__ == "__main__":
     # Create global MAVLink services
     logger.info("Creating MAVLink handler and status cache...")
     status_cache = StatusCache()
+    status_cache.set_mode_mapping(mav_connection.mode_mapping())
     handler = MavlinkHandler(mav_connection, status_cache)
     handler.start()
     logger.info("MAVLink handler started")

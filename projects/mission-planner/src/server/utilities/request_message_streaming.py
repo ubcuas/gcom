@@ -210,6 +210,46 @@ def request_messages(handler: MavlinkHandler, message_types: list) -> bool:
             logger.warning(f"Request for Message of type {message_type} DENIED")
 
 
+def get_parameter(handler: MavlinkHandler, param_id: str):
+    param_id_bytes = param_id.encode("ascii").ljust(16, b"\x00")
+
+    # Sometimes if the SITL is failing to respond with the param values, you may be accidentally
+    # using the plane SITL instead of the copter
+    for attempt in range(2):
+        handler.mav.param_request_read_send(
+            handler.target_system, handler.target_component, param_id_bytes, -1
+        )
+
+        def filter_param_id(msg):
+            # Pymavlink already decodes param_id to string and strips null padding
+            logger.debug(f"Comparing param_id: '{msg.param_id}' with '{param_id}'")
+            return msg.param_id == param_id
+
+        param_value_msg = handler.wait_for_message(
+            "PARAM_VALUE", timeout=3.0, filter_func=filter_param_id
+        )
+
+        if param_value_msg is not None:
+            received_param_id = param_value_msg.param_id
+            logger.debug(
+                f"Param value message for {received_param_id}: {param_value_msg}"
+            )
+
+            return {
+                "param_id": received_param_id,
+                "param_value": param_value_msg.param_value,
+                "param_type": param_value_msg.param_type,
+            }
+
+        if attempt == 0:
+            logger.warning(
+                f"Timeout getting parameter {param_id}, retrying (attempt {attempt + 1}/2)"
+            )
+
+    logger.error(f"Failed to get parameter {param_id} after 2 attempts")
+    return None
+
+
 def set_parameter(handler: MavlinkHandler, param_id, param_value) -> bool:
     param_id = bytes(param_id, "ascii")
     # obtain parameter type

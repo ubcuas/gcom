@@ -26,6 +26,7 @@ class StatusCache:
     def __init__(self):
         self._cache: Dict[str, Tuple[Any, float]] = {}
         self._lock = threading.Lock()
+        self._mode_mapping: Optional[Dict[str, int]] = None
 
     def update(self, msg_type: str, message: Any) -> None:
         """
@@ -115,24 +116,31 @@ class StatusCache:
         with self._lock:
             self._cache.clear()
 
-    def get_flight_mode(self, mode_mapping: Dict[str, int]) -> Optional[str]:
+    def set_mode_mapping(self, mode_mapping: Dict[str, int]) -> None:
         """
-        Get the current flight mode from the cached HEARTBEAT message.
+        Set the mode mapping for flight mode lookups.
 
         Args:
             mode_mapping: Dictionary mapping mode names to mode IDs
+        """
+        with self._lock:
+            self._mode_mapping = mode_mapping
+
+    def get_flight_mode(self) -> Optional[str]:
+        """
+        Get the current flight mode from the cached HEARTBEAT message.
 
         Returns:
             Flight mode name (e.g., 'GUIDED', 'RTL') or None if not available
         """
         heartbeat_msg = self.get_message("HEARTBEAT")
-        if not heartbeat_msg:
+        if not heartbeat_msg or not self._mode_mapping:
             return None
 
         custom_mode = heartbeat_msg.custom_mode
 
         # Reverse lookup: find mode name from mode ID
-        for mode_name, mode_id in mode_mapping.items():
+        for mode_name, mode_id in self._mode_mapping.items():
             if mode_id == custom_mode:
                 return mode_name
 
