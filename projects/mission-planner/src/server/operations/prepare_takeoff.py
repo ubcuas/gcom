@@ -1,11 +1,11 @@
-from server.common.wpqueue import WaypointQueue, Waypoint
-from server.operations.queue import new_mission
+from server.common.wpqueue import Waypoint, WaypointQueue
+from server.logging_config import logger
 from server.operations.get_info import get_status
+from server.operations.queue import new_mission
 from server.services.mavlink_handler import MavlinkHandler
 from server.services.status_cache import StatusCache
-from server.utilities.wait_for_position_aiding import wait_until_position_aiding
 from server.utilities.request_message_streaming import set_parameter
-from server.logging_config import logger
+from server.utilities.wait_for_position_aiding import wait_until_position_aiding
 
 
 def prepare_takeoff(

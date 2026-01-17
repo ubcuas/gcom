@@ -5,12 +5,13 @@ mid-flight mode changes, and air-start scenarios.
 """
 
 import pytest
+
 from helpers import (
+    filter_home_waypoint,
     wait_for_altitude,
     wait_for_flight_mode,
     wait_for_position,
     wait_for_stationary,
-    filter_home_waypoint,
 )
 
 
@@ -171,9 +172,9 @@ def test_autonomous_navigation(api_client, flight_cleanup):
     # Verify queue
     queue = api_client.get_queue()
     filtered_queue = filter_home_waypoint(queue)
-    assert len(filtered_queue) == len(waypoints), (
-        f"Expected {len(waypoints)} waypoints in queue, got {len(filtered_queue)}"
-    )
+    assert len(filtered_queue) == len(
+        waypoints
+    ), f"Expected {len(waypoints)} waypoints in queue, got {len(filtered_queue)}"
     print(f"Mission uploaded: {len(filtered_queue)} waypoints")
 
     # PHASE 3: Mission Execution (Air Start)
@@ -191,7 +192,9 @@ def test_autonomous_navigation(api_client, flight_cleanup):
     print("\nNavigating to waypoints...")
 
     for i, wp in enumerate(waypoints[:-1], start=1):  # Exclude loiter waypoint
-        print(f"Waypoint {i}/{len(waypoints)-1}: ({wp['latitude']:.6f}, {wp['longitude']:.6f})")
+        print(
+            f"Waypoint {i}/{len(waypoints)-1}: ({wp['latitude']:.6f}, {wp['longitude']:.6f})"
+        )
         wait_for_position(
             api_client,
             wp["latitude"],
@@ -275,12 +278,12 @@ def test_autonomous_navigation(api_client, flight_cleanup):
         f"Distance from start: {distance_from_start:.1f}m"
     )
 
-    assert distance_from_start <= 20.0, (
-        f"Drone should land near start position, but is {distance_from_start:.1f}m away"
-    )
+    assert (
+        distance_from_start <= 20.0
+    ), f"Drone should land near start position, but is {distance_from_start:.1f}m away"
 
     print("\n=== Test Complete ===")
-    print(f"Mission executed successfully:")
+    print("Mission executed successfully:")
     print(f"  - Navigated {len(waypoints)} waypoints")
-    print(f"  - Loitered at final position")
-    print(f"  - Returned home and landed")
+    print("  - Loitered at final position")
+    print("  - Returned home and landed")

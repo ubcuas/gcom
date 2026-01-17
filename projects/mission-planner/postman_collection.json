@@ -195,35 +195,8 @@
 			"description": "Access to aircraft status."
 		},
 		{
-			"name": "takeoff",
+			"name": "arming",
 			"item": [
-				{
-					"name": "takeoff",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"altitude\": 25\n}"
-						},
-						"url": {
-							"raw": "{{ base_url }}/takeoff",
-							"host": [
-								"{{ base_url }}"
-							],
-							"path": [
-								"takeoff"
-							]
-						},
-						"description": "Lift off to a given altitude."
-					},
-					"response": []
-				},
 				{
 					"name": "arm",
 					"request": {
@@ -252,7 +225,7 @@
 					"response": []
 				}
 			],
-			"description": "Access to takeoff and arming motors."
+			"description": "Access to arming motors."
 		},
 		{
 			"name": "landing",

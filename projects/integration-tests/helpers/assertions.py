@@ -4,13 +4,13 @@ These functions provide clear, reusable validation logic for common
 test assertions related to waypoints, status, and drone state.
 """
 
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .api_client import APIClient
 
 
-def assert_status_valid(status: Dict[str, Any]) -> None:
+def assert_status_valid(status: dict[str, Any]) -> None:
     """Assert that status dictionary contains required fields with valid values.
 
     Validates core telemetry fields that must be present in status responses.
@@ -52,9 +52,9 @@ def assert_status_valid(status: Dict[str, Any]) -> None:
 
 
 def assert_waypoint_match(
-    actual: Dict[str, Any],
-    expected: Dict[str, Any],
-    check_fields: Optional[List[str]] = None,
+    actual: dict[str, Any],
+    expected: dict[str, Any],
+    check_fields: list[str] | None = None,
 ) -> None:
     """Assert that actual waypoint matches expected waypoint.
 
@@ -90,9 +90,9 @@ def assert_waypoint_match(
 
 
 def assert_waypoints_match(
-    actual_list: List[Dict[str, Any]],
-    expected_list: List[Dict[str, Any]],
-    check_fields: Optional[List[str]] = None,
+    actual_list: list[dict[str, Any]],
+    expected_list: list[dict[str, Any]],
+    check_fields: list[str] | None = None,
 ) -> None:
     """Assert that list of waypoints matches expected list.
 
@@ -108,7 +108,9 @@ def assert_waypoints_match(
         expected_list
     ), f"Waypoint count mismatch: {len(actual_list)} != {len(expected_list)}"
 
-    for i, (actual, expected) in enumerate(zip(actual_list, expected_list)):
+    for i, (actual, expected) in enumerate(
+        zip(actual_list, expected_list, strict=False)
+    ):
         try:
             assert_waypoint_match(actual, expected, check_fields)
         except AssertionError as e:
@@ -116,7 +118,7 @@ def assert_waypoints_match(
 
 
 def assert_position_near(
-    pos1: Dict[str, Any], pos2: Dict[str, Any], tolerance_meters: float = 10.0
+    pos1: dict[str, Any], pos2: dict[str, Any], tolerance_meters: float = 10.0
 ) -> None:
     """Assert that two positions are within tolerance of each other.
 
@@ -163,7 +165,7 @@ def assert_altitude_near(
     ), f"Altitude mismatch: {actual_altitude}m != {expected_altitude}m (±{tolerance}m)"
 
 
-def filter_home_waypoint(queue: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def filter_home_waypoint(queue: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Filter out the home waypoint from a queue.
 
     The home waypoint is identified by having id == 0 and "home" in the name.
@@ -175,12 +177,13 @@ def filter_home_waypoint(queue: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         Queue with home waypoint removed
     """
     return [
-        wp for wp in queue
+        wp
+        for wp in queue
         if not (wp.get("id") == 0 and "home" in wp.get("name", "").lower())
     ]
 
 
-def assert_queue_empty(queue: List[Dict[str, Any]]) -> None:
+def assert_queue_empty(queue: list[dict[str, Any]]) -> None:
     """Assert that waypoint queue is empty (only home waypoint present).
 
     Note: MAVLink missions always include a home waypoint at seq=0.
@@ -193,10 +196,12 @@ def assert_queue_empty(queue: List[Dict[str, Any]]) -> None:
         AssertionError: If queue has more than just home waypoint
     """
     filtered = filter_home_waypoint(queue)
-    assert len(filtered) == 0, f"Expected empty queue but found {len(filtered)} waypoints"
+    assert (
+        len(filtered) == 0
+    ), f"Expected empty queue but found {len(filtered)} waypoints"
 
 
-def assert_queue_not_empty(queue: List[Dict[str, Any]]) -> None:
+def assert_queue_not_empty(queue: list[dict[str, Any]]) -> None:
     """Assert that waypoint queue is not empty (excluding home waypoint).
 
     Args:
@@ -210,9 +215,9 @@ def assert_queue_not_empty(queue: List[Dict[str, Any]]) -> None:
 
 
 def assert_field_values_match(
-    actual: Dict[str, Any],
-    expected: Dict[str, Any],
-    fields: List[str],
+    actual: dict[str, Any],
+    expected: dict[str, Any],
+    fields: list[str],
     tolerance: float = 0.001,
 ) -> None:
     """Assert that specified fields match between two dictionaries.
@@ -248,9 +253,9 @@ def assert_field_values_match(
 
 def assert_queue_upload_successful(
     api_client: "APIClient",
-    waypoints: List[Dict[str, Any]],
+    waypoints: list[dict[str, Any]],
     check_response: bool = True,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Upload waypoints and verify they are correctly stored.
 
     This helper consolidates the common pattern of:
@@ -285,17 +290,15 @@ def assert_queue_upload_successful(
 
     # Don't check names - MAVLink doesn't preserve them
     assert_waypoints_match(
-        filtered_queue,
-        waypoints,
-        check_fields=["latitude", "longitude", "altitude"]
+        filtered_queue, waypoints, check_fields=["latitude", "longitude", "altitude"]
     )
 
     return filtered_queue
 
 
 def assert_waypoint_db_match(
-    actual: Dict[str, Any],
-    expected: Dict[str, Any],
+    actual: dict[str, Any],
+    expected: dict[str, Any],
     ignore_id: bool = True,
 ) -> None:
     """Assert that database waypoint matches expected values.
@@ -348,7 +351,7 @@ def assert_waypoint_db_match(
 
 
 def assert_route_contains_waypoints(
-    route: Dict[str, Any],
+    route: dict[str, Any],
     expected_count: int,
 ) -> None:
     """Assert that route contains expected number of waypoints.
@@ -369,7 +372,7 @@ def assert_route_contains_waypoints(
     ), f"Route waypoint count mismatch: {actual_count} != {expected_count}"
 
 
-def assert_waypoints_ordered(waypoints: List[Dict[str, Any]]) -> None:
+def assert_waypoints_ordered(waypoints: list[dict[str, Any]]) -> None:
     """Assert that waypoints are in correct order (0, 1, 2, ...).
 
     Verifies that the 'order' field in each waypoint is sequential starting from 0.

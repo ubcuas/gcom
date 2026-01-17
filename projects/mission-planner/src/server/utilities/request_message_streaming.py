@@ -1,6 +1,7 @@
 from pymavlink import mavutil
-from server.services.mavlink_handler import MavlinkHandler
+
 from server.logging_config import logger
+from server.services.mavlink_handler import MavlinkHandler
 
 
 def set_message_streaming_rates(handler: MavlinkHandler):

@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 
 
 class DroneApiClient:
@@ -36,12 +37,6 @@ class DroneApiClient:
     @staticmethod
     def get_status_history():
         return DroneApiClient._fetch_from_mission_planner("status/history")
-
-    @staticmethod
-    def takeoff(altitude):
-        return DroneApiClient._fetch_from_mission_planner(
-            "takeoff", method="POST", data={"altitude": altitude}
-        )
 
     @staticmethod
     def prepare_takeoff(altitude):

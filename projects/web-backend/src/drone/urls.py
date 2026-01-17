@@ -1,10 +1,10 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
     path("status", views.get_current_status, name="get_current_status"),
     path("status/history", views.get_status_history, name="get_status_history"),
-    path("takeoff", views.takeoff, name="takeoff"),
     path("prepare_takeoff", views.prepare_takeoff, name="prepare_takeoff"),
     path("prepare_rtl_params", views.prepare_rtl_params, name="prepare_rtl_params"),
     path("arm", views.arm, name="arm"),

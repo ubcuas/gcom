@@ -14,8 +14,6 @@ tags:
     description: Access to aircraft status
   - name: feature
     description: Access to competition-specific behaviour
-  - name: takeoff
-    description: Access to takeoff and arming motors
   - name: landing
     description: Access to landing, RTL, and home waypoint
   - name: options
@@ -33,7 +31,7 @@ paths:
         - queue
       summary: Returns the current list of waypoints remaining in the queue
       description: >-
-        Returns the current list of queue of waypoints to hit. 
+        Returns the current list of queue of waypoints to hit.
         Waypoints that have been passed and removed from the queue are not displayed.
       responses:
         "200":
@@ -44,18 +42,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Waypoint"
-    post: 
+    post:
       tags:
         - queue
-      summary: Overwrite the queue with a new list of waypoints 
+      summary: Overwrite the queue with a new list of waypoints
       description: >-
-        POST request containing a list of waypoints with names and longitude, 
-        latitude, and altitude values. If the altitude for a waypoint is null, 
-        uses the altitude of the previous waypoint (in the case of the first 
+        POST request containing a list of waypoints with names and longitude,
+        latitude, and altitude values. If the altitude for a waypoint is null,
+        uses the altitude of the previous waypoint (in the case of the first
         waypoint, uses the current altitude of the drone).
         The existing waypoint queue will be overwritten and lost.
-        Longitude, name, and latitude must not be null/empty. Returns a Bad 
-        Request status code and error message in that case. Longitude and 
+        Longitude, name, and latitude must not be null/empty. Returns a Bad
+        Request status code and error message in that case. Longitude and
         latitude in degrees, altitude in meters.
       requestBody:
         content:
@@ -90,7 +88,7 @@ paths:
     get:
       tags:
         - queue
-      summary: Clear the waypoint queue. 
+      summary: Clear the waypoint queue.
       description: >-
         Idempotent with POST'ing an empty queue to /queue.
       responses:
@@ -102,8 +100,8 @@ paths:
         - status
       summary: Obtain the aircraft status
       description: >-
-        GET request returns the aircraft status. Velocity in m/s. Altitude 
-        in meters and is relative to sea level. Longitude, latitude, heading 
+        GET request returns the aircraft status. Velocity in m/s. Altitude
+        in meters and is relative to sea level. Longitude, latitude, heading
         in degrees.
       responses:
         "200":
@@ -112,37 +110,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Status"
-  /takeoff:
-    post:
-      tags:
-        - takeoff
-      summary: Lift off to a given altitude
-      description: >-
-        POST request containing an altitude to take off to.
-        Don't put an altitude that would be underground.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                altitude:
-                  type: number
-                  format: float64
-      responses:
-        "200":
-          description: Successful operation
-        "400":
-          description: Takeoff unsuccessful or motors disarmed
   /rtl:
     get:
       tags:
         - landing
       summary: return to launch
       description: >-
-        Aircraft returns to home waypoint and lands (return-to-launch). 
-        Returns a Bad Request status code and error message if the drone 
+        Aircraft returns to home waypoint and lands (return-to-launch).
+        Returns a Bad Request status code and error message if the drone
         could not execute the operation.
       responses:
         "200":
@@ -154,10 +129,10 @@ paths:
         - landing
       summary: return to launch at specified altitude
       description: >-
-        Aircraft returns to home waypoint and lands (return-to-launch). 
-        Returns a Bad Request status code and error message if the drone 
+        Aircraft returns to home waypoint and lands (return-to-launch).
+        Returns a Bad Request status code and error message if the drone
         could not execute the operation.
-        POST request body contains the altitude the drone should be at 
+        POST request body contains the altitude the drone should be at
         while transiting back towards the launch point.
       requestBody:
         required: true
@@ -180,17 +155,17 @@ paths:
         - landing
       summary: immediately descend and land
       description: >-
-        Aircraft stops at its current position and lands. 
-        Returns a Bad Request status code and error message if the drone 
+        Aircraft stops at its current position and lands.
+        Returns a Bad Request status code and error message if the drone
         could not execute the operation.
       responses:
         "200":
           description: Successful, drone has started landing procedure
         "400":
           description: Could not initiate landing
-    post: 
-      tags: 
-        - landing 
+    post:
+      tags:
+        - landing
       summary: land at designated location
       description: >-
         Land at the location in the request, approaching at the altitude specified in the request body
@@ -198,21 +173,21 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: 
+            schema:
               $ref: "#/components/schemas/Waypoint"
       responses:
         "200":
-          description: Successful, drone has started landing procedure 
+          description: Successful, drone has started landing procedure
         "400":
-          description: Invalid coordinates - latitude and/or longitude value was null 
+          description: Invalid coordinates - latitude and/or longitude value was null
   /home:
     post:
       tags:
         - landing
       summary: set the home waypoint of the drone
       description: >-
-        POST request containing a waypoint whose longitude, latitiude and 
-        altitiude will be the basis for the new home waypoint. All other 
+        POST request containing a waypoint whose longitude, latitiude and
+        altitiude will be the basis for the new home waypoint. All other
         fields will be ignored.
       requestBody:
         content:
@@ -225,22 +200,22 @@ paths:
         "400":
           description: Home position could not be set
   /diversion:
-    post: 
-      tags: 
+    post:
+      tags:
         - queue
       summary: divert the aircraft around an exclusion zone
       description: >-
-        Include the waypoints that define the exclusion polygon in 
-        order in the exclude array, and the waypoint to rejoin the 
-        normal queue at in the rejoin_at property. The server will 
-        process the information, produce a diverted path, and pass 
-        that to the aircraft, returning 200. Note that 200 will be 
+        Include the waypoints that define the exclusion polygon in
+        order in the exclude array, and the waypoint to rejoin the
+        normal queue at in the rejoin_at property. The server will
+        process the information, produce a diverted path, and pass
+        that to the aircraft, returning 200. Note that 200 will be
         returned whether or not the new path is applied or not.
       requestBody:
         content:
           application/json:
             schema:
-              type: object 
+              type: object
               properties:
                 exclude:
                   type: array
@@ -293,8 +268,6 @@ paths:
           description: Unrecognized mode
   /arm:
     put:
-      tags:
-        - takeoff
       summary: Arm or disarm the motors. Take care.
       description: >-
         Call this endpoint to arm or disarm the drone.
@@ -323,7 +296,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: 
+            schema:
               type: object
               properties:
                 standard:
@@ -342,7 +315,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: 
+            schema:
               type: object
               properties:
                 center_lat:

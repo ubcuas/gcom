@@ -1,6 +1,7 @@
-from django.apps import AppConfig
 import os
 import zipfile
+
+from django.apps import AppConfig
 
 
 class MapTilesConfig(AppConfig):

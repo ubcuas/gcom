@@ -1,5 +1,6 @@
-from drone.models import DroneTelemetry
 from rest_framework import serializers
+
+from drone.models import DroneTelemetry
 
 
 class DroneTelemetrySerializer(serializers.ModelSerializer):

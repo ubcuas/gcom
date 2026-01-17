@@ -5,7 +5,8 @@ web-backend → mission-planner → SITL → back through the stack.
 """
 
 import pytest
-from helpers import assert_status_valid, assert_field_values_match
+
+from helpers import assert_field_values_match, assert_status_valid
 
 
 @pytest.mark.critical
