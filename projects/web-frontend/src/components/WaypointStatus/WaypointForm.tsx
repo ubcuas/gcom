@@ -7,9 +7,11 @@ import {
     editWaypointInCurrentRoute,
     selectCurrentRouteWaypoints,
 } from "../../store/slices/dataSlice";
+import { addWaypointToCurrentRoute, editWaypointInCurrentRoute } from "../../store/slices/dataSlice";
 import { FormErrors, FormKeys, FormState } from "../../types/WaypointForm";
 import parseWaypointForm from "../../utils/parseWaypointForm";
 import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
+import { selectAppSlice } from "../../store/slices/appSlice.ts";
 
 // TODO: Needs a bit of cleaning up, im sure there are better logical flows for this form.
 
@@ -35,6 +37,7 @@ const defaultFormState: FormState = {
 export default function WaypointForm({ editState, clearEditState }: WaypointFormProps) {
     const dispatch = useAppDispatch();
     const waypoints = useAppSelector(selectCurrentRouteWaypoints);
+    const settings = useAppSelector(selectAppSlice);
     const [formState, setFormState] = useState<FormState>(defaultFormState);
 
     const [formErrors, setFormErrors] = useState<FormErrors>({
@@ -212,50 +215,55 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                     onChange={handleFormChange}
                 />
             </Grid>
-            <Grid item xs={12} md={6} lg={3}>
-                <TextField
-                    fullWidth
-                    id="param1"
-                    type="string"
-                    label="Param 1"
-                    value={formState.param1}
-                    onChange={handleFormChange}
-                    onWheel={preventScroll}
-                />
-            </Grid>
-            <Grid item xs={12} md={6} lg={3}>
-                <TextField
-                    fullWidth
-                    id="param2"
-                    type="string"
-                    label="Param 2"
-                    value={formState.param2}
-                    onChange={handleFormChange}
-                    onWheel={preventScroll}
-                />
-            </Grid>
-            <Grid item xs={12} md={6} lg={3}>
-                <TextField
-                    fullWidth
-                    id="param3"
-                    type="string"
-                    label="Param 3"
-                    value={formState.param3}
-                    onChange={handleFormChange}
-                    onWheel={preventScroll}
-                />
-            </Grid>
-            <Grid item xs={12} md={6} lg={3}>
-                <TextField
-                    fullWidth
-                    id="param4"
-                    type="string"
-                    label="Param 4"
-                    value={formState.param4}
-                    onChange={handleFormChange}
-                    onWheel={preventScroll}
-                />
-            </Grid>
+
+            {settings.showParamValues && (
+                <>
+                    <Grid item xs={12} md={6} lg={3}>
+                        <TextField
+                            fullWidth
+                            id="param1"
+                            type="string"
+                            label="Param 1"
+                            value={formState.param1}
+                            onChange={handleFormChange}
+                            onWheel={preventScroll}
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={6} lg={3}>
+                        <TextField
+                            fullWidth
+                            id="param2"
+                            type="string"
+                            label="Param 2"
+                            value={formState.param2}
+                            onChange={handleFormChange}
+                            onWheel={preventScroll}
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={6} lg={3}>
+                        <TextField
+                            fullWidth
+                            id="param3"
+                            type="string"
+                            label="Param 3"
+                            value={formState.param3}
+                            onChange={handleFormChange}
+                            onWheel={preventScroll}
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={6} lg={3}>
+                        <TextField
+                            fullWidth
+                            id="param4"
+                            type="string"
+                            label="Param 4"
+                            value={formState.param4}
+                            onChange={handleFormChange}
+                            onWheel={preventScroll}
+                        />
+                    </Grid>
+                </>
+            )}
             {editState.waypoint ? (
                 <>
                     <Grid item xs={12} lg={6}>

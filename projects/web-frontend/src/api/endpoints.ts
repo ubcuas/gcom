@@ -9,16 +9,12 @@ export const armDrone = async (arm: boolean) => {
     return await api.put("/drone/arm", { arm });
 };
 
-export const takeoffDrone = async (altitude?: number) => {
-    return await api.post("/drone/takeoff", { altitude });
-};
-
 export const prepareTakeoffDrone = async (altitude: number) => {
     return await api.post("/drone/prepare_takeoff", { altitude });
 };
 
-export const prepareRtlParams = async (altitude: number) => {
-    return await api.post("/drone/prepare_rtl_params", { altitude });
+export const returnToLaunch = async () => {
+    return await api.post("/drone/rtl");
 };
 
 export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
@@ -26,9 +22,12 @@ export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
     return await api.post("/drone/queue", waypoints);
 };
 
-export const getGCOM = async (): Promise<Waypoint[]> => {
+// not to be confused with the current route
+// these are the waypoints currently loaded in the drone's mission queue
+// not the ones stored in the backend which may or may not have been posted to the drone
+export const getCurrentMissionRaw = async (): Promise<object[]> => {
     const response = await api.get("/drone/queue");
-    return response.data.map((wp: unknown) => WaypointSchema.parse(wp));
+    return response.data;
 };
 
 export const listRoutes = async (): Promise<Route[]> => {
@@ -92,4 +91,11 @@ export const syncRouteWaypoints = async (routeId: number, waypoints: Waypoint[])
     console.log("Syncing waypoints via API", routeId, waypoints);
     const response = await api.post(`/route/${routeId}/sync-waypoints/`, waypoints);
     return RouteSchema.parse(response.data);
+};
+
+export const getDroneParameter = async (
+    paramId: string,
+): Promise<{ param_id: string; param_value: number; param_type: number }> => {
+    const response = await api.get(`/drone/parameters/${paramId}`);
+    return response.data;
 };

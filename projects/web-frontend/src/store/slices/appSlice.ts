@@ -18,6 +18,7 @@ type AppState = {
     mpsWaypointMapState: boolean[];
     mapViewOpen: boolean;
     mapCenterCoords: Coords;
+    showParamValues: boolean;
 };
 
 const initialState: AppState = localStorage.getItem("appSlice")
@@ -34,6 +35,7 @@ const initialState: AppState = localStorage.getItem("appSlice")
           mpsWaypointMapState: [],
           mapViewOpen: false,
           mapCenterCoords: defaultCoords,
+          showParamValues: false,
       };
 
 const appSlice = createSlice({
@@ -79,6 +81,9 @@ const appSlice = createSlice({
         setMapCenterCoords: (state, action: PayloadAction<Coords>) => {
             state.mapCenterCoords = action.payload;
         },
+        setShowParamValues: (state, action: PayloadAction<boolean>) => {
+            state.showParamValues = action.payload;
+        },
     },
 });
 
@@ -93,6 +98,7 @@ export const {
     initializeMpsWaypointMapState,
     setMapViewOpen,
     setMapCenterCoords,
+    setShowParamValues,
 } = appSlice.actions;
 
 export const selectAppSlice = (state: RootState) => state.app;
@@ -104,6 +110,7 @@ export const selectBypassStatus = (state: RootState) => state.app.bypassArmingRe
 export const selectMpsWaypointMapState = (state: RootState) => state.app.mpsWaypointMapState;
 export const selectMapViewOpen = (state: RootState) => state.app.mapViewOpen;
 export const selectMapCenterCoords = (state: RootState) => state.app.mapCenterCoords;
+export const selectShowParamValues = (state: RootState) => state.app.showParamValues;
 
 const appReducer = appSlice.reducer;
 export default appReducer;

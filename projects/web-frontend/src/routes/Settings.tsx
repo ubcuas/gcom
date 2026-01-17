@@ -6,6 +6,7 @@ import {
     setBypassStatus,
     setMapCenterCoords,
     setPreferredTheme,
+    setShowParamValues,
     setSocketStatus,
 } from "../store/slices/appSlice";
 import { useAppDispatch, useAppSelector } from "../store/store";
@@ -35,12 +36,15 @@ export default function Settings() {
     const handleBypassChange = (event: SelectChangeEvent<string>) => {
         dispatch(setBypassStatus(event.target.value === "Bypassed"));
     };
+    const handleParamDisplay = (event: React.ChangeEvent<HTMLInputElement>) => {
+        dispatch(setShowParamValues(event.target.checked));
+    };
     const handleDefaultCoordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // early return if the input is not a number
         if (/[^0-9.-]/.test(event.target.value)) {
             return;
         }
-        // allow changes to input even if its not a valid coordinate
+        // allow changes to input even if it's not a valid coordinate
         const newCoords =
             event.target.id === "longitude"
                 ? { ...coords, long: event.target.value }
@@ -88,6 +92,12 @@ export default function Settings() {
                         name="Socket Telemetry"
                         type="toggle"
                         onChange={handleSocketChange}
+                    />
+                    <SettingItem
+                        checked={settings.showParamValues}
+                        name="Show Params"
+                        type="toggle"
+                        onChange={handleParamDisplay}
                     />
                     <SettingItem
                         type="select"

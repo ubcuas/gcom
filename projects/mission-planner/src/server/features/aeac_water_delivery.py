@@ -1,4 +1,4 @@
-from server.common.wpqueue import WaypointQueue, Waypoint
+from server.common.wpqueue import Waypoint, WaypointQueue
 
 
 def generate_water_wps(

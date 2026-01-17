@@ -21,5 +21,5 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: ruff  
+      - name: ruff
         uses: chartboost/ruff-action@v1

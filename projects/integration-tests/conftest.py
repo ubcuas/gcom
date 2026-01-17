@@ -6,8 +6,10 @@ The fixtures handle service URLs, API client setup, and state reset.
 
 import os
 import time
+
 import pytest
 from dotenv import load_dotenv
+
 from helpers import APIClient, wait_for_drone_armed
 
 # Load environment variables from .env file if it exists
@@ -291,7 +293,9 @@ def flight_cleanup(api_client):
         final_status = api_client.get_status()
         assert not final_status.get("armed"), "Cleanup: Failed to disarm drone"
         assert final_status["groundspeed"] < 0.5, "Cleanup: Drone not stationary"
-        print(f"Final state verified: disarmed, stationary (groundspeed: {final_status['groundspeed']:.2f} m/s)")
+        print(
+            f"Final state verified: disarmed, stationary (groundspeed: {final_status['groundspeed']:.2f} m/s)"
+        )
         print("=== Cleanup Complete ===\n")
 
     except Exception as e:

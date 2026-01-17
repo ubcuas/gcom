@@ -17,12 +17,11 @@ Including another URLconf
 
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.urls import include
-from django.urls import path
-from drf_spectacular.views import SpectacularAPIView
-from drf_spectacular.views import SpectacularSwaggerView
-from nav.views import RoutesViewset, OrderedWaypointViewset
+from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
+
+from nav.views import OrderedWaypointViewset, RoutesViewset
 
 router = DefaultRouter()
 router.register(r"route", RoutesViewset, basename="route")

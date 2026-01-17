@@ -9,7 +9,7 @@ function sleep(ms) {
 socket.on('message', async function(data) {
     let statusData = JSON.parse(data.status_data);
     console.log('Received status data:', statusData);
-    
+
     await sleep(500);
 
     socket.emit("message", "test");
