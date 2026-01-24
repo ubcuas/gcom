@@ -1,7 +1,9 @@
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 import json
+
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+
 from .mps_api import DroneApiClient
 
 
@@ -15,33 +17,6 @@ def get_current_status(request):
 def get_status_history(request):
     response = DroneApiClient.get_status_history()
     return JsonResponse(response.json(), safe=False, status=response.status_code)
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def takeoff(request):
-    try:
-        data = json.loads(request.body)
-        altitude = data.get("altitude")
-        response = DroneApiClient.takeoff(altitude)
-
-        if response.status_code >= 400:
-            print(f"[ERROR] Mission-planner response: {response.text}")
-            return JsonResponse(
-                {"error": "Mission-planner error", "details": response.text},
-                status=response.status_code,
-            )
-
-        return HttpResponse(status=response.status_code)
-    except (KeyError, ValueError, TypeError) as e:
-        print(f"[ERROR] Invalid input for takeoff: {type(e).__name__}: {str(e)}")
-        return JsonResponse({"error": "Invalid input"}, status=400)
-    except Exception as e:
-        print(f"[ERROR] Unexpected error in takeoff: {type(e).__name__}: {str(e)}")
-        return JsonResponse(
-            {"error": "Internal server error", "details": str(e)},
-            status=500,
-        )
 
 
 @csrf_exempt
@@ -67,10 +42,14 @@ def prepare_takeoff(request):
     
         # return HttpResponse(status=response.status_code)
     except (KeyError, ValueError, TypeError) as e:
-        print(f"[ERROR] Invalid input for prepare_takeoff: {type(e).__name__}: {str(e)}")
+        print(
+            f"[ERROR] Invalid input for prepare_takeoff: {type(e).__name__}: {str(e)}"
+        )
         return JsonResponse({"error": "Invalid input"}, status=400)
     except Exception as e:
-        print(f"[ERROR] Unexpected error in prepare_takeoff: {type(e).__name__}: {str(e)}")
+        print(
+            f"[ERROR] Unexpected error in prepare_takeoff: {type(e).__name__}: {str(e)}"
+        )
         return JsonResponse(
             {"error": "Internal server error", "details": str(e)},
             status=500,
@@ -94,10 +73,14 @@ def prepare_rtl_params(request):
 
         return HttpResponse(status=response.status_code)
     except (KeyError, ValueError, TypeError) as e:
-        print(f"[ERROR] Invalid input for prepare_rtl_params: {type(e).__name__}: {str(e)}")
+        print(
+            f"[ERROR] Invalid input for prepare_rtl_params: {type(e).__name__}: {str(e)}"
+        )
         return JsonResponse({"error": "Invalid input"}, status=400)
     except Exception as e:
-        print(f"[ERROR] Unexpected error in prepare_rtl_params: {type(e).__name__}: {str(e)}")
+        print(
+            f"[ERROR] Unexpected error in prepare_rtl_params: {type(e).__name__}: {str(e)}"
+        )
         return JsonResponse(
             {"error": "Internal server error", "details": str(e)},
             status=500,
@@ -122,19 +105,11 @@ def land(request):
     return HttpResponse(status=response.status_code)
 
 
-@require_http_methods(["GET"])
-def get_rtl(request):
-    response = DroneApiClient.get_rtl()
-    return HttpResponse(status=response.status_code)
-
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def post_rtl(request):
     try:
-        data = json.loads(request.body)
-        altitude = data.get("altitude")
-        response = DroneApiClient.post_rtl(altitude)
+        response = DroneApiClient.post_rtl()
         return HttpResponse(status=response.status_code)
     except (KeyError, ValueError, TypeError):
         return JsonResponse({"error": "Invalid input"}, status=400)
@@ -225,16 +200,70 @@ def diversion(request):
 
 
 @csrf_exempt
-@require_http_methods(["GET", "PUT"])
+@require_http_methods(["PUT"])
 def flightmode(request):
+    try:
+        data = json.loads(request.body)
+        mode = data.get("mode")
+        response = DroneApiClient.put_flightmode(mode)
+        return HttpResponse(status=response.status_code)
+    except (KeyError, ValueError, TypeError):
+        return JsonResponse({"error": "Invalid input"}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "PUT"])
+def parameter(request, param_id):
     if request.method == "GET":
-        response = DroneApiClient.get_flightmode()
-        return JsonResponse(response.json(), safe=False, status=response.status_code)
+        try:
+            response = DroneApiClient.get_parameter(param_id)
+
+            if response.status_code >= 400:
+                print(f"[ERROR] Mission-planner response: {response.text}")
+                return JsonResponse(
+                    {"error": "Mission-planner error", "details": response.text},
+                    status=response.status_code,
+                )
+
+            return JsonResponse(
+                response.json(), safe=False, status=response.status_code
+            )
+        except Exception as e:
+            print(
+                f"[ERROR] Unexpected error in get_parameter: {type(e).__name__}: {str(e)}"
+            )
+            return JsonResponse(
+                {"error": "Internal server error", "details": str(e)}, status=500
+            )
     else:  # PUT
         try:
             data = json.loads(request.body)
-            mode = data.get("mode")
-            response = DroneApiClient.put_flightmode(mode)
+            value = data.get("value")
+
+            if value is None:
+                return JsonResponse(
+                    {"error": "Parameter value is required"}, status=400
+                )
+
+            response = DroneApiClient.set_parameter(param_id, value)
+
+            if response.status_code >= 400:
+                print(f"[ERROR] Mission-planner response: {response.text}")
+                return JsonResponse(
+                    {"error": "Mission-planner error", "details": response.text},
+                    status=response.status_code,
+                )
+
             return HttpResponse(status=response.status_code)
-        except (KeyError, ValueError, TypeError):
+        except (KeyError, ValueError, TypeError) as e:
+            print(
+                f"[ERROR] Invalid input for set_parameter: {type(e).__name__}: {str(e)}"
+            )
             return JsonResponse({"error": "Invalid input"}, status=400)
+        except Exception as e:
+            print(
+                f"[ERROR] Unexpected error in set_parameter: {type(e).__name__}: {str(e)}"
+            )
+            return JsonResponse(
+                {"error": "Internal server error", "details": str(e)}, status=500
+            )

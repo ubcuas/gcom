@@ -1,15 +1,14 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
     path("status", views.get_current_status, name="get_current_status"),
     path("status/history", views.get_status_history, name="get_status_history"),
-    path("takeoff", views.takeoff, name="takeoff"),
     path("prepare_takeoff", views.prepare_takeoff, name="prepare_takeoff"),
     path("prepare_rtl_params", views.prepare_rtl_params, name="prepare_rtl_params"),
     path("arm", views.arm, name="arm"),
     path("land", views.land, name="land"),
-    path("rtl", views.get_rtl, name="rtl"),
     path("rtl", views.post_rtl, name="rtl"),
     path("lock", views.lock, name="lock"),
     path("insert", views.insert, name="insert"),
@@ -19,4 +18,5 @@ urlpatterns = [
     path("clear", views.clear, name="clear"),
     path("diversion", views.diversion, name="diversion"),
     path("flightmode", views.flightmode, name="flight_mode"),
+    path("parameters/<str:param_id>", views.parameter, name="parameter"),
 ]

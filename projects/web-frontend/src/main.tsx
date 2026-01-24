@@ -2,6 +2,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import store from "./store/store.ts";
 import { Provider } from "react-redux";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "@fontsource/inter/300.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";

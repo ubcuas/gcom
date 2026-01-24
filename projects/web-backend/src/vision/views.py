@@ -1,9 +1,7 @@
 from rest_framework import viewsets
 
-from .models import GroundObject
-from .models import Image
-from .serializers import GroundObjectSerializer
-from .serializers import ImageSerializer
+from .models import GroundObject, Image
+from .serializers import GroundObjectSerializer, ImageSerializer
 
 
 # Create your views here.

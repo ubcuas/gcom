@@ -1,18 +1,20 @@
-import { useAppDispatch, useAppSelector } from "../store/store";
-import { selectAircraftStatus, updateAircraftStatus } from "../store/slices/dataSlice";
+import { useAppSelector } from "../store/store";
+import { selectAircraftStatus } from "../store/slices/dataSlice";
 import PositionSection from "./DroneStatus/PositionSection";
 import SpeedSection from "./DroneStatus/SpeedSection";
 import TimeStamp from "./DroneStatus/TimeStamp";
 import MPSControlSection from "./DroneStatus/MPSControlSection";
+import StatusIndicators from "./DroneStatus/StatusIndicators";
 import { useEffect } from "react";
 import { socket } from "../api/socket";
 import { AircraftStatus } from "../types/AircraftStatus";
 import { Paper } from "@mui/material";
 
 const roundValues = (
-    data: Omit<AircraftStatus, "verticalSpeed" | "speed" | "armed"> & {
+    data: Omit<AircraftStatus, "verticalSpeed" | "speed" | "voltage" | "armed"> & {
         vertical_velocity: number;
         velocity: number;
+        battery_voltage: number;
         armed: boolean;
     },
 ) => {
@@ -24,23 +26,14 @@ const roundValues = (
         verticalSpeed: Math.round(data.vertical_velocity * 100) / 100,
         speed: Math.round(data.velocity * 100) / 100,
         heading: Math.round(data.heading),
-        voltage: Math.round(data.voltage * 100) / 100,
+        voltage: Math.round((data.battery_voltage / 1000) * 100) / 100,
         armed: data.armed,
+        flightmode: data.flightmode,
     } satisfies AircraftStatus;
 };
 
 export default function DroneStatusCard() {
     const droneState = useAppSelector(selectAircraftStatus);
-    const dispatch = useAppDispatch();
-
-    useEffect(() => {
-        socket.on("drone_update", (data) => {
-            dispatch(updateAircraftStatus(roundValues(data)));
-        });
-        return () => {
-            socket.off("drone_update");
-        };
-    }, []);
 
     return (
         <Paper
@@ -51,6 +44,11 @@ export default function DroneStatusCard() {
                 gap: 4,
             }}
         >
+            <StatusIndicators
+                flightMode={droneState.flightmode || "UNKNOWN"}
+                armed={droneState.armed}
+                voltage={droneState.voltage}
+            />
             <PositionSection
                 latitude={droneState.latitude}
                 longitude={droneState.longitude}

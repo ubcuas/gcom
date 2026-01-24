@@ -18,8 +18,12 @@ export default function SpeedSection({ speed, verticalSpeed }: { verticalSpeed: 
                     gap: 1,
                 }}
             >
-                <Widget text="Speed" data={`${speed}m/s`} />
+                <Widget text="Horizontal Speed" data={`${speed}m/s`} />
                 <Widget text="Vertical Speed" data={`${verticalSpeed}m/s`} />
+                <Widget
+                    text="Total Speed"
+                    data={`${Math.sqrt(speed * speed + verticalSpeed * verticalSpeed).toFixed(2)}m/s`}
+                />
             </Box>
         </Box>
     );

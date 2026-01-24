@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('drone', '0001_initial'),
+        ("drone", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='dronetelemetry',
-            name='timestamp',
+            model_name="dronetelemetry",
+            name="timestamp",
             field=models.FloatField(primary_key=True, serialize=False),
         ),
     ]

@@ -1,7 +1,7 @@
-import { Flight, Place, Home } from "@mui/icons-material";
-import { Box } from "@mui/material";
-import { Fragment, useEffect } from "react";
-import Map, { Layer, LayerProps, Marker, Source } from "react-map-gl/maplibre";
+import { Flight, Place, Home, MyLocation, CropFree } from "@mui/icons-material";
+import { Box, IconButton, Tooltip } from "@mui/material";
+import { Fragment, useEffect, useRef } from "react";
+import Map, { Layer, LayerProps, MapRef, Marker, Source } from "react-map-gl/maplibre";
 import {
     initializeMpsWaypointMapState,
     selectMapCenterCoords,
@@ -20,10 +20,37 @@ export default function MapView() {
     const coords = useAppSelector(selectMapCenterCoords);
     const takeoffWaypoint = useAppSelector(selectTakeoffWaypoint);
     const dispatch = useAppDispatch();
+    const mapRef = useRef<MapRef>(null);
 
     useEffect(() => {
         dispatch(initializeMpsWaypointMapState(mpsWaypoints.length));
     }, []);
+
+    const fitToWaypoints = () => {
+        if (mpsWaypoints.length === 0) return;
+        const longitudes = mpsWaypoints.map((wp) => wp.longitude);
+        const latitudes = mpsWaypoints.map((wp) => wp.latitude);
+        const minLng = Math.min(...longitudes);
+        const maxLng = Math.max(...longitudes);
+        const minLat = Math.min(...latitudes);
+        const maxLat = Math.max(...latitudes);
+
+        mapRef.current?.fitBounds(
+            [
+                [minLng, minLat],
+                [maxLng, maxLat],
+            ],
+            { padding: 100, duration: 1000 },
+        );
+    };
+
+    const centerOnDrone = () => {
+        mapRef.current?.flyTo({
+            center: [aircraftStatus.longitude, aircraftStatus.latitude],
+            zoom: 16,
+            duration: 1000,
+        });
+    };
 
     const routeData: GeoJSON.GeoJSON = {
         type: "LineString",
@@ -46,6 +73,7 @@ export default function MapView() {
             }}
         >
             <Map
+                ref={mapRef}
                 initialViewState={{
                     longitude: coords.long,
                     latitude: coords.lat,
@@ -58,6 +86,35 @@ export default function MapView() {
                 }
                 doubleClickZoom={false}
             >
+                <Box
+                    sx={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        zIndex: 1,
+                    }}
+                >
+                    <Tooltip title="Center on Drone">
+                        <IconButton
+                            onClick={centerOnDrone}
+                            sx={{ bgcolor: "background.paper", "&:hover": { bgcolor: "background.paper" } }}
+                        >
+                            <MyLocation />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Fit to Waypoints">
+                        <IconButton
+                            onClick={fitToWaypoints}
+                            sx={{ bgcolor: "background.paper", "&:hover": { bgcolor: "background.paper" } }}
+                        >
+                            <CropFree />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+                
                 {mpsWaypoints.map((waypoint, i) => (
                     <Fragment key={i}>
                         <Marker
@@ -93,6 +150,7 @@ export default function MapView() {
                                 {i + 1}
                             </Box>
                         </Marker>
+
                         {mpsWaypointMapState[i] && (
                             <Marker latitude={waypoint.latitude} longitude={waypoint.longitude}>
                                 <WaypointItem
@@ -152,6 +210,7 @@ export default function MapView() {
                         }}
                     />
                 </Marker>
+
                 <Source type="geojson" data={routeData}>
                     <Layer {...routeStyle} />
                 </Source>

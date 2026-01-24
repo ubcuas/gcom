@@ -5,11 +5,12 @@ can takeoff and maintain a stable hover at the target altitude.
 """
 
 import pytest
+
 from helpers import (
+    filter_home_waypoint,
     wait_for_altitude,
     wait_for_flight_mode,
     wait_for_stationary,
-    filter_home_waypoint,
 )
 
 
@@ -86,9 +87,9 @@ def test_basic_takeoff_and_hover(api_client, flight_cleanup):
     # Step 4: Verify queue cleared and only contains home + takeoff waypoint
     queue = api_client.get_queue()
     filtered_queue = filter_home_waypoint(queue)
-    assert len(filtered_queue) == 1, (
-        f"Queue should only contain 1 waypoint (takeoff), found {len(filtered_queue)}"
-    )
+    assert (
+        len(filtered_queue) == 1
+    ), f"Queue should only contain 1 waypoint (takeoff), found {len(filtered_queue)}"
     print("Queue verified: dummy waypoint cleared, only takeoff waypoint present")
 
     # Step 5: Verify flight mode did NOT change
@@ -129,9 +130,9 @@ def test_basic_takeoff_and_hover(api_client, flight_cleanup):
 
     # Step 10: Verify altitude is correct
     status = api_client.get_status()
-    assert abs(status["altitude"] - target_altitude) <= 2.0, (
-        f"Altitude mismatch: {status['altitude']}m != {target_altitude}m"
-    )
+    assert (
+        abs(status["altitude"] - target_altitude) <= 2.0
+    ), f"Altitude mismatch: {status['altitude']}m != {target_altitude}m"
 
     # Step 11: Verify drone is hovering (stationary for 10 seconds)
     print("Verifying stable hover...")

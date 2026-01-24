@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 
 
 class DroneApiClient:
@@ -38,12 +39,6 @@ class DroneApiClient:
         return DroneApiClient._fetch_from_mission_planner("status/history")
 
     @staticmethod
-    def takeoff(altitude):
-        return DroneApiClient._fetch_from_mission_planner(
-            "takeoff", method="POST", data={"altitude": altitude}
-        )
-
-    @staticmethod
     def prepare_takeoff(altitude):
         return DroneApiClient._fetch_from_mission_planner(
             "prepare_takeoff", method="POST", data={"altitude": altitude}
@@ -70,10 +65,8 @@ class DroneApiClient:
         return DroneApiClient._fetch_from_mission_planner("rtl")
 
     @staticmethod
-    def post_rtl(altitude):
-        return DroneApiClient._fetch_from_mission_planner(
-            "rtl", method="POST", data={"altitude": altitude}
-        )
+    def post_rtl():
+        return DroneApiClient._fetch_from_mission_planner("rtl", method="POST")
 
     @staticmethod
     def lock():
@@ -118,11 +111,19 @@ class DroneApiClient:
         )
 
     @staticmethod
-    def get_flightmode():
-        return DroneApiClient._fetch_from_mission_planner("flightmode")
-
-    @staticmethod
     def put_flightmode(mode):
         return DroneApiClient._fetch_from_mission_planner(
             "flightmode", method="PUT", data={"mode": mode}
+        )
+
+    @staticmethod
+    def get_parameter(param_id):
+        return DroneApiClient._fetch_from_mission_planner(
+            f"parameters/{param_id}", method="GET"
+        )
+
+    @staticmethod
+    def set_parameter(param_id, value):
+        return DroneApiClient._fetch_from_mission_planner(
+            f"parameters/{param_id}", method="PUT", data={"value": value}
         )

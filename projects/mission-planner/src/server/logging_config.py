@@ -1,7 +1,6 @@
 import logging
-import os
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 
 def setup_logger(name: str = "mission_planner") -> logging.Logger:
@@ -20,7 +19,7 @@ def setup_logger(name: str = "mission_planner") -> logging.Logger:
     if logger.handlers:
         return logger
 
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # Create logs directory
     log_dir = Path(__file__).parent.parent.parent / "logs"

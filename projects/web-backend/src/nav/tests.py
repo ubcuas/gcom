@@ -1,7 +1,9 @@
 import json
+
 from django.test import TestCase
-from .models import OrderedWaypoint, Route, Waypoint
 from rest_framework.test import APITestCase
+
+from .models import OrderedWaypoint, Route, Waypoint
 
 
 class WaypointModelTest(TestCase):
