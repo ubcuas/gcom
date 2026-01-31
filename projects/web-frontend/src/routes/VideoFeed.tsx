@@ -4,7 +4,7 @@ import { useWebRTCConnection } from "../hooks/useWebRTCConnection";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import DroneStatusCard from "../components/DroneStatusCard";
 
-export default function WebRTCTest() {
+export default function VideoFeed() {
     const { signalingStatus, peerStatus, remoteStream, connect, disconnect, isConnecting } = useWebRTCConnection();
 
     const videoRef = useRef<HTMLVideoElement>(null);
