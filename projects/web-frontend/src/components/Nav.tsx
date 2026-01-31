@@ -1,9 +1,9 @@
 import { EditLocationAlt } from "@mui/icons-material";
-import FlightIcon from "@mui/icons-material/Flight";
 import Home from "@mui/icons-material/Home";
 import MapIcon from "@mui/icons-material/Map";
 import Settings from "@mui/icons-material/Settings";
-import { Paper, Tab, Tabs, Typography } from "@mui/material";
+import VideocamIcon from "@mui/icons-material/Videocam";
+import { Paper, Tab, Tabs } from "@mui/material";
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
 
@@ -11,7 +11,8 @@ const linkMap: Record<string, number> = {
     "": 0,
     map: 1,
     queue: 2,
-    settings: 3,
+    "webrtc-test": 3,
+    settings: 4,
 };
 
 export default function Nav() {
@@ -82,6 +83,14 @@ export default function Nav() {
                     }}
                     label={<EditLocationAlt />}
                     href="/queue"
+                    LinkComponent={Link}
+                />
+                <Tab
+                    sx={{
+                        minWidth: 0,
+                    }}
+                    label={<VideocamIcon />}
+                    href="/webrtc-test"
                     LinkComponent={Link}
                 />
                 <Tab
