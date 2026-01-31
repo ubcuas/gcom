@@ -15,24 +15,11 @@ repos:
     -   id: ruff
         args: [ --fix ]
     -   id: ruff-format
--   repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.17.0
+-   repo: local
     hooks:
     -   id: eslint
+        name: eslint
+        entry: bash -c 'cd projects/web-frontend && npm run lint'
+        language: system
         files: projects/web-frontend/.*\.[jt]sx?$
-        types: [file]
-        args: [--fix]
-        additional_dependencies:
-        - eslint@8.50.0
-        - '@typescript-eslint/eslint-plugin@6.7.3'
-        - '@typescript-eslint/parser@6.7.3'
-        - eslint-config-prettier@9.0.0
-        - eslint-plugin-prettier@5.0.0
-        - eslint-plugin-react-hooks@4.6.0
-        - eslint-plugin-react-refresh@0.4.3
--   repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
-    hooks:
-    -   id: prettier
-        files: projects/web-frontend/.*\.[jt]sx?$
-        types: [file]
+        pass_filenames: false
