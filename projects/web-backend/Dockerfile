@@ -10,11 +10,9 @@ RUN mkdir -p /src /var/log/supervisor
 WORKDIR /src
 
 COPY ./src /src
-COPY pyproject.toml /src
+COPY requirements.txt /src/requirements.txt
 
-RUN pip3 install poetry \
-    && poetry config virtualenvs.create false \
-    && poetry install --only main
+RUN pip3 install --no-cache-dir -r /src/requirements.txt
 
 RUN cat <<EOF > /etc/supervisor/supervisord.conf
 [supervisord]
