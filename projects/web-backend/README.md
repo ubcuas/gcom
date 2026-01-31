@@ -4,16 +4,14 @@
 
 **If you are on Windows, you will need to run this whole project in WSL**
 
-1. Install Python and Redis
+1. Install Python
 2. `pip install -r requirements.txt` to install all Python dependencies
 
 ## Running the Server
 
 **If you are on Windows, you will need to run this whole project in WSL**
 
-1. Start Redis Server (if not already running): `redis-server`
-2. Start GCOM: `python server.py` (in `/src`)
-3. Start Celery Worker: `python -m celery -A gcom worker` (in `/src`)
+1. Start GCOM: `python server.py` (in `/src`)
 
 Remember, if you are starting up the project for the first time, or after database changes, you will need to run the database migrations: `poetry run python manage.py migrate`
 
@@ -24,8 +22,6 @@ Remember, if you are starting up the project for the first time, or after databa
 - Uvicorn: ASGI Server
 - Django + DRF: For ORM and API
 - SocketIO: For WebSocket support
-- Celery: for multithreading
-- Redis: Message Broker (you will need to install this seperately)
 
 ### Swagger
 

@@ -39,7 +39,7 @@ def prepare_takeoff(request):
         # return first element of the queue as the takeoff waypoint
         takeoff_wp = status.json()[0]
         return JsonResponse(takeoff_wp, status=200)
-    
+
         # return HttpResponse(status=response.status_code)
     except (KeyError, ValueError, TypeError) as e:
         print(

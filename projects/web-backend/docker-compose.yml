@@ -9,15 +9,5 @@ services:
     environment:
       - PYTHONPATH=/src
       - PATH=/root/.local/bin:$PATH
-    depends_on:
-      - redis
     ports:
       - "8000:8000"
-
-  redis:
-    image: redis:7.0
-    ports:
-      - "6379:6379"
-
-volumes:
-  redis-data:
