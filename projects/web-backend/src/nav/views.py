@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,8 +8,19 @@ from .serializers import OrderedWaypointSerializer, RouteSerializer
 
 
 # Create your views here.
+@extend_schema_view(
+    list=extend_schema(description="List all waypoints"),
+    create=extend_schema(description="Create a new waypoint"),
+    retrieve=extend_schema(description="Get details of a specific waypoint"),
+    update=extend_schema(description="Update a specific waypoint"),
+    partial_update=extend_schema(description="Partially update a specific waypoint"),
+    destroy=extend_schema(description="Delete a specific waypoint"),
+)
 class OrderedWaypointViewset(viewsets.ModelViewSet):
-    """Viewset for CRUD operations on Waypoints"""
+    """
+    Viewset for CRUD operations on Waypoints.
+    Waypoints are ordered points in space associated with a route.
+    """
 
     queryset = OrderedWaypoint.objects.all()
     serializer_class = OrderedWaypointSerializer
@@ -20,8 +32,19 @@ class OrderedWaypointViewset(viewsets.ModelViewSet):
         return super(OrderedWaypointViewset, self).get_serializer(*args, **kwargs)
 
 
+@extend_schema_view(
+    list=extend_schema(description="List all routes"),
+    create=extend_schema(description="Create a new route"),
+    retrieve=extend_schema(description="Get details of a specific route"),
+    update=extend_schema(description="Update a specific route"),
+    partial_update=extend_schema(description="Partially update a specific route"),
+    destroy=extend_schema(description="Delete a specific route"),
+)
 class RoutesViewset(viewsets.ModelViewSet):
-    """Viewset for CRUD operations on Routes"""
+    """
+    Viewset for CRUD operations on Routes.
+    A route is a collection of ordered waypoints.
+    """
 
     queryset = Route.objects.all().prefetch_related("waypoints")
     serializer_class = RouteSerializer

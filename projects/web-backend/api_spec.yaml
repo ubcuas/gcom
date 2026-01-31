@@ -1,0 +1,1063 @@
+openapi: 3.0.3
+info:
+  title: GCOM
+  version: 1.0.0
+  description: UBC UAS Ground Control Software
+paths:
+  /api/route/:
+    get:
+      operationId: route_list
+      description: List all routes
+      tags:
+      - route
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Route'
+          description: ''
+    post:
+      operationId: route_create
+      description: Create a new route
+      tags:
+      - route
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Route'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Route'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+  /api/route/{id}/:
+    get:
+      operationId: route_retrieve
+      description: Get details of a specific route
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this route.
+        required: true
+      tags:
+      - route
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+    put:
+      operationId: route_update
+      description: Update a specific route
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this route.
+        required: true
+      tags:
+      - route
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Route'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Route'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+    patch:
+      operationId: route_partial_update
+      description: Partially update a specific route
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this route.
+        required: true
+      tags:
+      - route
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoute'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRoute'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoute'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+    delete:
+      operationId: route_destroy
+      description: Delete a specific route
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this route.
+        required: true
+      tags:
+      - route
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/route/{id}/reorder-waypoints/:
+    post:
+      operationId: route_reorder_waypoints_create
+      description: |-
+        Action to reorder waypoints in a route
+        Args:
+            request: The request object - contains the reordered waypoint ids
+            pk: The primary key of the route whose waypoints we're reordering
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this route.
+        required: true
+      tags:
+      - route
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Route'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Route'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+  /api/route/{id}/sync-waypoints/:
+    post:
+      operationId: route_sync_waypoints_create
+      description: |-
+        Synchronize waypoints for a route in a single atomic operation.
+        Handles creating new waypoints, updating existing ones, and deleting removed ones.
+        Args:
+            request: Contains list of waypoints with their data
+            pk: The primary key of the route to sync
+        Returns:
+            The updated route with all waypoints
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this route.
+        required: true
+      tags:
+      - route
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Route'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Route'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+  /api/vision/groundobject/:
+    get:
+      operationId: vision_groundobject_list
+      description: List all ground objects
+      tags:
+      - vision
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroundObject'
+          description: ''
+    post:
+      operationId: vision_groundobject_create
+      description: Create a new ground object
+      tags:
+      - vision
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroundObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GroundObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GroundObject'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroundObject'
+          description: ''
+  /api/vision/groundobject/{id}/:
+    get:
+      operationId: vision_groundobject_retrieve
+      description: Get details of a specific ground object
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ground Object.
+        required: true
+      tags:
+      - vision
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroundObject'
+          description: ''
+    put:
+      operationId: vision_groundobject_update
+      description: Update a specific ground object
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ground Object.
+        required: true
+      tags:
+      - vision
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroundObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GroundObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GroundObject'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroundObject'
+          description: ''
+    patch:
+      operationId: vision_groundobject_partial_update
+      description: Partially update a specific ground object
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ground Object.
+        required: true
+      tags:
+      - vision
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGroundObject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGroundObject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGroundObject'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroundObject'
+          description: ''
+    delete:
+      operationId: vision_groundobject_destroy
+      description: Delete a specific ground object
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Ground Object.
+        required: true
+      tags:
+      - vision
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/vision/image/:
+    get:
+      operationId: vision_image_list
+      description: List all images
+      tags:
+      - vision
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Image'
+          description: ''
+    post:
+      operationId: vision_image_create
+      description: Upload a new image
+      tags:
+      - vision
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Image'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Image'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Image'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+  /api/vision/image/{id}/:
+    get:
+      operationId: vision_image_retrieve
+      description: Get details of a specific image
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - vision
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+    put:
+      operationId: vision_image_update
+      description: Update a specific image
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - vision
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Image'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Image'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Image'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+    patch:
+      operationId: vision_image_partial_update
+      description: Partially update a specific image
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - vision
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedImage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedImage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedImage'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+    delete:
+      operationId: vision_image_destroy
+      description: Delete a specific image
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - vision
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/waypoint/:
+    get:
+      operationId: waypoint_list
+      description: List all waypoints
+      tags:
+      - waypoint
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderedWaypoint'
+          description: ''
+    post:
+      operationId: waypoint_create
+      description: Create a new waypoint
+      tags:
+      - waypoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderedWaypoint'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderedWaypoint'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderedWaypoint'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderedWaypoint'
+          description: ''
+  /api/waypoint/{id}/:
+    get:
+      operationId: waypoint_retrieve
+      description: Get details of a specific waypoint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this ordered waypoint.
+        required: true
+      tags:
+      - waypoint
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderedWaypoint'
+          description: ''
+    put:
+      operationId: waypoint_update
+      description: Update a specific waypoint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this ordered waypoint.
+        required: true
+      tags:
+      - waypoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderedWaypoint'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderedWaypoint'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderedWaypoint'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderedWaypoint'
+          description: ''
+    patch:
+      operationId: waypoint_partial_update
+      description: Partially update a specific waypoint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this ordered waypoint.
+        required: true
+      tags:
+      - waypoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedWaypoint'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedWaypoint'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderedWaypoint'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderedWaypoint'
+          description: ''
+    delete:
+      operationId: waypoint_destroy
+      description: Delete a specific waypoint
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this ordered waypoint.
+        required: true
+      tags:
+      - waypoint
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    ColorEnum:
+      enum:
+      - black
+      - red
+      - blue
+      - green
+      - purple
+      - brown
+      - orange
+      type: string
+      description: |-
+        * `black` - Black
+        * `red` - Red
+        * `blue` - Blue
+        * `green` - Green
+        * `purple` - Purple
+        * `brown` - Brown
+        * `orange` - Orange
+    GroundObject:
+      type: object
+      description: Serializer to convert GroundObject objects to JSON
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        object_type:
+          $ref: '#/components/schemas/ObjectTypeEnum'
+        lat:
+          type: number
+          format: double
+        long:
+          type: number
+          format: double
+        shape:
+          $ref: '#/components/schemas/ShapeEnum'
+        color:
+          $ref: '#/components/schemas/ColorEnum'
+        text:
+          type: string
+          maxLength: 100
+        text_color:
+          $ref: '#/components/schemas/TextColorEnum'
+      required:
+      - id
+      - lat
+      - long
+      - text
+    Image:
+      type: object
+      description: Serializer to convert Image objects to JSON
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+        title:
+          type: string
+          maxLength: 100
+        image_type:
+          $ref: '#/components/schemas/ImageTypeEnum'
+        taken_at:
+          type: string
+          format: date-time
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        altitude:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - id
+      - image
+      - taken_at
+      - title
+    ImageTypeEnum:
+      enum:
+      - visible
+      - thermal
+      type: string
+      description: |-
+        * `visible` - Visible
+        * `thermal` - Thermal
+    ObjectTypeEnum:
+      enum:
+      - standard
+      - emergent
+      type: string
+      description: |-
+        * `standard` - Standard
+        * `emergent` - Emergent
+    OrderedWaypoint:
+      type: object
+      description: Serializer to convert Waypoint objects to JSON
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 32
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        altitude:
+          type: number
+          format: double
+        radius:
+          type: number
+          format: double
+        pass_radius:
+          type: number
+          format: double
+        pass_option:
+          allOf:
+          - $ref: '#/components/schemas/PassOptionEnum'
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        route:
+          type: integer
+      required:
+      - altitude
+      - id
+      - latitude
+      - longitude
+      - name
+      - order
+      - route
+    PassOptionEnum:
+      enum:
+      - 0
+      - 1
+      - -1
+      type: integer
+      description: |-
+        * `0` - Passthrough
+        * `1` - Orbit Clockwise
+        * `-1` - Orbit Counter-Clockwise
+    PatchedGroundObject:
+      type: object
+      description: Serializer to convert GroundObject objects to JSON
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        object_type:
+          $ref: '#/components/schemas/ObjectTypeEnum'
+        lat:
+          type: number
+          format: double
+        long:
+          type: number
+          format: double
+        shape:
+          $ref: '#/components/schemas/ShapeEnum'
+        color:
+          $ref: '#/components/schemas/ColorEnum'
+        text:
+          type: string
+          maxLength: 100
+        text_color:
+          $ref: '#/components/schemas/TextColorEnum'
+    PatchedImage:
+      type: object
+      description: Serializer to convert Image objects to JSON
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+        title:
+          type: string
+          maxLength: 100
+        image_type:
+          $ref: '#/components/schemas/ImageTypeEnum'
+        taken_at:
+          type: string
+          format: date-time
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        altitude:
+          type: number
+          format: double
+          nullable: true
+    PatchedOrderedWaypoint:
+      type: object
+      description: Serializer to convert Waypoint objects to JSON
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 32
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        altitude:
+          type: number
+          format: double
+        radius:
+          type: number
+          format: double
+        pass_radius:
+          type: number
+          format: double
+        pass_option:
+          allOf:
+          - $ref: '#/components/schemas/PassOptionEnum'
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        route:
+          type: integer
+    PatchedRoute:
+      type: object
+      description: Serializer to convert Route objects to JSON
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 32
+        waypoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderedWaypoint'
+          readOnly: true
+    Route:
+      type: object
+      description: Serializer to convert Route objects to JSON
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 32
+        waypoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderedWaypoint'
+          readOnly: true
+      required:
+      - id
+      - name
+      - waypoints
+    ShapeEnum:
+      enum:
+      - circle
+      - semicircle
+      - quartercircle
+      - triangle
+      - rectangle
+      - pentagon
+      - star
+      - cross
+      type: string
+      description: |-
+        * `circle` - Circle
+        * `semicircle` - Semi-Circle
+        * `quartercircle` - Quarter-Circle
+        * `triangle` - Triangle
+        * `rectangle` - Rectangle
+        * `pentagon` - Pentagon
+        * `star` - Star
+        * `cross` - Cross
+    TextColorEnum:
+      enum:
+      - black
+      - red
+      - blue
+      - green
+      - purple
+      - brown
+      - orange
+      type: string
+      description: |-
+        * `black` - Black
+        * `red` - Red
+        * `blue` - Blue
+        * `green` - Green
+        * `purple` - Purple
+        * `brown` - Brown
+        * `orange` - Orange
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
