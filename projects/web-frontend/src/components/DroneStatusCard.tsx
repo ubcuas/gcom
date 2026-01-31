@@ -27,9 +27,7 @@ const roundValues = (data: AircraftStatus) => {
 
 export default function DroneStatusCard() {
     const droneState = useAppSelector(selectAircraftStatus);
-    console.log("DRONE STATE", droneState);
     const roundedState = useMemo(() => roundValues(droneState), [droneState]);
-    console.log("ROUNDED STATE", roundedState);
 
     return (
         <Paper
