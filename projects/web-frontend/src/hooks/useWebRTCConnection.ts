@@ -37,6 +37,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const iceCandidateQueueRef = useRef<RTCIceCandidateInit[]>([]);
     const remotePeerIdRef = useRef<string | null>(null);
+    const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
@@ -112,9 +113,17 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             if (pc.connectionState === "connected") {
                 setPeerStatus("connected");
                 setIsConnecting(false);
+                if (connectionTimeoutRef.current) {
+                    clearTimeout(connectionTimeoutRef.current);
+                    connectionTimeoutRef.current = null;
+                }
             } else if (pc.connectionState === "failed") {
                 setPeerStatus("failed");
                 setIsConnecting(false);
+                if (connectionTimeoutRef.current) {
+                    clearTimeout(connectionTimeoutRef.current);
+                    connectionTimeoutRef.current = null;
+                }
             } else if (pc.connectionState === "connecting") {
                 setPeerStatus("connecting");
             } else if (pc.connectionState === "disconnected" || pc.connectionState === "closed") {
@@ -245,6 +254,17 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
         setIsConnecting(true);
         setSignalingStatus("connecting");
 
+        if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+        }
+
+        const timeout_seconds = 10;
+        connectionTimeoutRef.current = setTimeout(() => {
+            console.error(`Connection attempt timed out after ${timeout_seconds} seconds`);
+            disconnect();
+            setPeerStatus("failed");
+        }, timeout_seconds * 1000);
+
         const socket = io(SIGNALING_SERVER_URL, {
             transports: ["websocket"],
         });
@@ -279,6 +299,11 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     };
 
     const disconnect = () => {
+        if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+            connectionTimeoutRef.current = null;
+        }
+
         if (socketRef.current) {
             socketRef.current.disconnect();
             socketRef.current = null;
