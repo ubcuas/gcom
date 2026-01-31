@@ -28,19 +28,43 @@ class HTTP_Server:
         self.status_cache = status_cache
         self.handler = handler
 
-    # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
-    def serve_forever(self, production: bool, host: str, port: int):
-        logger.info("GCOM HTTP Server starting...")
+    def create_app(self):
         app = Flask(__name__)
         socketio = SocketIO(app)
 
         # GET endpoints
         @app.route("/", methods=["GET"])
         def index():
+            """
+            Call this to see if the server's running.
+            ---
+            responses:
+              "200":
+                description: server is running
+            """
             return "Server Running", 200
 
         @app.route("/queue", methods=["GET"])
         def get_queue():
+            """
+            Returns the current list of waypoints remaining in the queue
+            ---
+            tags:
+              - queue
+            summary: Returns the current list of waypoints remaining in the queue
+            description: >-
+              Returns the current list of queue of waypoints to hit.
+              Waypoints that have been passed and removed from the queue are not displayed.
+            responses:
+              "200":
+                description: successful operation
+                content:
+                  application/json:
+                    schema:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Waypoint"
+            """
             try:
                 curr = get_status(self.status_cache)._wpn
                 wpq = get_current_mission(self.handler)
@@ -63,6 +87,34 @@ class HTTP_Server:
 
         @app.route("/queue", methods=["POST"])
         def post_queue():
+            """
+            Overwrite the queue with a new list of waypoints
+            ---
+            tags:
+              - queue
+            summary: Overwrite the queue with a new list of waypoints
+            description: >-
+              POST request containing a list of waypoints with names and longitude,
+              latitude, and altitude values. If the altitude for a waypoint is null,
+              uses the altitude of the previous waypoint (in the case of the first
+              waypoint, uses the current altitude of the drone).
+              The existing waypoint queue will be overwritten and lost.
+              Longitude, name, and latitude must not be null/empty. Returns a Bad
+              Request status code and error message in that case. Longitude and
+              latitude in degrees, altitude in meters.
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Waypoint"
+            responses:
+              "200":
+                description: successful operation
+              "400":
+                description: bad request
+            """
             payload = request.get_json()
 
             ret = get_status(self.status_cache)
@@ -109,6 +161,25 @@ class HTTP_Server:
 
         @app.route("/insert", methods=["POST"])
         def post_insert_wp():
+            """
+            Inserts waypoints immediately before the current waypoint
+            ---
+            tags:
+             - queue
+            summary: Inserts waypoints immediately before the current waypoint
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Waypoint"
+            responses:
+              "200":
+                description: successful operation
+              "400":
+                description: bad request
+            """
             try:
                 payload = request.get_json()
 
@@ -166,6 +237,18 @@ class HTTP_Server:
 
         @app.route("/clear", methods=["GET"])
         def get_clear_queue():
+            """
+            Clear the waypoint queue.
+            ---
+            tags:
+              - queue
+            summary: Clear the waypoint queue.
+            description: >-
+              Idempotent with POST'ing an empty queue to /queue.
+            responses:
+              "200":
+                description: Queue successfully emptied.
+            """
             result = clear_mission(self.handler)
 
             if result:
@@ -175,12 +258,50 @@ class HTTP_Server:
 
         @app.route("/status", methods=["GET"])
         def get_status_handler():
+            """
+            Obtain the aircraft status
+            ---
+            tags:
+              - status
+            summary: Obtain the aircraft status
+            description: >-
+              GET request returns the aircraft status. Velocity in m/s. Altitude
+              in meters and is relative to sea level. Longitude, latitude, heading
+              in degrees.
+            responses:
+              "200":
+                description: Successful operation
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/Status"
+            """
             logger.info("Status sent to GCOM")
             s = get_status(self.status_cache).as_dictionary()
             return s, 200
 
         @app.route("/prepare_takeoff", methods=["POST"])
         def post_prepare_takeoff():
+            """
+            Prepare takeoff sequence
+            ---
+            tags:
+              - takeoff
+            summary: Prepare takeoff sequence with waypoint at altitude
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      altitude:
+                        type: number
+            responses:
+              "200":
+                description: Takeoff sequence prepared successfully
+              "400":
+                description: Failed to prepare takeoff sequence
+            """
             payload = request.get_json()
 
             if "altitude" not in payload:
@@ -205,6 +326,28 @@ class HTTP_Server:
 
         @app.route("/arm", methods=["PUT"])
         def put_arm_disarm_drone():
+            """
+            Arm or disarm the motors. Take care.
+            ---
+            summary: Arm or disarm the motors. Take care.
+            description: >-
+              Call this endpoint to arm or disarm the drone.
+              A value of True in the payload will arm the drone, while False will disarm the drone.
+              If the request returns 200, the drone will be in the requested state.
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      arm:
+                        type: boolean
+            responses:
+              "200":
+                description: Arm/disarm successful.
+              "400":
+                description: Arm/disarm failed - drone is NOT in the requested state
+            """
             input = request.get_json()
 
             if input["arm"] in [1, 0]:
@@ -229,6 +372,26 @@ class HTTP_Server:
 
         @app.route("/prepare_rtl_params", methods=["POST"])
         def post_prepare_rtl_params():
+            """
+            Prepare RTL parameters
+            ---
+            tags:
+              - landing
+            summary: Set RTL altitude parameter
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      altitude:
+                        type: number
+            responses:
+              "200":
+                description: RTL parameters prepared successfully
+              "400":
+                description: Failed to set RTL altitude parameter
+            """
             payload = request.get_json()
 
             if "altitude" not in payload:
@@ -247,6 +410,20 @@ class HTTP_Server:
 
         @app.route("/rtl", methods=["POST"])
         def post_rtl():
+            """
+            Return to launch
+            ---
+            tags:
+              - landing
+            summary: return to launch
+            description: >-
+              Aircraft returns to home waypoint and lands (return-to-launch).
+            responses:
+              "200":
+                description: Successful, drone has initiated RTL procedure
+              "400":
+                description: Failed to RTL
+            """
             logger.info("RTL initiated")
 
             success = change_flight_mode(
@@ -263,6 +440,22 @@ class HTTP_Server:
 
         @app.route("/land", methods=["GET"])
         def get_land():
+            """
+            Immediately descend and land
+            ---
+            tags:
+              - landing
+            summary: immediately descend and land
+            description: >-
+              Aircraft stops at its current position and lands.
+              Returns a Bad Request status code and error message if the drone
+              could not execute the operation.
+            responses:
+              "200":
+                description: Successful, drone has started landing procedure
+              "400":
+                description: Could not initiate landing
+            """
             logger.info("Landing")
             if not change_flight_mode(
                 self.handler,
@@ -279,6 +472,26 @@ class HTTP_Server:
 
         @app.route("/land", methods=["POST"])
         def post_land():
+            """
+            Land at designated location
+            ---
+            tags:
+              - landing
+            summary: land at designated location
+            description: >-
+              Land at the location in the request, approaching at the altitude specified in the request body
+              before descending to the ground.
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Waypoint"
+            responses:
+              "200":
+                description: Successful, drone has started landing procedure
+              "400":
+                description: Invalid coordinates - latitude and/or longitude value was null
+            """
             # land_at_position does not seem to work for a copter
             # land_at_position(self.mav_connection, land.get("latitude"), land.get("longitude")) == 0:
 
@@ -309,6 +522,27 @@ class HTTP_Server:
 
         @app.route("/home", methods=["POST"])
         def post_home():
+            """
+            Set the home waypoint of the drone
+            ---
+            tags:
+              - landing
+            summary: set the home waypoint of the drone
+            description: >-
+              POST request containing a waypoint whose longitude, latitiude and
+              altitiude will be the basis for the new home waypoint. All other
+              fields will be ignored.
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/Waypoint"
+            responses:
+              "200":
+                description: Successfully set new home position
+              "400":
+                description: Home position could not be set
+            """
             home: dict = request.get_json()
 
             if (
@@ -333,6 +567,29 @@ class HTTP_Server:
 
         @app.route("/flightmode", methods=["PUT"])
         def flight_mode():
+            """
+            Change flight mode of the aircraft
+            ---
+            tags:
+              - options
+            summary: Change flight mode of the aircraft
+            description: >-
+              Set the flight mode of the aircraft to Loiter, Stabilize, Auto, or Guided, or set the current aircraft type to Copter or Plane.
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      mode:
+                        type: string
+                        enum: ['STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER', 'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'DRIFT', 'SPORT', 'FLIP', 'AUTOTUNE', 'POSHOLD', 'BRAKE', 'THROW', 'AVOID_ADSB', 'GUIDED_NOGPS', 'SMART_RTL', 'FLOWHOLD', 'FOLLOW', 'ZIGZAG', 'SYSTEMID', 'AUTOROTATE', 'AUTO_RTL']
+            responses:
+              "200":
+                description: Operation processed
+              "400":
+                description: Unrecognized mode
+            """
             input = request.get_json()
 
             success = change_flight_mode(
@@ -390,6 +647,38 @@ class HTTP_Server:
 
         @app.route("/aeac_scan", methods=["POST"])
         def generate_scan_points():
+            """
+            Scan a circular target area in a spiral path.
+            ---
+            tags:
+              - feature
+            summary: Scan a circular target area in a spiral path.
+            description: >-
+              TODO
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      center_lat:
+                        type: number
+                        format: float64
+                      center_lng:
+                        type: number
+                        format: float64
+                      altitude:
+                        type: number
+                        format: float64
+                      target_area_radius:
+                        type: number
+                        format: float64
+            responses:
+              "200":
+                description: "Scan Mission Set"
+              "400":
+                description: "Invalid input"
+            """
             input = request.get_json()
 
             # TODO Trigger CameraVision system to begin scanning
@@ -415,6 +704,41 @@ class HTTP_Server:
 
         @app.route("/aeac_deliver", methods=["POST"])
         def deliver_water_down():
+            """
+            Deliver water operation
+            ---
+            tags:
+              - delivery
+            summary: Deliver water operation
+            description: >
+              For AEAC 2025, while in autonomous mode, hovers down to specific altitude for 'deliver_duration' seconds, and then returns to original altitude ready for reentering manual control.
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      current_alt:
+                        type: number
+                        description: Current altitude of the drone
+                      deliver_alt:
+                        type: number
+                        description: Altitude to lower to for delivery
+                      deliver_duration_secs:
+                        type: number
+                        description: Duration in seconds to stay at the delivery altitude
+                      curr_lat:
+                        type: number
+                        description: Current latitude of the drone
+                      curr_lon:
+                        type: number
+                        description: Current longitude of the drone
+            responses:
+              "200":
+                description: Commencing Deliver operation
+              "400":
+                description: Invalid input, missing a parameter or Mission request failed
+            """
             input = request.get_json()
 
             if (
@@ -440,6 +764,13 @@ class HTTP_Server:
                     return "Mission request failed", 400
             else:
                 return "Invalid input, missing a parameter.", 400
+
+        return app, socketio
+
+    # def serve_forever(self, production=True, HOST="localhost", PORT=9000):
+    def serve_forever(self, production: bool, host: str, port: int):
+        logger.info("GCOM HTTP Server starting...")
+        app, socketio = self.create_app()
 
         try:
             socketio.run(
