@@ -114,7 +114,7 @@ export default function MapView() {
                         </IconButton>
                     </Tooltip>
                 </Box>
-                
+
                 {mpsWaypoints.map((waypoint, i) => (
                     <Fragment key={i}>
                         <Marker

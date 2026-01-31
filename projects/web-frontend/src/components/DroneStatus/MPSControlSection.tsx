@@ -3,13 +3,12 @@ import InfoIcon from "@mui/icons-material/Info";
 import { useState } from "react";
 import { prepareTakeoffDrone, returnToLaunch } from "../../api/endpoints.ts";
 import { openSnackbar } from "../../store/slices/appSlice";
-import { selectAircraftStatus, setTakeoffWaypoint } from "../../store/slices/dataSlice";
-import { useAppDispatch, useAppSelector } from "../../store/store";
+import { setTakeoffWaypoint } from "../../store/slices/dataSlice";
+import { useAppDispatch } from "../../store/store";
 import DebugPanel from "./DebugPanel";
 
 export default function MPSControlSection() {
     const dispatch = useAppDispatch();
-    const aircraftStatus = useAppSelector(selectAircraftStatus);
     const [takeoffAltitude, setTakeoffAltitude] = useState(0);
     const [rtlModalState, setRtlModalState] = useState(false);
     const [debugPanelOpen, setDebugPanelOpen] = useState(false);

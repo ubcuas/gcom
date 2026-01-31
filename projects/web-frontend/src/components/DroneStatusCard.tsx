@@ -5,8 +5,6 @@ import SpeedSection from "./DroneStatus/SpeedSection";
 import TimeStamp from "./DroneStatus/TimeStamp";
 import MPSControlSection from "./DroneStatus/MPSControlSection";
 import StatusIndicators from "./DroneStatus/StatusIndicators";
-import { useEffect } from "react";
-import { socket } from "../api/socket";
 import { AircraftStatus } from "../types/AircraftStatus";
 import { Paper } from "@mui/material";
 

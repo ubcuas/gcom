@@ -1,9 +1,8 @@
 import { EditLocationAlt } from "@mui/icons-material";
-import FlightIcon from "@mui/icons-material/Flight";
 import Home from "@mui/icons-material/Home";
 import MapIcon from "@mui/icons-material/Map";
 import Settings from "@mui/icons-material/Settings";
-import { Paper, Tab, Tabs, Typography } from "@mui/material";
+import { Paper, Tab, Tabs } from "@mui/material";
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
 
