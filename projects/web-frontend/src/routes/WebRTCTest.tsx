@@ -194,8 +194,8 @@ export default function WebRTCTest() {
                                         {isConnecting
                                             ? "Establishing connection to signaling server..."
                                             : signalingStatus === "connected"
-                                              ? "Connected to signaling server"
-                                              : "Click connect to start"}
+                                            ? "Connected to signaling server"
+                                            : "Click connect to start"}
                                     </Typography>
                                 </Box>
                             </Stack>

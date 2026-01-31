@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useAppSelector } from "../../store/store";
 import { selectAircraftStatus } from "../../store/slices/dataSlice";
 import { getDroneParameter, getCurrentMissionRaw } from "../../api/endpoints";
-import { Waypoint } from "../../types/Waypoint";
 
 type DebugPanelProps = {
     open: boolean;

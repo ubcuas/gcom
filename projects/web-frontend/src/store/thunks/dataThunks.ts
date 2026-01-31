@@ -4,7 +4,6 @@ import {
     getRouteById,
     createRoute as apiCreateRoute,
     deleteRoute as apiDeleteRoute,
-    updateRouteName,
     syncRouteWaypoints,
 } from "../../api/endpoints";
 import { loadAvailableRoutes, setCurrentRoute, addRoute, removeRoute, updateRouteInList } from "../slices/dataSlice";
