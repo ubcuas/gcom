@@ -36,6 +36,8 @@ export default function WaypointStatusCard() {
         }
         try {
             await postWaypointsToDrone(waypointQueue);
+            const message = `Posted ${waypointQueue.length} waypoints to drone`;
+            dispatch(openSnackbar({ message, severity: "success" }));
         } catch (error) {
             const message = createErrorMessage(error);
             dispatch(openSnackbar({ message }));
@@ -46,6 +48,8 @@ export default function WaypointStatusCard() {
         dispatch(deleteWaypointFromCurrentRoute(index));
         dispatch(saveCurrentRouteToBackend());
         clearEditState();
+        const message = `Deleted waypoint ${index + 1}`;
+        dispatch(openSnackbar({ message, severity: "success" }));
     };
 
     const handleEditWaypoint = (index: number) => {
@@ -283,6 +287,7 @@ export default function WaypointStatusCard() {
                             dispatch(updateCurrentRouteWaypoints([]));
                             dispatch(saveCurrentRouteToBackend());
                             setModalOpen(false);
+                            dispatch(openSnackbar({ message: "All queued waypoints deleted", severity: "success" }));
                         }}
                     >
                         Yes
