@@ -1,5 +1,5 @@
 import { useAppSelector } from "../store/store";
-import { selectAircraftStatus } from "../store/slices/dataSlice";
+import { selectAircraftStatus, selectTakeoffWaypoint } from "../store/slices/dataSlice";
 import PositionSection from "./DroneStatus/PositionSection";
 import SpeedSection from "./DroneStatus/SpeedSection";
 import TimeStamp from "./DroneStatus/TimeStamp";
@@ -32,6 +32,10 @@ const roundValues = (
 
 export default function DroneStatusCard() {
     const droneState = useAppSelector(selectAircraftStatus);
+    const takeoffWaypoint = useAppSelector(selectTakeoffWaypoint);
+
+    const relativeAltitude =
+        takeoffWaypoint?.altitude !== undefined ? droneState.altitude - takeoffWaypoint.altitude : undefined;
 
     return (
         <Paper
@@ -51,6 +55,7 @@ export default function DroneStatusCard() {
                 latitude={droneState.latitude}
                 longitude={droneState.longitude}
                 altitude={droneState.altitude}
+                relativeAltitude={relativeAltitude}
                 heading={droneState.heading}
             />
             <SpeedSection speed={droneState.speed} verticalSpeed={droneState.verticalSpeed} />
