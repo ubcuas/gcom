@@ -23,3 +23,9 @@ repos:
         language: system
         files: projects/web-frontend/.*\.[jt]sx?$
         pass_filenames: false
+    -   id: generate-api-spec
+        name: Generate API Spec
+        entry: bash -c 'cd projects/web-backend && python3 src/manage.py spectacular --file api_spec.yaml --validate'
+        language: system
+        files: ^projects/web-backend/
+        pass_filenames: false
