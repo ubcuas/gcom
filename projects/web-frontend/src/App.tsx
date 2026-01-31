@@ -7,7 +7,7 @@ import Home from "./routes/Home";
 import MapRoute from "./routes/MapRoute";
 import Queue from "./routes/Queue";
 import Settings from "./routes/Settings";
-import WebRTCTest from "./routes/WebRTCTest";
+import WebRTCTest from "./routes/VideoFeed";
 import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "./store/store";
