@@ -11,7 +11,6 @@ import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "./store/store";
 import { socket } from "./api/socket";
-import { roundValues } from "./utils/telemetry";
 
 function App() {
     const colorScheme = useAppSelector(selectPreferredTheme);
@@ -84,7 +83,7 @@ function App() {
 
     useEffect(() => {
         socket.on("drone_update", (data) => {
-            dispatch(updateAircraftStatus(roundValues(data)));
+            dispatch(updateAircraftStatus(data));
         });
         return () => {
             socket.off("drone_update");

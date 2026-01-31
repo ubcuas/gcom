@@ -9,6 +9,7 @@ class Status:
         latitude=0,
         longitude=0,
         altitude=0,
+        relative_altitude=0,
         roll=0,
         pitch=0,
         yaw=0,
@@ -27,6 +28,7 @@ class Status:
         self._lat: float = latitude
         self._lng: float = longitude
         self._alt: float = altitude
+        self._rel_alt: float = relative_altitude
 
         self._rol: float = roll
         self._pch: float = pitch
@@ -46,12 +48,13 @@ class Status:
 
     def encoded_status(self) -> bytes:
         return struct.pack(
-            "Qi12f?",
+            "Qi13f?",
             self._timestamp,
             self._wpn,
             self._lat,
             self._lng,
             self._alt,
+            self._rel_alt,
             self._rol,
             self._pch,
             self._yaw,
@@ -71,6 +74,7 @@ class Status:
             self._lat,
             self._lng,
             self._alt,
+            self._rel_alt,
             self._rol,
             self._pch,
             self._yaw,
@@ -81,7 +85,7 @@ class Status:
             self._wdr,
             self._wvl,
             self._armed,
-        ) = struct.unpack("Qi12f?", status_bytes)
+        ) = struct.unpack("Qi13f?", status_bytes)
 
     def as_dictionary(self) -> dict:
         return {
@@ -90,6 +94,7 @@ class Status:
             "latitude": self._lat,
             "longitude": self._lng,
             "altitude": self._alt,
+            "relative_altitude": self._rel_alt,
             "roll": self._rol,
             "pitch": self._pch,
             "heading": self._yaw,
@@ -109,6 +114,7 @@ class Status:
             "latitude": self._lat,
             "longitude": self._lng,
             "altitude": self._alt,
+            "relative_altitude": self._rel_alt,
             "vertical_velocity": self._vsp,
             "velocity": self._gsp,
             "heading": self._yaw,

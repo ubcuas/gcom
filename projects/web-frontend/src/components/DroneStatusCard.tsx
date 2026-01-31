@@ -7,24 +7,19 @@ import MPSControlSection from "./DroneStatus/MPSControlSection";
 import StatusIndicators from "./DroneStatus/StatusIndicators";
 import { AircraftStatus } from "../types/AircraftStatus";
 import { Paper } from "@mui/material";
+import { useMemo } from "react";
 
-const roundValues = (
-    data: Omit<AircraftStatus, "verticalSpeed" | "speed" | "voltage" | "armed"> & {
-        vertical_velocity: number;
-        velocity: number;
-        battery_voltage: number;
-        armed: boolean;
-    },
-) => {
+const roundValues = (data: AircraftStatus) => {
     return {
         timestamp: Math.round(data.timestamp),
         latitude: Math.round(data.latitude * 1000000) / 1000000,
         longitude: Math.round(data.longitude * 1000000) / 1000000,
         altitude: Math.round(data.altitude),
-        verticalSpeed: Math.round(data.vertical_velocity * 100) / 100,
-        speed: Math.round(data.velocity * 100) / 100,
+        relativeAltitude: Math.round(data.relativeAltitude),
+        verticalSpeed: Math.round(data.verticalSpeed * 100) / 100,
+        speed: Math.round(data.speed * 100) / 100,
         heading: Math.round(data.heading),
-        voltage: Math.round((data.battery_voltage / 1000) * 100) / 100,
+        voltage: Math.round((data.voltage / 1000) * 100) / 100,
         armed: data.armed,
         flightmode: data.flightmode,
     } satisfies AircraftStatus;
@@ -32,6 +27,9 @@ const roundValues = (
 
 export default function DroneStatusCard() {
     const droneState = useAppSelector(selectAircraftStatus);
+    console.log("DRONE STATE", droneState);
+    const roundedState = useMemo(() => roundValues(droneState), [droneState]);
+    console.log("ROUNDED STATE", roundedState);
 
     return (
         <Paper
@@ -43,18 +41,19 @@ export default function DroneStatusCard() {
             }}
         >
             <StatusIndicators
-                flightMode={droneState.flightmode || "UNKNOWN"}
-                armed={droneState.armed}
-                voltage={droneState.voltage}
+                flightMode={roundedState.flightmode || "UNKNOWN"}
+                armed={roundedState.armed}
+                voltage={roundedState.voltage}
             />
             <PositionSection
-                latitude={droneState.latitude}
-                longitude={droneState.longitude}
-                altitude={droneState.altitude}
-                heading={droneState.heading}
+                latitude={roundedState.latitude}
+                longitude={roundedState.longitude}
+                altitude={roundedState.altitude}
+                relativeAltitude={roundedState.relativeAltitude}
+                heading={roundedState.heading}
             />
-            <SpeedSection speed={droneState.speed} verticalSpeed={droneState.verticalSpeed} />
-            <TimeStamp time={droneState.timestamp} />
+            <SpeedSection speed={roundedState.speed} verticalSpeed={roundedState.verticalSpeed} />
+            <TimeStamp time={roundedState.timestamp} />
             <MPSControlSection />
         </Paper>
     );

@@ -8,6 +8,7 @@ export type AircraftStatus = {
     latitude: number;
     longitude: number;
     altitude: number;
+    relativeAltitude: number;
     verticalSpeed: number;
     speed: number;
     heading: number;
