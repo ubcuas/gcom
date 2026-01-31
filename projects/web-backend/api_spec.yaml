@@ -7,7 +7,7 @@ paths:
   /api/route/:
     get:
       operationId: route_list
-      description: Viewset for CRUD operations on Routes
+      description: List all routes
       tags:
       - route
       security:
@@ -25,7 +25,7 @@ paths:
           description: ''
     post:
       operationId: route_create
-      description: Viewset for CRUD operations on Routes
+      description: Create a new route
       tags:
       - route
       requestBody:
@@ -54,7 +54,7 @@ paths:
   /api/route/{id}/:
     get:
       operationId: route_retrieve
-      description: Viewset for CRUD operations on Routes
+      description: Get details of a specific route
       parameters:
       - in: path
         name: id
@@ -77,7 +77,7 @@ paths:
           description: ''
     put:
       operationId: route_update
-      description: Viewset for CRUD operations on Routes
+      description: Update a specific route
       parameters:
       - in: path
         name: id
@@ -112,7 +112,7 @@ paths:
           description: ''
     patch:
       operationId: route_partial_update
-      description: Viewset for CRUD operations on Routes
+      description: Partially update a specific route
       parameters:
       - in: path
         name: id
@@ -146,7 +146,7 @@ paths:
           description: ''
     delete:
       operationId: route_destroy
-      description: Viewset for CRUD operations on Routes
+      description: Delete a specific route
       parameters:
       - in: path
         name: id
@@ -249,7 +249,7 @@ paths:
   /api/vision/groundobject/:
     get:
       operationId: vision_groundobject_list
-      description: Viewset for CRUD operations on GroundObjects
+      description: List all ground objects
       tags:
       - vision
       security:
@@ -267,7 +267,7 @@ paths:
           description: ''
     post:
       operationId: vision_groundobject_create
-      description: Viewset for CRUD operations on GroundObjects
+      description: Create a new ground object
       tags:
       - vision
       requestBody:
@@ -296,7 +296,7 @@ paths:
   /api/vision/groundobject/{id}/:
     get:
       operationId: vision_groundobject_retrieve
-      description: Viewset for CRUD operations on GroundObjects
+      description: Get details of a specific ground object
       parameters:
       - in: path
         name: id
@@ -320,7 +320,7 @@ paths:
           description: ''
     put:
       operationId: vision_groundobject_update
-      description: Viewset for CRUD operations on GroundObjects
+      description: Update a specific ground object
       parameters:
       - in: path
         name: id
@@ -356,7 +356,7 @@ paths:
           description: ''
     patch:
       operationId: vision_groundobject_partial_update
-      description: Viewset for CRUD operations on GroundObjects
+      description: Partially update a specific ground object
       parameters:
       - in: path
         name: id
@@ -391,7 +391,7 @@ paths:
           description: ''
     delete:
       operationId: vision_groundobject_destroy
-      description: Viewset for CRUD operations on GroundObjects
+      description: Delete a specific ground object
       parameters:
       - in: path
         name: id
@@ -412,7 +412,7 @@ paths:
   /api/vision/image/:
     get:
       operationId: vision_image_list
-      description: Viewset for CRUD operations on Image
+      description: List all images
       tags:
       - vision
       security:
@@ -430,7 +430,7 @@ paths:
           description: ''
     post:
       operationId: vision_image_create
-      description: Viewset for CRUD operations on Image
+      description: Upload a new image
       tags:
       - vision
       requestBody:
@@ -459,7 +459,7 @@ paths:
   /api/vision/image/{id}/:
     get:
       operationId: vision_image_retrieve
-      description: Viewset for CRUD operations on Image
+      description: Get details of a specific image
       parameters:
       - in: path
         name: id
@@ -482,7 +482,7 @@ paths:
           description: ''
     put:
       operationId: vision_image_update
-      description: Viewset for CRUD operations on Image
+      description: Update a specific image
       parameters:
       - in: path
         name: id
@@ -517,7 +517,7 @@ paths:
           description: ''
     patch:
       operationId: vision_image_partial_update
-      description: Viewset for CRUD operations on Image
+      description: Partially update a specific image
       parameters:
       - in: path
         name: id
@@ -551,7 +551,7 @@ paths:
           description: ''
     delete:
       operationId: vision_image_destroy
-      description: Viewset for CRUD operations on Image
+      description: Delete a specific image
       parameters:
       - in: path
         name: id
@@ -571,7 +571,7 @@ paths:
   /api/waypoint/:
     get:
       operationId: waypoint_list
-      description: Viewset for CRUD operations on Waypoints
+      description: List all waypoints
       tags:
       - waypoint
       security:
@@ -589,7 +589,7 @@ paths:
           description: ''
     post:
       operationId: waypoint_create
-      description: Viewset for CRUD operations on Waypoints
+      description: Create a new waypoint
       tags:
       - waypoint
       requestBody:
@@ -618,7 +618,7 @@ paths:
   /api/waypoint/{id}/:
     get:
       operationId: waypoint_retrieve
-      description: Viewset for CRUD operations on Waypoints
+      description: Get details of a specific waypoint
       parameters:
       - in: path
         name: id
@@ -642,7 +642,7 @@ paths:
           description: ''
     put:
       operationId: waypoint_update
-      description: Viewset for CRUD operations on Waypoints
+      description: Update a specific waypoint
       parameters:
       - in: path
         name: id
@@ -678,7 +678,7 @@ paths:
           description: ''
     patch:
       operationId: waypoint_partial_update
-      description: Viewset for CRUD operations on Waypoints
+      description: Partially update a specific waypoint
       parameters:
       - in: path
         name: id
@@ -713,7 +713,7 @@ paths:
           description: ''
     delete:
       operationId: waypoint_destroy
-      description: Viewset for CRUD operations on Waypoints
+      description: Delete a specific waypoint
       parameters:
       - in: path
         name: id
