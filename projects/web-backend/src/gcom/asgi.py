@@ -4,7 +4,7 @@ import django
 import socketio
 from django.core.asgi import get_asgi_application
 
-from websocket.sockets import sio  # your AsyncServer instance
+from websocket_connection.sockets import sio  # your AsyncServer instance
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gcom.settings")
 django.setup()
