@@ -8,3 +8,5 @@ if (!VITE_MAPTILER_KEY && window.navigator.onLine) {
 }
 
 export const MAPTILER_API_KEY = VITE_MAPTILER_KEY as string;
+
+export const SIGNALING_SERVER_URL = import.meta.env.VITE_SIGNALING_SERVER_URL;

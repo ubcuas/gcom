@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { SIGNALING_SERVER_URL } from "../constants";
 
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
@@ -24,8 +25,6 @@ type UseWebRTCConnectionResult = {
     disconnect: () => void;
     isConnecting: boolean;
 };
-
-const SIGNALING_SERVER_URL = import.meta.env.VITE_SIGNALING_SERVER_URL || "ws://localhost:8081";
 
 export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const [signalingStatus, setSignalingStatus] = useState<SignalingStatus>("disconnected");
