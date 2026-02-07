@@ -44,6 +44,7 @@ urlpatterns = [
     path("api/mapping/", include("mapping.urls")),
     path("api/vision/", include("vision.urls")),
     path("api/map-tiles/", include("map_tiles.urls")),
+    path("api/mqtt/", include("mqtt.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

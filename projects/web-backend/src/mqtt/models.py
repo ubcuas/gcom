@@ -8,12 +8,12 @@ class Data(models.Model):
 
     id = models.CharField(max_length=16, primary_key=True)
     MSG_TYPE_CHOICES = [
-        ("TYPE1", "Type 1"),
+        ("TAKE_PHOTO", "Take Photo"),
         ("TYPE2", "Type 2"),
         ("TYPE3", "Type 3"),
     ]
-    msg_type = models.CharField(max_length=20, choices=MSG_TYPE_CHOICES)
-    message = models.JSONField()
+    action = models.CharField(max_length=20, choices=MSG_TYPE_CHOICES)
+    message = models.JSONField(null=True, blank=True)
     timestamp = models.FloatField()
 
     def __str__(self):

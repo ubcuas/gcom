@@ -2,8 +2,13 @@ import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
 import os
 import json
+import threading
 
 load_dotenv()
+
+# Global ACK handling
+ack_event = threading.Event()
+ack_data = {}
 
 MQTT_BROKER = os.getenv("MQTT_BROKER")
 MQTT_PORT = int(os.getenv("MQTT_PORT"))
@@ -25,18 +30,27 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
+    global ack_event, ack_data
     try:
         topic = msg.topic
         message = msg.payload.decode("utf-8")
-        print(f"Received message: {message} {topic}")
-        return message
+        print(f'Received message: {message} "{topic}"')
 
+        # Check if this is an ACK message and verify it
+        if chk_ack(message, topic):
+            ack_data["ack"] = message
+            ack_event.set()
+            print("ACK verified and set")
     except json.JSONDecodeError:
         print("Error decoding MQTT message")
 
 
 def on_disconnect(client, userdata, rc):
     print("Disconnected from MQTT Broker")
+
+
+def chk_ack(message, topic):
+    return topic == "uc_uas/drone_01/command_ack"
 
 
 client = mqtt.Client()
@@ -51,5 +65,4 @@ message = """{"action":"TAKE_PHOTO"}"""
 
 
 client.publish(MQTT_TOPIC_CMD, message)
-
 client.loop_start()
