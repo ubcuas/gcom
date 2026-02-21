@@ -8,3 +8,14 @@ if (!VITE_MAPTILER_KEY && window.navigator.onLine) {
 }
 
 export const MAPTILER_API_KEY = VITE_MAPTILER_KEY as string;
+
+const VITE_SIGNALING_SERVER_URL = import.meta.env.VITE_SIGNALING_SERVER_URL;
+
+if (!VITE_SIGNALING_SERVER_URL && window.navigator.onLine) {
+    throw new Error(
+        "VITE_SIGNALING_SERVER_URL environment variable is not set. " +
+            "Please copy .env.example to .env and configure it with your signaling server URL.",
+    );
+}
+
+export const SIGNALING_SERVER_URL = VITE_SIGNALING_SERVER_URL as string;
