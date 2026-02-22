@@ -138,6 +138,20 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             console.log("ICE gathering state:", pc.iceGatheringState);
         });
 
+        pc.addEventListener("datachannel", (event) => {
+            const channel = event.channel;
+            if (channel.label === "oldc_images") {
+                channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
+                    const { image, metadata } = JSON.parse(msgEvent.data) as {
+                        image: string;
+                        metadata: Record<string, unknown>;
+                    };
+                    console.log("Tagged image received, metadata:", metadata);
+                    console.log("Tagged image data length (base64 chars):", image.length);
+                });
+            }
+        });
+
         return pc;
     };
 
