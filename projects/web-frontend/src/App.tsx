@@ -8,6 +8,7 @@ import MapRoute from "./routes/MapRoute";
 import Queue from "./routes/Queue";
 import Settings from "./routes/Settings";
 import VideoFeed from "./routes/VideoFeed";
+import OldcImages from "./routes/OldcImages";
 import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "./store/store";
@@ -112,6 +113,7 @@ function App() {
                     {/* <Route path="/mps-queue" component={MPSQueue} /> */}
                     <Route path="/queue" component={Queue} />
                     <Route path="/webrtc-test" component={VideoFeed} />
+                    <Route path="/oldc-images" component={OldcImages} />
                 </Switch>
             </Box>
             <ErrorSnackbar />
