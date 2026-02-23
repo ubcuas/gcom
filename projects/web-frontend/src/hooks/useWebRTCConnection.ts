@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { SIGNALING_SERVER_URL } from "../constants";
 import { saveOldcSession } from "../api/endpoints";
@@ -355,12 +355,6 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
         setPeerStatus("disconnected");
         setIsConnecting(false);
     };
-
-    useEffect(() => {
-        return () => {
-            disconnect();
-        };
-    }, []);
 
     return {
         signalingStatus,
