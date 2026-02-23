@@ -2,14 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { SIGNALING_SERVER_URL } from "../constants";
 import { saveOldcSession } from "../api/endpoints";
+import { OldcImageSchema } from "../schemas/oldc";
+import type { OldcImage } from "../schemas/oldc";
+
+export type { OldcImage };
 
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
-
-export type OldcImage = {
-    image: string;
-    metadata: Record<string, unknown>;
-};
 
 type SignalData = {
     type: string;
@@ -152,8 +151,12 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             const channel = event.channel;
             if (channel.label === "oldc_images") {
                 channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
-                    const parsed = JSON.parse(msgEvent.data) as OldcImage;
-                    const updated = [...oldcImagesRef.current, parsed];
+                    const result = OldcImageSchema.safeParse(JSON.parse(msgEvent.data));
+                    if (!result.success) {
+                        console.error("Invalid OLDC image data received:", result.error);
+                        return;
+                    }
+                    const updated = [...oldcImagesRef.current, result.data];
                     oldcImagesRef.current = updated;
                     setOldcImages(updated);
                     saveOldcSession(sessionIdRef.current, updated).catch((err) => {
