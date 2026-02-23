@@ -2,6 +2,7 @@ import { Waypoint } from "../types/Waypoint";
 import { Route } from "../types/Route";
 import api from "./api";
 import { WaypointSchema, RouteSchema, PartialWaypointSchema } from "../schemas/waypoint";
+import { OldcImage } from "../hooks/useWebRTCConnection";
 
 // TODO: Implement new endpoint logic
 
@@ -98,4 +99,8 @@ export const getDroneParameter = async (
 ): Promise<{ param_id: string; param_value: number; param_type: number }> => {
     const response = await api.get(`/drone/parameters/${paramId}`);
     return response.data;
+};
+
+export const saveOldcSession = async (sessionId: string, images: OldcImage[]): Promise<void> => {
+    await api.post("/vision/oldc-session/save/", { sessionId, images });
 };

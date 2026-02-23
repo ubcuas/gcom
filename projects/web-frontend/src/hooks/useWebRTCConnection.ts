@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { SIGNALING_SERVER_URL } from "../constants";
+import { saveOldcSession } from "../api/endpoints";
 
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
+
+export type OldcImage = {
+    image: string;
+    metadata: Record<string, unknown>;
+};
 
 type SignalData = {
     type: string;
@@ -21,6 +27,7 @@ type UseWebRTCConnectionResult = {
     signalingStatus: SignalingStatus;
     peerStatus: PeerStatus;
     remoteStream: MediaStream | null;
+    oldcImages: OldcImage[];
     connect: () => void;
     disconnect: () => void;
     isConnecting: boolean;
@@ -30,6 +37,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const [signalingStatus, setSignalingStatus] = useState<SignalingStatus>("disconnected");
     const [peerStatus, setPeerStatus] = useState<PeerStatus>("disconnected");
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    const [oldcImages, setOldcImages] = useState<OldcImage[]>([]);
     const [isConnecting, setIsConnecting] = useState(false);
 
     const socketRef = useRef<Socket | null>(null);
@@ -37,6 +45,8 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const iceCandidateQueueRef = useRef<RTCIceCandidateInit[]>([]);
     const remotePeerIdRef = useRef<string | null>(null);
     const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const sessionIdRef = useRef<string>(crypto.randomUUID());
+    const oldcImagesRef = useRef<OldcImage[]>([]);
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
@@ -142,12 +152,13 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             const channel = event.channel;
             if (channel.label === "oldc_images") {
                 channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
-                    const { image, metadata } = JSON.parse(msgEvent.data) as {
-                        image: string;
-                        metadata: Record<string, unknown>;
-                    };
-                    console.log("Tagged image received, metadata:", metadata);
-                    console.log("Tagged image data length (base64 chars):", image.length);
+                    const parsed = JSON.parse(msgEvent.data) as OldcImage;
+                    const updated = [...oldcImagesRef.current, parsed];
+                    oldcImagesRef.current = updated;
+                    setOldcImages(updated);
+                    saveOldcSession(sessionIdRef.current, updated).catch((err) => {
+                        console.error("Failed to save OLDC session:", err);
+                    });
                 });
             }
         });
@@ -353,6 +364,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
         signalingStatus,
         peerStatus,
         remoteStream,
+        oldcImages,
         connect,
         disconnect,
         isConnecting,
