@@ -1,8 +1,40 @@
+import json
+from pathlib import Path
+
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 
 from .models import GroundObject, Image
 from .serializers import GroundObjectSerializer, ImageSerializer
+
+OLDC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "oldc_sessions"
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_oldc_session(request):
+    try:
+        data = json.loads(request.body)
+        session_id = data.get("sessionId")
+        images = data.get("images")
+
+        if not session_id or not isinstance(images, list):
+            return JsonResponse({"error": "Invalid input"}, status=400)
+
+        OLDC_SESSIONS_DIR.mkdir(exist_ok=True)
+        session_file = OLDC_SESSIONS_DIR / f"{session_id}.json"
+        session_file.write_text(json.dumps({"sessionId": session_id, "images": images}))
+
+        return HttpResponse(status=200)
+    except (KeyError, ValueError, TypeError) as e:
+        return JsonResponse({"error": "Invalid input", "details": str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse(
+            {"error": "Internal server error", "details": str(e)}, status=500
+        )
 
 
 # Create your views here.
