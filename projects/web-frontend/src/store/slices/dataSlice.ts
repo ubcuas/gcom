@@ -3,6 +3,7 @@ import { AircraftStatus } from "../../types/AircraftStatus";
 import { Route } from "../../types/Route";
 import { RootState } from "../store";
 import { Waypoint } from "../../types/Waypoint";
+import type { OldcImage } from "../../schemas/oldc";
 
 // DataState holds actual information that is supposed to be aligned with backend.
 type DataState = {
@@ -10,6 +11,7 @@ type DataState = {
     availableRoutes: Route[];
     currentRouteId: number | null;
     takeoffWaypoint: Waypoint | null;
+    oldcImages: OldcImage[];
 };
 
 const initialState: DataState = {
@@ -29,6 +31,7 @@ const initialState: DataState = {
     availableRoutes: [],
     currentRouteId: null,
     takeoffWaypoint: null,
+    oldcImages: [],
 };
 
 const dataSlice = createSlice({
@@ -108,6 +111,12 @@ const dataSlice = createSlice({
         setTakeoffWaypoint: (state, action: PayloadAction<Waypoint | null>) => {
             state.takeoffWaypoint = action.payload;
         },
+        appendOldcImage: (state, action: PayloadAction<OldcImage>) => {
+            state.oldcImages.push(action.payload);
+        },
+        clearOldcImages: (state) => {
+            state.oldcImages = [];
+        },
     },
 });
 
@@ -124,6 +133,8 @@ export const {
     editWaypointInCurrentRoute,
     deleteWaypointFromCurrentRoute,
     setTakeoffWaypoint,
+    appendOldcImage,
+    clearOldcImages,
 } = dataSlice.actions;
 
 export const selectAircraftStatus = (state: RootState) => state.data.aircraftStatus;
@@ -134,6 +145,7 @@ export const selectCurrentRouteWaypoints = (state: RootState) =>
     state.data.availableRoutes.find((r) => r.id === state.data.currentRouteId)?.waypoints ?? [];
 
 export const selectTakeoffWaypoint = (state: RootState) => state.data.takeoffWaypoint;
+export const selectOldcImages = (state: RootState) => state.data.oldcImages;
 
 const dataReducer = dataSlice.reducer;
 export default dataReducer;

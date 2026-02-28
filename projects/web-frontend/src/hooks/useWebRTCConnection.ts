@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { SIGNALING_SERVER_URL } from "../constants";
+import { saveOldcSession } from "../api/endpoints";
+import { OldcImageSchema } from "../schemas/oldc";
+import { useAppDispatch, useAppSelector } from "../store/store";
+import { appendOldcImage, selectOldcImages } from "../store/slices/dataSlice";
 
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
@@ -32,11 +36,16 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
 
+    const dispatch = useAppDispatch();
+    const oldcImages = useAppSelector(selectOldcImages);
+
     const socketRef = useRef<Socket | null>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const iceCandidateQueueRef = useRef<RTCIceCandidateInit[]>([]);
     const remotePeerIdRef = useRef<string | null>(null);
     const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const sessionIdRef = useRef<string>(crypto.randomUUID());
+    const oldcImagesRef = useRef<ReturnType<typeof selectOldcImages>>(oldcImages);
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
@@ -136,6 +145,24 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
 
         pc.addEventListener("icegatheringstatechange", () => {
             console.log("ICE gathering state:", pc.iceGatheringState);
+        });
+
+        pc.addEventListener("datachannel", (event) => {
+            const channel = event.channel;
+            if (channel.label === "oldc_images") {
+                channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
+                    const result = OldcImageSchema.safeParse(JSON.parse(msgEvent.data));
+                    if (!result.success) {
+                        console.error("Invalid OLDC image data received:", result.error);
+                        return;
+                    }
+                    oldcImagesRef.current = [...oldcImagesRef.current, result.data];
+                    dispatch(appendOldcImage(result.data));
+                    saveOldcSession(sessionIdRef.current, oldcImagesRef.current).catch((err) => {
+                        console.error("Failed to save OLDC session:", err);
+                    });
+                });
+            }
         });
 
         return pc;
@@ -328,12 +355,6 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
         setPeerStatus("disconnected");
         setIsConnecting(false);
     };
-
-    useEffect(() => {
-        return () => {
-            disconnect();
-        };
-    }, []);
 
     return {
         signalingStatus,
