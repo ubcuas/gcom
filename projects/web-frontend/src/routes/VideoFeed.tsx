@@ -1,11 +1,11 @@
 import { Box, Button, Paper, Stack, Typography, Chip, Grid } from "@mui/material";
 import { useRef, useEffect } from "react";
-import { useWebRTCConnection } from "../hooks/useWebRTCConnection";
+import { useWebRTCContext } from "../context/WebRTCContext";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import DroneStatusCard from "../components/DroneStatusCard";
 
 export default function VideoFeed() {
-    const { signalingStatus, peerStatus, remoteStream, connect, disconnect, isConnecting } = useWebRTCConnection();
+    const { signalingStatus, peerStatus, remoteStream, connect, disconnect, isConnecting } = useWebRTCContext();
 
     const videoRef = useRef<HTMLVideoElement>(null);
 

@@ -9,11 +9,13 @@ import Queue from "./routes/Queue";
 import Settings from "./routes/Settings";
 import Task1Page from "./routes/Task1Page";
 import VideoFeed from "./routes/VideoFeed";
+import OldcImages from "./routes/OldcImages";
 import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "./store/store";
 import { socket } from "./api/socket";
-import { roundValues } from "./utils/telemetry";
+import { parseAndTransformDroneData } from "./types/AircraftStatus";
+import { WebRTCProvider } from "./context/WebRTCContext";
 
 function App() {
     const colorScheme = useAppSelector(selectPreferredTheme);
@@ -86,7 +88,12 @@ function App() {
 
     useEffect(() => {
         socket.on("drone_update", (data) => {
-            dispatch(updateAircraftStatus(roundValues(data)));
+            try {
+                const aircraftStatus = parseAndTransformDroneData(data);
+                dispatch(updateAircraftStatus(aircraftStatus));
+            } catch (error) {
+                console.error("Failed to parse drone data:", error);
+            }
         });
         return () => {
             socket.off("drone_update");
@@ -117,6 +124,29 @@ function App() {
                 </Switch>
             </Box>
             <ErrorSnackbar />
+            <WebRTCProvider>
+                <Box
+                    sx={{
+                        display: "flex",
+                        minwidth: "100vw",
+                        minHeight: "100vh",
+                        colorScheme: "dark",
+                    }}
+                >
+                    <Nav />
+                    <Switch>
+                        <Route path="/" component={Home} />
+                        {/* <Route path="/telemetry" component={Telemetry} /> */}
+                        <Route path="/map" component={MapRoute} />
+                        <Route path="/settings" component={Settings} />
+                        {/* <Route path="/mps-queue" component={MPSQueue} /> */}
+                        <Route path="/queue" component={Queue} />
+                        <Route path="/webrtc-test" component={VideoFeed} />
+                        <Route path="/oldc-images" component={OldcImages} />
+                    </Switch>
+                </Box>
+                <ErrorSnackbar />
+            </WebRTCProvider>
         </ThemeProvider>
     );
 }

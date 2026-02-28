@@ -48,7 +48,7 @@ export default function MPSControlSection() {
                     required
                     id="takeoffAltitude"
                     type="number"
-                    label="Take Off Altitude (m)"
+                    label="Take Off Altitude (m)" // Relative to drone start altitude
                     onChange={(e) => {
                         setTakeoffAltitude(parseFloat(e.target.value));
                     }}
@@ -82,7 +82,19 @@ export default function MPSControlSection() {
                             .finally(() => setPreparingTakeoff(false));
                     }}
                     endIcon={
-                        <Tooltip title="Clears mission queue and loads a takeoff waypoint. Switch drone to AUTO mode to takeoff">
+                        <Tooltip
+                            title={
+                                <>
+                                    <Typography variant="body2">
+                                        Clears mission queue and loads a takeoff waypoint. Switch drone to AUTO mode to
+                                        takeoff
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ mt: 2, fontSize: "0.7rem" }}>
+                                        (Altitude is given in meters relative to the drone's starting altitude)
+                                    </Typography>
+                                </>
+                            }
+                        >
                             <InfoIcon fontSize="small" />
                         </Tooltip>
                     }

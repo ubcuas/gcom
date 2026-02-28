@@ -40,7 +40,7 @@ def get_status(status_cache: StatusCache) -> Status:
         time_unix_usec=0, time_boot_ms=0
     )
     status_gps = status_cache.get_message("GLOBAL_POSITION_INT") or Object(
-        lat=0, lon=0, alt=0
+        lat=0, lon=0, alt=0, relative_alt=0
     )
     status_att = status_cache.get_message("ATTITUDE") or Object(roll=0, pitch=0, yaw=0)
     status_vfr = status_cache.get_message("VFR_HUD") or Object(
@@ -75,7 +75,8 @@ def get_status(status_cache: StatusCache) -> Status:
         status_wpn.seq,
         status_gps.lat / 10000000,
         status_gps.lon / 10000000,
-        status_gps.alt / 1000,  # meters
+        status_gps.alt / 1000,  # meters (MSL)
+        status_gps.relative_alt / 1000,  # meters (relative to home)
         math.degrees(status_att.roll),
         math.degrees(status_att.pitch),
         math.degrees(status_att.yaw) % 360,
