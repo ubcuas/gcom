@@ -143,6 +143,7 @@ function App() {
                         <Route path="/queue" component={Queue} />
                         <Route path="/webrtc-test" component={VideoFeed} />
                         <Route path="/oldc-images" component={OldcImages} />
+                        <Route path="/task1" component={Task1Page} />
                     </Switch>
                 </Box>
                 <ErrorSnackbar />
