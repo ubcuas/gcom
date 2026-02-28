@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { SIGNALING_SERVER_URL } from "../constants";
-import { saveOldcSession } from "../api/endpoints";
-import { OldcImageSchema } from "../schemas/oldc";
+import { saveOdlcSession } from "../api/endpoints";
+import { OdlcImageSchema } from "../schemas/odlc";
 import { useAppDispatch, useAppSelector } from "../store/store";
-import { appendOldcImage, selectOldcImages } from "../store/slices/dataSlice";
+import { appendOdlcImage, selectOdlcImageRecords } from "../store/slices/dataSlice";
 
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
@@ -37,7 +37,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const [isConnecting, setIsConnecting] = useState(false);
 
     const dispatch = useAppDispatch();
-    const oldcImages = useAppSelector(selectOldcImages);
+    const odlcImageRecords = useAppSelector(selectOdlcImageRecords);
 
     const socketRef = useRef<Socket | null>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -45,7 +45,8 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const remotePeerIdRef = useRef<string | null>(null);
     const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const sessionIdRef = useRef<string>(crypto.randomUUID());
-    const oldcImagesRef = useRef<ReturnType<typeof selectOldcImages>>(oldcImages);
+    const odlcImageRecordsRef = useRef(odlcImageRecords);
+    odlcImageRecordsRef.current = odlcImageRecords;
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
@@ -149,17 +150,19 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
 
         pc.addEventListener("datachannel", (event) => {
             const channel = event.channel;
-            if (channel.label === "oldc_images") {
+            if (channel.label === "odlc_images") {
                 channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
-                    const result = OldcImageSchema.safeParse(JSON.parse(msgEvent.data));
+                    const result = OdlcImageSchema.safeParse(JSON.parse(msgEvent.data));
                     if (!result.success) {
-                        console.error("Invalid OLDC image data received:", result.error);
+                        console.error("Invalid ODLC image data received:", result.error);
                         return;
                     }
-                    oldcImagesRef.current = [...oldcImagesRef.current, result.data];
-                    dispatch(appendOldcImage(result.data));
-                    saveOldcSession(sessionIdRef.current, oldcImagesRef.current).catch((err) => {
-                        console.error("Failed to save OLDC session:", err);
+                    dispatch(appendOdlcImage(result.data));
+                    saveOdlcSession(sessionIdRef.current, [
+                        ...odlcImageRecordsRef.current.map((r) => r.image),
+                        result.data,
+                    ]).catch((err) => {
+                        console.error("Failed to save ODLC session:", err);
                     });
                 });
             }

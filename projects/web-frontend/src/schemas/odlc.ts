@@ -1,15 +1,15 @@
 import { z } from "zod";
 
-export const OldcImageSchema = z.object({
+export const OdlcImageSchema = z.object({
     image_data: z.string(), // Base64-encoded image data
     color_detection: z.tuple([z.number().int(), z.number().int(), z.number().int()]),
     bounding_box: z.array(z.tuple([z.number(), z.number()])),
     confidence_level: z.number().int(),
 });
 
-export const OldcSessionPayloadSchema = z.object({
+export const OdlcSessionPayloadSchema = z.object({
     sessionId: z.string().uuid(),
-    images: z.array(OldcImageSchema),
+    images: z.array(OdlcImageSchema),
 });
 
-export type OldcImage = z.infer<typeof OldcImageSchema>;
+export type OdlcImage = z.infer<typeof OdlcImageSchema>;

@@ -13,7 +13,7 @@ const linkMap: Record<string, number> = {
     map: 1,
     queue: 2,
     "webrtc-test": 3,
-    "oldc-images": 4,
+    "odlc-images": 4,
     settings: 5,
 };
 
@@ -100,7 +100,7 @@ export default function Nav() {
                         minWidth: 0,
                     }}
                     label={<ImageSearchIcon />}
-                    href="/oldc-images"
+                    href="/odlc-images"
                     LinkComponent={Link}
                 />
                 <Tab

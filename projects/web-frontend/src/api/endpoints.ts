@@ -2,8 +2,8 @@ import { Waypoint } from "../types/Waypoint";
 import { Route } from "../types/Route";
 import api from "./api";
 import { WaypointSchema, RouteSchema, PartialWaypointSchema } from "../schemas/waypoint";
-import { OldcSessionPayloadSchema } from "../schemas/oldc";
-import type { OldcImage } from "../schemas/oldc";
+import { OdlcSessionPayloadSchema } from "../schemas/odlc";
+import type { OdlcImage } from "../schemas/odlc";
 
 // TODO: Implement new endpoint logic
 
@@ -102,7 +102,15 @@ export const getDroneParameter = async (
     return response.data;
 };
 
-export const saveOldcSession = async (sessionId: string, images: OldcImage[]): Promise<void> => {
-    const payload = OldcSessionPayloadSchema.parse({ sessionId, images });
-    await api.post("/vision/oldc-session/save/", payload);
+export const saveOdlcSession = async (sessionId: string, images: OdlcImage[]): Promise<void> => {
+    const payload = OdlcSessionPayloadSchema.parse({ sessionId, images });
+    await api.post("/vision/odlc-session/save/", payload);
+};
+
+export const calculateAnnotationDistance = async (
+    p1: { x: number; y: number },
+    p2: { x: number; y: number },
+): Promise<{ distance: number }> => {
+    const response = await api.post<{ distance: number }>("/vision/odlc-annotation-distance/", { p1, p2 });
+    return response.data;
 };
