@@ -9,8 +9,11 @@ def project_point_to_pixel(pixel: list[float], intrinsics: dict, point: list[flo
     
     model = intrinsics['model']
     coeffs = intrinsics['coeffs']
+
+    r2 = x * x + y * y
+    r = math.sqrt(r2)
+
     if (model == 'RS2_DISTORTION_MODIFIED_BROWN_CONRADY') or (model == 'RS2_DISTORTION_INVERSE_BROWN_CONRADY'):
-        r2 = x * x + y * y
         f = 1 + coeffs[0] * r2 + coeffs[1] * r2 * r2 + coeffs[4] * r2 * r2 * r2
         
         x *= f
@@ -23,7 +26,6 @@ def project_point_to_pixel(pixel: list[float], intrinsics: dict, point: list[flo
         y = dy
 
     elif (model == 'RS2_DISTORTION_BROWN_CONRADY'):
-        r2 = x * x + y * y
         f = 1 + coeffs[0] * r2 + coeffs[1] * r2 * r2 + coeffs[4] * r2 * r2 * r2
 
         xf = x * f
@@ -34,8 +36,8 @@ def project_point_to_pixel(pixel: list[float], intrinsics: dict, point: list[flo
 
         x = dx
         y = dy
+        
     elif (model == 'RS2_DISTORTION_FTHETA'):
-        r = math.sqrt(x * x + y * y)
         r = max(r, FLT_EPSILON)
 
         rd = (1.0 / coeffs[0] * math.atan(2 * r * math.tan(coeffs[0] / 2.0)))
@@ -43,7 +45,6 @@ def project_point_to_pixel(pixel: list[float], intrinsics: dict, point: list[flo
         y *= rd / r
 
     elif (model == 'RS2_DISTORTION_KANNALA_BRANDT4'):
-        r = math.sqrt(x * x + y * y)
         r = max(r, FLT_EPSILON)
 
         theta = math.atan(r)
