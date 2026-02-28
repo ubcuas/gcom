@@ -183,7 +183,7 @@ export default function WaypointForm({ editState, clearEditState }: WaypointForm
                     required
                     id="altitude"
                     type="string"
-                    label="Altitude"
+                    label="Altitude Relative to Home (m)"
                     onChange={handleFormChange}
                     onWheel={preventScroll}
                     value={formState.altitude}

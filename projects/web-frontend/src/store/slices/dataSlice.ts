@@ -18,6 +18,7 @@ const initialState: DataState = {
         latitude: 0,
         longitude: 0,
         altitude: 100,
+        relativeAltitude: 0,
         verticalSpeed: 100,
         speed: 100,
         heading: 90,

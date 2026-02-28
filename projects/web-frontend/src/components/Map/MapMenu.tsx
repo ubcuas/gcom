@@ -8,7 +8,7 @@ export default function MapMenu() {
                 position: "absolute",
                 right: 0,
                 top: 0,
-                m: 8,
+                m: 4,
                 height: "calc(100% - 128px)", // 128px account for top and bottom margin.
             }}
         >

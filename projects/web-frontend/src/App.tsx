@@ -12,7 +12,7 @@ import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "./store/store";
 import { socket } from "./api/socket";
-import { roundValues } from "./utils/telemetry";
+import { parseAndTransformDroneData } from "./types/AircraftStatus";
 
 function App() {
     const colorScheme = useAppSelector(selectPreferredTheme);
@@ -85,7 +85,12 @@ function App() {
 
     useEffect(() => {
         socket.on("drone_update", (data) => {
-            dispatch(updateAircraftStatus(roundValues(data)));
+            try {
+                const aircraftStatus = parseAndTransformDroneData(data);
+                dispatch(updateAircraftStatus(aircraftStatus));
+            } catch (error) {
+                console.error("Failed to parse drone data:", error);
+            }
         });
         return () => {
             socket.off("drone_update");
