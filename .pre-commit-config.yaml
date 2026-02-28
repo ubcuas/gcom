@@ -23,9 +23,15 @@ repos:
         language: system
         files: projects/web-frontend/.*\.[jt]sx?$
         pass_filenames: false
-    -   id: generate-api-spec
-        name: Generate API Spec
-        entry: bash -c 'cd projects/web-backend && python3 src/manage.py spectacular --file api_spec.yaml --validate'
+    -   id: generate-web-backend-api-spec
+        name: Generate Web Backend API Spec
+        entry: bash -c 'cd projects/web-backend && venv/bin/python src/manage.py spectacular --file api_spec.yaml --validate'
         language: system
         files: ^projects/web-backend/
+        pass_filenames: false
+    -   id: generate-mp-api-spec
+        name: Generate Mission Planner API Spec
+        entry: bash -c 'cd projects/mission-planner && venv/bin/python generate_spec.py'
+        language: system
+        files: ^projects/mission-planner/
         pass_filenames: false
