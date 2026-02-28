@@ -8,9 +8,39 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 
 from .models import GroundObject, Image
+from .projection import project_point_to_pixel
 from .serializers import GroundObjectSerializer, ImageSerializer
 
 OLDC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "oldc_sessions"
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def project_point(request):
+    try:
+        data = json.loads(request.body)
+        point = data.get("point")
+        intrinsics = data.get("intrinsics")
+        pixel = data.get("pixel")
+
+        if not isinstance(point, list) or len(point) != 3:
+            return JsonResponse({"error": "Invalid input: point must be a list of 3 floats"}, status=400)
+
+        if not isinstance(intrinsics, dict):
+            return JsonResponse({"error": "Invalid input: intrinsics must be an object"}, status=400)
+
+        if not isinstance(pixel, list) or len(pixel) != 2:
+            return JsonResponse({"error": "Invalid input: pixel must be a list of 2 floats"}, status=400)
+
+        pixel = project_point_to_pixel(pixel=pixel, intrinsics=intrinsics, point=point)
+
+        return JsonResponse({"pixel": pixel})
+    except NotImplementedError:
+        return JsonResponse({"error": "Not implemented"}, status=501)
+    except (KeyError, ValueError, TypeError) as e:
+        return JsonResponse({"error": "Invalid input", "details": str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": "Internal server error", "details": str(e)}, status=500)
 
 
 @csrf_exempt
