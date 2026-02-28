@@ -7,6 +7,7 @@ import Home from "./routes/Home";
 import MapRoute from "./routes/MapRoute";
 import Queue from "./routes/Queue";
 import Settings from "./routes/Settings";
+import Task1Page from "./routes/Task1Page";
 import VideoFeed from "./routes/VideoFeed";
 import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
@@ -111,6 +112,7 @@ function App() {
                     <Route path="/settings" component={Settings} />
                     {/* <Route path="/mps-queue" component={MPSQueue} /> */}
                     <Route path="/queue" component={Queue} />
+                    <Route path="/task1" component={Task1Page} />
                     <Route path="/webrtc-test" component={VideoFeed} />
                 </Switch>
             </Box>

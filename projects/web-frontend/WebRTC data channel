@@ -1,0 +1,8 @@
+WebRTC data channel 
+
+{
+image_data: IMAGE
+color_detection: COLOR
+bounding_box: [list of bounding box pixel coordinates, (1110, 250), (1000, 1000)]
+confidence_level: integer
+}
