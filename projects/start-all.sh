@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SESSION_NAME="gcom_projects"
+SESSION_NAME="gcom"
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
 VENV_PATH="venv"
@@ -52,6 +52,16 @@ prepare_env() {
     local venv_dir="$folder/$VENV_PATH"
     local req_file="$folder/requirements.txt"
 
+    # Check if python3-venv is actually working
+    if ! $PY_CMD -m venv --help &>/dev/null; then
+        echo "-------------------------------------------------------"
+        echo "ERROR: Python 'venv' module is missing."
+        echo "If you are on Ubuntu/Debian, run:"
+        echo "    sudo apt update && sudo apt install python3-venv"
+        echo "-------------------------------------------------------"
+        exit 1
+    fi
+
     # 1. Create if missing
     if [ ! -d "$venv_dir" ]; then
         echo "Creating new venv in $folder..."
@@ -94,25 +104,25 @@ setup_sitl() {
     # SITL
     tmux send-keys -t "$SESSION_NAME:0.0" "echo 'Starting SITL'; docker rm -f uasitl 2>/dev/null && docker run --rm -p 5760-5780:5760-5780 -it --network=gcom-x_uasnet --name=uasitl $UASITL_IMAGE" C-m
     echo "Waiting for SITL to initialize..."
-    sleep 3
+    sleep 10
 }
 
 setup_mavproxy() {
     select_mavproxy_command
     # Mavproxy
-    tmux send-keys -t "$SESSION_NAME:0.1" "echo 'Starting mavproxy'; cd $SCRIPT_DIR/mission-planner && source $VENV_NAME/bin/activate && $MAV_CMD $MAV_ARGS" C-m
+    tmux send-keys -t "$SESSION_NAME:0.1" "echo 'Starting mavproxy'; cd $SCRIPT_DIR/mission-planner && source $VENV_PATH/bin/activate && $MAV_CMD $MAV_ARGS" C-m
     echo "Giving MAVProxy time to start the network streams..."
-    sleep 3
+    sleep 8
 }
 
 setup_mission_planner() {
     # Mission Planner
-    tmux send-keys -t "$SESSION_NAME:0.2" "echo 'Starting mission planner'; cd $SCRIPT_DIR/mission-planner && source $VENV_NAME/bin/activate && $PY_CMD src/main.py" C-m
+    tmux send-keys -t "$SESSION_NAME:0.2" "echo 'Starting mission planner'; cd $SCRIPT_DIR/mission-planner && source $VENV_PATH/bin/activate && $PY_CMD src/main.py" C-m
 }
 
 setup_web_backend() {
     # Web Backend
-    tmux send-keys -t "$SESSION_NAME:0.3" "echo 'Starting web backend'; cd $SCRIPT_DIR/web-backend && source $VENV_NAME/bin/activate && $PY_CMD src/server.py" C-m
+    tmux send-keys -t "$SESSION_NAME:0.3" "echo 'Starting web backend'; cd $SCRIPT_DIR/web-backend && source $VENV_PATH/bin/activate && $PY_CMD src/server.py" C-m
 }
 
 setup_web_frontend() {
