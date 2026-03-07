@@ -5,6 +5,7 @@ from .views import (
     GroundObjectViewset,
     ImageViewset,
     calculate_annotation_distance,
+    project_point,
     save_odlc_session,
 )
 
@@ -20,4 +21,5 @@ urlpatterns = [
         calculate_annotation_distance,
         name="calculate_annotation_distance",
     ),
+    path("project-point/", project_point, name="project_point"),
 ]
