@@ -3,30 +3,20 @@ import { useMemo, useState } from "react";
 import { useAppSelector } from "../store/store";
 import { selectNodeLogs } from "../store/slices/dataSlice";
 
-const LEVEL_LABELS: Record<number, string> = {
-    10: "TRACE",
-    20: "DEBUG",
-    30: "INFO",
-    40: "WARN",
-    50: "ERROR",
-    60: "FATAL",
+const LEVEL_COLORS: Record<string, string> = {
+    DEBUG: "#888888",
+    INFO: "#4fc3f7",
+    WARN: "#ffb74d",
+    ERROR: "#ef5350",
+    FATAL: "#b71c1c",
 };
 
-const LEVEL_COLORS: Record<number, string> = {
-    10: "#888888",
-    20: "#aaaaaa",
-    30: "#4fc3f7",
-    40: "#ffb74d",
-    50: "#ef5350",
-    60: "#b71c1c",
-};
-
-function levelLabel(level: number): string {
-    return LEVEL_LABELS[level] ?? `LVL${level}`;
+function levelColor(level: string): string {
+    return LEVEL_COLORS[level] ?? "#ffffff";
 }
 
-function levelColor(level: number): string {
-    return LEVEL_COLORS[level] ?? "#ffffff";
+function formatTimestamp(ms: number): string {
+    return new Date(ms).toISOString().replace("T", " ").slice(0, 23);
 }
 
 export default function Logs() {
@@ -77,11 +67,14 @@ export default function Logs() {
                     ) : (
                         filteredLogs.map((log, i) => (
                             <Box key={i} sx={{ display: "flex", gap: 1, lineHeight: 1.6 }}>
+                                <Box component="span" sx={{ color: "#555", minWidth: 160, flexShrink: 0 }}>
+                                    {formatTimestamp(log.timestamp)}
+                                </Box>
                                 <Box
                                     component="span"
                                     sx={{ color: levelColor(log.level), minWidth: 48, flexShrink: 0 }}
                                 >
-                                    {levelLabel(log.level)}
+                                    {log.level}
                                 </Box>
                                 {selectedNode === "all" && (
                                     <Box component="span" sx={{ color: "#888", minWidth: 100, flexShrink: 0 }}>

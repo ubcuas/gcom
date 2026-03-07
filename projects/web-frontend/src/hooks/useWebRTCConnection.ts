@@ -168,7 +168,17 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
                 channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
                     try {
                         const log = JSON.parse(msgEvent.data);
-                        dispatch(appendNodeLog({ level: log.level, node: log.node, message: log.message }));
+                        dispatch(
+                            appendNodeLog({
+                                level: log.level,
+                                node: log.node,
+                                message: log.message,
+                                timestamp: log.timestamp,
+                                file: log.file,
+                                function: log.function,
+                                line: log.line,
+                            }),
+                        );
                     } catch {
                         console.error("Failed to parse log message:", msgEvent.data);
                     }

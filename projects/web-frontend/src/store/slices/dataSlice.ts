@@ -6,9 +6,13 @@ import { Waypoint } from "../../types/Waypoint";
 import type { OldcImage } from "../../schemas/oldc";
 
 export type NodeLog = {
-    level: number;
+    level: string;
     node: string;
     message: string;
+    timestamp: number;
+    file: string;
+    function: string;
+    line: number;
 };
 
 // DataState holds actual information that is supposed to be aligned with backend.
