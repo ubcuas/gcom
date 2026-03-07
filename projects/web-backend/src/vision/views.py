@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 
 from .models import GroundObject, Image
-from .projection import project_point_to_pixel
+from .projection import deproject_pixel_to_point
 from .serializers import GroundObjectSerializer, ImageSerializer
 
 ODLC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "odlc_sessions"
@@ -16,16 +16,16 @@ ODLC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "odlc_sessio
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def project_point(request):
+def deproject_pixel(request):
     try:
         data = json.loads(request.body)
-        point = data.get("point")
-        intrinsics = data.get("intrinsics")
         pixel = data.get("pixel")
+        intrinsics = data.get("intrinsics")
+        depth = data.get("depth")
 
-        if not isinstance(point, list) or len(point) != 3:
+        if not isinstance(pixel, list) or len(pixel) != 2:
             return JsonResponse(
-                {"error": "Invalid input: point must be a list of 3 floats"}, status=400
+                {"error": "Invalid input: pixel must be a list of 2 floats"}, status=400
             )
 
         if not isinstance(intrinsics, dict):
@@ -33,17 +33,19 @@ def project_point(request):
                 {"error": "Invalid input: intrinsics must be an object"}, status=400
             )
 
-        if not isinstance(pixel, list) or len(pixel) != 2:
+        if not isinstance(depth, (int, float)):
             return JsonResponse(
-                {"error": "Invalid input: pixel must be a list of 2 floats"}, status=400
+                {"error": "Invalid input: depth must be a float"}, status=400
             )
 
-        pixel = project_point_to_pixel(pixel=pixel, intrinsics=intrinsics, point=point)
+        point = deproject_pixel_to_point(
+            intrinsics=intrinsics, pixel=pixel, depth=float(depth)
+        )
 
-        return JsonResponse({"pixel": pixel})
-    except NotImplementedError:
-        return JsonResponse({"error": "Not implemented"}, status=501)
-    except (KeyError, ValueError, TypeError) as e:
+        return JsonResponse({"point": point})
+    except (ValueError, NotImplementedError) as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except (KeyError, TypeError) as e:
         return JsonResponse({"error": "Invalid input", "details": str(e)}, status=400)
     except Exception as e:
         return JsonResponse(
