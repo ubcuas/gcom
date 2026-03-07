@@ -5,6 +5,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
 VENV_PATH="venv"
 ARCH=$(uname -m)
+NETWORK_NAME="gcom-x_uasnet"
 
 select_python() {
     if command -v python3 &>/dev/null; then
@@ -24,6 +25,15 @@ select_sitl_image() {
     else
         UASITL_IMAGE="ubcuas/uasitl:copter-4.5.5"
         echo "non-ARM architecture detected. Using standard image."
+    fi
+}
+
+setup_network() {
+    if ! docker network ls | grep -q "$NETWORK_NAME"; then
+        echo "Creating docker network: $NETWORK_NAME"
+        docker network create "$NETWORK_NAME"
+    else
+        echo "Network $NETWORK_NAME already exists, skipping creation."
     fi
 }
 
@@ -80,8 +90,9 @@ setup_tmux() {
 
 setup_sitl() {
     select_sitl_image
+    setup_network
     # SITL
-    tmux send-keys -t "$SESSION_NAME:0.0" "echo 'Starting SITL'; docker rm -f uasitl 2>/dev/null && docker run --rm -p 5760-5780:5760-5780 -it --network=gcom-x_uasnet --name=uasitl $UASITL_IMAGE" C-m
+    tmux send-keys -t "$SESSION_NAME:0.0" "echo 'Starting SITL'; docker rm -f uasitl 2>/dev/null && docker network create gcom-x_uasnet && docker run --rm -p 5760-5780:5760-5780 -it --network=gcom-x_uasnet --name=uasitl $UASITL_IMAGE" C-m
     echo "Waiting for SITL to initialize..."
     sleep 3
 }
