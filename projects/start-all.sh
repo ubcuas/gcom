@@ -38,15 +38,32 @@ setup_network() {
 }
 
 select_mavproxy_command() {
+    # 1. Search for Hardware (Telemetry Radio) - Prioritizes this over SITL
+    local USB_RADIO=$(ls /dev/tty.usbserial* /dev/ttyUSB* 2>/dev/null | head -n 1)
+
+    # 2. Configure Master and Baudrate based on what we found
+    if [ -n "$USB_RADIO" ]; then
+        echo "--- HARDWARE DETECTED: $USB_RADIO ---"
+        MASTER_STR="$USB_RADIO"
+        BAUD_STR="--baudrate=115200"
+        IS_HARDWARE=true  # Flag to disable SITL later
+    else
+        echo "--- NO HARDWARE: Falling back to SITL ---"
+        MASTER_STR="tcp:127.0.0.1:5760"
+        BAUD_STR=""
+        IS_HARDWARE=false
+    fi
+
+    # 3. Set OS-Specific Command and Arguments
     if [[ "$OSTYPE" == "darwin"* ]]; then
         MAV_CMD="mavproxy.py"
-        MAV_ARGS="--master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551"
+        MAV_ARGS="--master=$MASTER_STR $BAUD_STR --out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         MAV_CMD="mavproxy.py"
-        MAV_ARGS="--master=tcp:127.0.0.1:5760 --out=udp:172.25.32.1:14550 --out=udp:127.0.0.1:14551"
+        MAV_ARGS="--master=$MASTER_STR $BAUD_STR --out=udp:172.25.32.1:14550 --out=udp:127.0.0.1:14551"
     else
         MAV_CMD="mavproxy"
-        MAV_ARGS="--master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551"
+        MAV_ARGS="--master=$MASTER_STR $BAUD_STR --out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551"
     fi
 }
 
@@ -55,30 +72,23 @@ prepare_env() {
     local venv_dir="$folder/$VENV_PATH"
     local req_file="$folder/requirements.txt"
 
-    # Check if python3-venv is actually working
     if ! $PY_CMD -m venv --help &>/dev/null; then
-        echo "-------------------------------------------------------"
         echo "ERROR: Python 'venv' module is missing."
-        echo "If you are on Ubuntu/Debian, run:"
-        echo "    sudo apt update && sudo apt install python3-venv"
-        echo "-------------------------------------------------------"
         exit 1
     fi
 
-    # 1. Create if missing
     if [ ! -d "$venv_dir" ]; then
         echo "Creating new venv in $folder..."
         $PY_CMD -m venv "$venv_dir"
         "$venv_dir/bin/pip" install --upgrade pip
         "$venv_dir/bin/pip" install -r "$req_file"
-        touch "$venv_dir/pyvenv.cfg" # Mark as updated
+        touch "$venv_dir/pyvenv.cfg"
         return
     fi
 
-    # 2. Update if requirements.txt changed since last run
     if [ -f "$req_file" ]; then
         if [[ "$req_file" -nt "$venv_dir/pyvenv.cfg" ]]; then
-            echo "Changes detected in requirements.txt. Updating..."
+            echo "Updating requirements in $folder..."
             "$venv_dir/bin/pip" install -r "$req_file"
             touch "$venv_dir/pyvenv.cfg"
         fi
@@ -87,7 +97,7 @@ prepare_env() {
 
 setup_tmux() {
     if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-        echo "Session '$SESSION_NAME' already exists. Ataching to the existing session..."
+        echo "Session '$SESSION_NAME' already exists. Attaching..."
         tmux attach-session -t "$SESSION_NAME"
         exit 0
     fi
@@ -102,39 +112,40 @@ setup_tmux() {
 }
 
 setup_sitl() {
-    select_sitl_image
-    setup_network
-    # SITL
-    tmux send-keys -t "$SESSION_NAME:0.0" "echo 'Starting SITL'; docker rm -f uasitl 2>/dev/null && docker run --rm -p 5760-5780:5760-5780 -it --network=gcom-x_uasnet --name=uasitl $UASITL_IMAGE" C-m
-    echo "Waiting for SITL to initialize..."
-    sleep 3
+    # Only run SITL if no hardware was detected
+    if [ "$IS_HARDWARE" = false ]; then
+        select_sitl_image
+        setup_network
+        tmux send-keys -t "$SESSION_NAME:0.0" "echo 'Starting SITL'; docker rm -f uasitl 2>/dev/null; docker run --rm -p 5760-5780:5760-5780 -it --network=gcom-x_uasnet --name=uasitl $UASITL_IMAGE" C-m
+        echo "Waiting for SITL to initialize..."
+        sleep 3
+    else
+        tmux send-keys -t "$SESSION_NAME:0.0" "echo 'Hardware detected at $MASTER_STR. SITL bypassed.'" C-m
+    fi
 }
 
 setup_mavproxy() {
-    select_mavproxy_command
     # Mavproxy
     tmux send-keys -t "$SESSION_NAME:0.1" "echo 'Starting mavproxy'; cd $SCRIPT_DIR/mission-planner && source $VENV_PATH/bin/activate && $MAV_CMD $MAV_ARGS" C-m
-    echo "Giving MAVProxy time to start the network streams..."
+    echo "Giving MAVProxy time to start..."
     sleep 3
 }
 
 setup_mission_planner() {
-    # Mission Planner
     tmux send-keys -t "$SESSION_NAME:0.2" "echo 'Starting mission planner'; cd $SCRIPT_DIR/mission-planner && source $VENV_PATH/bin/activate && $PY_CMD src/main.py" C-m
 }
 
 setup_web_backend() {
-    # Web Backend
     tmux send-keys -t "$SESSION_NAME:0.3" "echo 'Starting web backend'; cd $SCRIPT_DIR/web-backend && source $VENV_PATH/bin/activate && $PY_CMD src/server.py" C-m
 }
 
 setup_web_frontend() {
-    # Web Frontend
     tmux send-keys -t "$SESSION_NAME:0.4" "echo 'Starting web frontend'; cd $SCRIPT_DIR/web-frontend && npm run dev" C-m
 }
 
 start_all() {
     select_python
+    select_mavproxy_command # Must run before setup_sitl to set IS_HARDWARE flag
     prepare_env "$SCRIPT_DIR/mission-planner"
     prepare_env "$SCRIPT_DIR/web-backend"
     setup_tmux
