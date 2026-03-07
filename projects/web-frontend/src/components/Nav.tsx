@@ -4,6 +4,7 @@ import ImageSearchIcon from "@mui/icons-material/ImageSearch";
 import MapIcon from "@mui/icons-material/Map";
 import Settings from "@mui/icons-material/Settings";
 import VideocamIcon from "@mui/icons-material/Videocam";
+import TerminalIcon from "@mui/icons-material/Terminal";
 import { Paper, Tab, Tabs } from "@mui/material";
 import { useState } from "react";
 import { Link, useRoute } from "wouter";
@@ -14,7 +15,8 @@ const linkMap: Record<string, number> = {
     queue: 2,
     "webrtc-test": 3,
     "oldc-images": 4,
-    settings: 5,
+    logs: 5,
+    settings: 6,
 };
 
 export default function Nav() {
@@ -101,6 +103,14 @@ export default function Nav() {
                     }}
                     label={<ImageSearchIcon />}
                     href="/oldc-images"
+                    LinkComponent={Link}
+                />
+                <Tab
+                    sx={{
+                        minWidth: 0,
+                    }}
+                    label={<TerminalIcon />}
+                    href="/logs"
                     LinkComponent={Link}
                 />
                 <Tab
