@@ -3,3 +3,6 @@ requests
 pymavlink
 matplotlib
 flask-socketio
+MAVProxy
+future
+gnureadline

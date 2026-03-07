@@ -38,7 +38,10 @@ setup_network() {
 }
 
 select_mavproxy_command() {
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        MAV_CMD="mavproxy.py"
+        MAV_ARGS="--master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         MAV_CMD="mavproxy.py"
         MAV_ARGS="--master=tcp:127.0.0.1:5760 --out=udp:172.25.32.1:14550 --out=udp:127.0.0.1:14551"
     else
