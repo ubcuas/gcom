@@ -1,58 +1,70 @@
 import math
 
-def project_point_to_pixel(intrinsics: dict, point: list[float]) -> list[float]:
-    """Re-implemented from https://github.com/realsenseai/librealsense/blob/78cb605b11f5ba80176e7b8d70292f76ba625565/src/rs.cpp#L4202-L4264"""
+FLT_EPSILON = 1e-6
 
-    FLT_EPSILON = 1e-6 # defining here for now, can't find in the repository
-    x = point[0] / point[2]
-    y = point[1] / point[2]
-    
+
+def _is_distortion_zero(coeffs: list[float]) -> bool:
+    return all(abs(c) < FLT_EPSILON for c in coeffs)
+
+
+def deproject_pixel_to_point(intrinsics: dict, pixel: list[float], depth: float) -> list[float]:
+    """Re-implemented from https://github.com/realsenseai/librealsense/blob/78cb605b11f5ba80176e7b8d70292f76ba625565/src/rs.cpp#L4273"""
+
     model = intrinsics['model']
     coeffs = intrinsics['coeffs']
 
-    r2 = x * x + y * y
-    r = math.sqrt(r2)
+    if model == 'RS2_DISTORTION_MODIFIED_BROWN_CONRADY':
+        raise ValueError("Cannot deproject from a forward-distorted image")
 
-    if (model == 'RS2_DISTORTION_MODIFIED_BROWN_CONRADY') or (model == 'RS2_DISTORTION_INVERSE_BROWN_CONRADY'):
-        f = 1 + coeffs[0] * r2 + coeffs[1] * r2 * r2 + coeffs[4] * r2 * r2 * r2
-        
-        x *= f
-        y *= f
+    x = (pixel[0] - intrinsics['ppx']) / intrinsics['fx']
+    y = (pixel[1] - intrinsics['ppy']) / intrinsics['fy']
 
-        dx = x + 2 * coeffs[2] * x * y + coeffs[3] * (r2 + 2 * x * x)
-        dy = y + 2 * coeffs[3] * x * y + coeffs[2] * (r2 + 2 * y * y)
+    xo = x
+    yo = y
 
-        x = dx
-        y = dy
+    if not _is_distortion_zero(coeffs):
+        if model == 'RS2_DISTORTION_INVERSE_BROWN_CONRADY':
+            for _ in range(10):
+                r2 = x * x + y * y
+                icdist = 1.0 / (1 + ((coeffs[4] * r2 + coeffs[1]) * r2 + coeffs[0]) * r2)
+                xq = x / icdist
+                yq = y / icdist
+                delta_x = 2 * coeffs[2] * xq * yq + coeffs[3] * (r2 + 2 * xq * xq)
+                delta_y = 2 * coeffs[3] * xq * yq + coeffs[2] * (r2 + 2 * yq * yq)
+                x = (xo - delta_x) * icdist
+                y = (yo - delta_y) * icdist
 
-    elif (model == 'RS2_DISTORTION_BROWN_CONRADY'):
-        f = 1 + coeffs[0] * r2 + coeffs[1] * r2 * r2 + coeffs[4] * r2 * r2 * r2
+        if model == 'RS2_DISTORTION_BROWN_CONRADY':
+            for _ in range(10):
+                r2 = x * x + y * y
+                icdist = 1.0 / (1 + ((coeffs[4] * r2 + coeffs[1]) * r2 + coeffs[0]) * r2)
+                delta_x = 2 * coeffs[2] * x * y + coeffs[3] * (r2 + 2 * x * x)
+                delta_y = 2 * coeffs[3] * x * y + coeffs[2] * (r2 + 2 * y * y)
+                x = (xo - delta_x) * icdist
+                y = (yo - delta_y) * icdist
 
-        xf = x * f
-        yf = y * f
+    if model == 'RS2_DISTORTION_KANNALA_BRANDT4':
+        rd = math.sqrt(x * x + y * y)
+        rd = max(rd, FLT_EPSILON)
 
-        dx = xf + 2 * coeffs[2] * x * y + coeffs[3] * (r2 + 2 * x * x)
-        dy = yf + 2 * coeffs[3] * x * y + coeffs[2] * (r2 + 2 * y * y)
+        theta = rd
+        theta2 = rd * rd
+        for _ in range(4):
+            f = theta * (1 + theta2 * (coeffs[0] + theta2 * (coeffs[1] + theta2 * (coeffs[2] + theta2 * coeffs[3])))) - rd
+            if abs(f) < FLT_EPSILON:
+                break
+            df = 1 + theta2 * (3 * coeffs[0] + theta2 * (5 * coeffs[1] + theta2 * (7 * coeffs[2] + 9 * theta2 * coeffs[3])))
+            theta -= f / df
+            theta2 = theta * theta
+        r = math.tan(theta)
+        x *= r / rd
+        y *= r / rd
 
-        x = dx
-        y = dy
-        
-    elif (model == 'RS2_DISTORTION_FTHETA'):
-        r = max(r, FLT_EPSILON)
+    if model == 'RS2_DISTORTION_FTHETA':
+        rd = math.sqrt(x * x + y * y)
+        rd = max(rd, FLT_EPSILON)
+        r = 0.0 if abs(coeffs[0]) < FLT_EPSILON else math.tan(coeffs[0] * rd) / math.atan(2 * math.tan(coeffs[0] / 2.0))
+        x *= r / rd
+        y *= r / rd
 
-        rd = (1.0 / coeffs[0] * math.atan(2 * r * math.tan(coeffs[0] / 2.0)))
-        x *= rd / r
-        y *= rd / r
-
-    elif (model == 'RS2_DISTORTION_KANNALA_BRANDT4'):
-        r = max(r, FLT_EPSILON)
-
-        theta = math.atan(r)
-        theta2 = theta * theta 
-        series = 1 + theta2 * (coeffs[0] + theta2 * (coeffs[1] + theta2 * (coeffs[2] + theta2 * coeffs[3])))
-        rd = theta * series
-        x *= rd / r
-        y *= rd / r
-
-    new_pixel = [x * intrinsics['fx'] + intrinsics['ppx'], y * intrinsics['fy'] + intrinsics['ppy']]
-    return new_pixel
+    return [depth * x, depth * y, depth]
