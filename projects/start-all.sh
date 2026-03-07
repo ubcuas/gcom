@@ -104,7 +104,7 @@ setup_sitl() {
     # SITL
     tmux send-keys -t "$SESSION_NAME:0.0" "echo 'Starting SITL'; docker rm -f uasitl 2>/dev/null && docker run --rm -p 5760-5780:5760-5780 -it --network=gcom-x_uasnet --name=uasitl $UASITL_IMAGE" C-m
     echo "Waiting for SITL to initialize..."
-    sleep 10
+    sleep 3
 }
 
 setup_mavproxy() {
@@ -112,7 +112,7 @@ setup_mavproxy() {
     # Mavproxy
     tmux send-keys -t "$SESSION_NAME:0.1" "echo 'Starting mavproxy'; cd $SCRIPT_DIR/mission-planner && source $VENV_PATH/bin/activate && $MAV_CMD $MAV_ARGS" C-m
     echo "Giving MAVProxy time to start the network streams..."
-    sleep 8
+    sleep 3
 }
 
 setup_mission_planner() {
