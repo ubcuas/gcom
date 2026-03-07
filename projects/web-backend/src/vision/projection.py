@@ -1,6 +1,6 @@
 import math
 
-def project_point_to_pixel(pixel: list[float], intrinsics: dict, point: list[float]) -> list[float]:
+def project_point_to_pixel(intrinsics: dict, point: list[float]) -> list[float]:
     """Re-implemented from https://github.com/realsenseai/librealsense/blob/78cb605b11f5ba80176e7b8d70292f76ba625565/src/rs.cpp#L4202-L4264"""
 
     FLT_EPSILON = 1e-6 # defining here for now, can't find in the repository
