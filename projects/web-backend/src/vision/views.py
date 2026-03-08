@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 
 from .models import GroundObject, Image
-from .projection import deproject_pixel_to_point, project_point_to_pixel
+from .projection import deproject_pixel_to_point
 from .serializers import GroundObjectSerializer, ImageSerializer
 
 OLDC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "oldc_sessions"
@@ -19,19 +19,15 @@ def deproject_pixel(request):
     try:
         data = json.loads(request.body)
         pixel = data.get("pixel")
-        intrinsics = data.get("intrinsics")
         depth = data.get("depth")
 
         if not isinstance(pixel, list) or len(pixel) != 2:
             return JsonResponse({"error": "Invalid input: pixel must be a list of 2 floats"}, status=400)
 
-        if not isinstance(intrinsics, dict):
-            return JsonResponse({"error": "Invalid input: intrinsics must be an object"}, status=400)
-
         if not isinstance(depth, (int, float)):
             return JsonResponse({"error": "Invalid input: depth must be a float"}, status=400)
 
-        point = deproject_pixel_to_point(intrinsics=intrinsics, pixel=pixel, depth=float(depth))
+        point = deproject_pixel_to_point(pixel=pixel, depth=float(depth))
 
         return JsonResponse({"point": point})
     except (ValueError, NotImplementedError) as e:
