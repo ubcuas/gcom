@@ -77,30 +77,6 @@ def save_odlc_session(request):
         )
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def calculate_annotation_distance(request):
-    """
-    Stub: accept two points (normalized 0-1) and return a distance.
-    Replace with real calibration/scale logic later.
-    """
-    try:
-        data = json.loads(request.body)
-        p1 = data.get("p1")
-        p2 = data.get("p2")
-        if not isinstance(p1, dict) or not isinstance(p2, dict):
-            return JsonResponse(
-                {"error": "Invalid input: p1 and p2 required"}, status=400
-            )
-        x1, y1 = float(p1.get("x", 0)), float(p1.get("y", 0))
-        x2, y2 = float(p2.get("x", 0)), float(p2.get("y", 0))
-        # Placeholder: Euclidean distance in normalized space (scale to mock units)
-        distance = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5 * 100.0
-        return JsonResponse({"distance": round(distance, 4)})
-    except (TypeError, ValueError) as e:
-        return JsonResponse({"error": "Invalid input", "details": str(e)}, status=400)
-
-
 # Create your views here.
 @extend_schema_view(
     list=extend_schema(description="List all images"),
