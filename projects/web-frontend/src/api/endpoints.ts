@@ -107,13 +107,23 @@ export const saveOdlcSession = async (sessionId: string, images: OdlcImage[]): P
     await api.post("/vision/odlc-session/save/", payload);
 };
 
+/**
+ * Deprojects a 2D pixel coordinate and depth value into a 3D point in camera space.
+ * Calls the backend which implements the RealSense deprojection formula, accounting
+ * for lens distortion via the provided camera intrinsic parameters.
+ *
+ * @param pixel - [x, y] pixel coordinates in the image (column, row)
+ * @param intrinsics - Camera intrinsic parameters: fx, fy, ppx, ppy, model, coeffs
+ * @param depth - Depth at the pixel in meters
+ * @returns A 3D point [x, y, z] in camera coordinate space, in meters
+ */
 export const deprojectPixel = async (
-    pixelCoordinates: { x: number; y: number },
-    intrinsics: Object,
+    pixel: [number, number],
+    intrinsics: object,
     depth: number,
-): Promise<{ distance: number }> => {
-    const response = await api.post<{ distance: number }>("/vision/deproject_pixel/", {
-        pixelCoordinates,
+): Promise<{ point: [number, number, number] }> => {
+    const response = await api.post<{ point: [number, number, number] }>("/vision/deproject_pixel/", {
+        pixel,
         intrinsics,
         depth,
     });

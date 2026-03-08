@@ -31,7 +31,6 @@ import {
     appendOdlcImage,
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
-import { deprojectPixel } from "../api/endpoints";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { getColorGroupKey, getColorGroupLabel } from "../utils/odlcColorGroup";
 import type { RGB } from "../utils/odlcColorGroup";
@@ -72,6 +71,7 @@ function createDummyOdlcImage(color: [number, number, number], confidenceLevel: 
     const y2 = randomIn(0.15, 0.95);
     return {
         image_data: createDummyImageBase64(width, height, ...color),
+        depth_data: null,
         color_detection: color,
         bounding_box: [
             [x1, y1],
@@ -248,25 +248,21 @@ export default function OdlcImages() {
     const handleImageAnnotation = async (args: {
         id: string;
         annotationId: string;
-        p1: {
-            x: number;
-            y: number;
-        };
-        p2: {
-            x: number;
-            y: number;
-        };
+        p1: { x: number; y: number };
+        p2: { x: number; y: number };
     }) => {
         dispatch(addOdlcImageAnnotation(args));
 
-        const res = await calculateAnnotationDistance(args.p1, args.p2);
-        dispatch(
-            setOdlcImageAnnotationDistance({
-                id: args.id,
-                annotationId: args.annotationId,
-                distance: res.distance,
-            }),
-        );
+        const res = await calculateAnnotationDistance(args.p1, args.p2, selectedRecord?.image.depth_data ?? null);
+        if (res !== null) {
+            dispatch(
+                setOdlcImageAnnotationDistance({
+                    id: args.id,
+                    annotationId: args.annotationId,
+                    distance: res.distance,
+                }),
+            );
+        }
     };
 
     if (records.length === 0) {
