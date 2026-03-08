@@ -107,10 +107,15 @@ export const saveOdlcSession = async (sessionId: string, images: OdlcImage[]): P
     await api.post("/vision/odlc-session/save/", payload);
 };
 
-export const calculateAnnotationDistance = async (
-    p1: { x: number; y: number },
-    p2: { x: number; y: number },
+export const deprojectPixel = async (
+    pixelCoordinates: { x: number; y: number },
+    intrinsics: Object,
+    depth: number,
 ): Promise<{ distance: number }> => {
-    const response = await api.post<{ distance: number }>("/vision/odlc-annotation-distance/", { p1, p2 });
+    const response = await api.post<{ distance: number }>("/vision/deproject_pixel/", {
+        pixelCoordinates,
+        intrinsics,
+        depth,
+    });
     return response.data;
 };

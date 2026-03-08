@@ -31,11 +31,12 @@ import {
     appendOdlcImage,
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
-import { calculateAnnotationDistance } from "../api/endpoints";
+import { deprojectPixel } from "../api/endpoints";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { getColorGroupKey, getColorGroupLabel } from "../utils/odlcColorGroup";
 import type { RGB } from "../utils/odlcColorGroup";
 import type { OdlcImage } from "../schemas/odlc";
+import { calculateAnnotationDistance } from "../utils/odlcImageAnnotationUtils";
 
 type SortBy = "time" | "confidence";
 
@@ -244,6 +245,30 @@ export default function OdlcImages() {
         samples.forEach((img) => dispatch(appendOdlcImage(img)));
     }, [dispatch]);
 
+    const handleImageAnnotation = async (args: {
+        id: string;
+        annotationId: string;
+        p1: {
+            x: number;
+            y: number;
+        };
+        p2: {
+            x: number;
+            y: number;
+        };
+    }) => {
+        dispatch(addOdlcImageAnnotation(args));
+
+        const res = await calculateAnnotationDistance(args.p1, args.p2);
+        dispatch(
+            setOdlcImageAnnotationDistance({
+                id: args.id,
+                annotationId: args.annotationId,
+                distance: res.distance,
+            }),
+        );
+    };
+
     if (records.length === 0) {
         return (
             <Box sx={{ p: 3, width: "100%" }}>
@@ -352,20 +377,7 @@ export default function OdlcImages() {
                                 annotations={selectedRecord.annotations}
                                 recordId={selectedRecord.id}
                                 boundingBox={selectedRecord.image.bounding_box}
-                                onAddAnnotation={(args) => {
-                                    dispatch(addOdlcImageAnnotation(args));
-                                    calculateAnnotationDistance(args.p1, args.p2)
-                                        .then((res) =>
-                                            dispatch(
-                                                setOdlcImageAnnotationDistance({
-                                                    id: args.id,
-                                                    annotationId: args.annotationId,
-                                                    distance: res.distance,
-                                                }),
-                                            ),
-                                        )
-                                        .catch(() => {});
-                                }}
+                                onAddAnnotation={handleImageAnnotation}
                                 onUndo={(id) => dispatch(undoLastOdlcImageAnnotation(id))}
                                 onDeleteAnnotation={(args) => dispatch(deleteOdlcImageAnnotation(args))}
                             />
