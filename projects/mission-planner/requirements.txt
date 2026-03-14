@@ -6,3 +6,5 @@ flask-socketio
 MAVProxy
 future
 gnureadline
+flasgger
+openapi-spec-validator

@@ -1,0 +1,443 @@
+info:
+  title: mission-planner
+  version: 2.0.0
+  description: This is the API that the mission-planner server exposes to web-backend.
+  contact:
+    name: Amin Fahiminia, Hansen Dan
+paths: !!python/object/apply:collections.defaultdict
+  args:
+  - !!python/name:builtins.dict ''
+  dictitems:
+    /:
+      get:
+        summary: Call this to see if the server's running.
+        responses:
+          '200':
+            description: server is running
+    /queue:
+      get:
+        summary: Returns the current list of waypoints remaining in the queue
+        description: Returns the current list of queue of waypoints to hit. Waypoints
+          that have been passed and removed from the queue are not displayed.
+        responses:
+          '200':
+            description: successful operation
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Waypoint'
+        tags:
+        - queue
+      post:
+        summary: Overwrite the queue with a new list of waypoints
+        description: POST request containing a list of waypoints with names and longitude,
+          latitude, and altitude values. If the altitude for a waypoint is null, uses
+          the altitude of the previous waypoint (in the case of the first waypoint,
+          uses the current altitude of the drone). The existing waypoint queue will
+          be overwritten and lost. Longitude, name, and latitude must not be null/empty.
+          Returns a Bad Request status code and error message in that case. Longitude
+          and latitude in degrees, altitude in meters.
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Waypoint'
+        responses:
+          '200':
+            description: successful operation
+          '400':
+            description: bad request
+        tags:
+        - queue
+    /insert:
+      post:
+        summary: Inserts waypoints immediately before the current waypoint
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Waypoint'
+        responses:
+          '200':
+            description: successful operation
+          '400':
+            description: bad request
+        tags:
+        - queue
+    /clear:
+      get:
+        summary: Clear the waypoint queue.
+        description: Idempotent with POST'ing an empty queue to /queue.
+        responses:
+          '200':
+            description: Queue successfully emptied.
+        tags:
+        - queue
+    /status:
+      get:
+        summary: Obtain the aircraft status
+        description: GET request returns the aircraft status. Velocity in m/s. Altitude
+          in meters and is relative to sea level. Longitude, latitude, heading in
+          degrees.
+        responses:
+          '200':
+            description: Successful operation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Status'
+        tags:
+        - status
+    /prepare_takeoff:
+      post:
+        summary: Prepare takeoff sequence
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  altitude:
+                    type: number
+        responses:
+          '200':
+            description: Takeoff sequence prepared successfully
+          '400':
+            description: Failed to prepare takeoff sequence
+        tags:
+        - takeoff
+    /arm:
+      put:
+        summary: Arm or disarm the motors. Take care.
+        description: Call this endpoint to arm or disarm the drone. A value of True
+          in the payload will arm the drone, while False will disarm the drone. If
+          the request returns 200, the drone will be in the requested state.
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  arm:
+                    type: boolean
+        responses:
+          '200':
+            description: Arm/disarm successful.
+          '400':
+            description: Arm/disarm failed - drone is NOT in the requested state
+    /prepare_rtl_params:
+      post:
+        summary: Prepare RTL parameters
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  altitude:
+                    type: number
+        responses:
+          '200':
+            description: RTL parameters prepared successfully
+          '400':
+            description: Failed to set RTL altitude parameter
+        tags:
+        - landing
+    /rtl:
+      post:
+        summary: Return to launch
+        description: Aircraft returns to home waypoint and lands (return-to-launch).
+        responses:
+          '200':
+            description: Successful, drone has initiated RTL procedure
+          '400':
+            description: Failed to RTL
+        tags:
+        - landing
+    /land:
+      get:
+        summary: Immediately descend and land
+        description: Aircraft stops at its current position and lands. Returns a Bad
+          Request status code and error message if the drone could not execute the
+          operation.
+        responses:
+          '200':
+            description: Successful, drone has started landing procedure
+          '400':
+            description: Could not initiate landing
+        tags:
+        - landing
+      post:
+        summary: Land at designated location
+        description: Land at the location in the request, approaching at the altitude
+          specified in the request body before descending to the ground.
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Waypoint'
+        responses:
+          '200':
+            description: Successful, drone has started landing procedure
+          '400':
+            description: Invalid coordinates - latitude and/or longitude value was
+              null
+        tags:
+        - landing
+    /home:
+      post:
+        summary: Set the home waypoint of the drone
+        description: POST request containing a waypoint whose longitude, latitiude
+          and altitiude will be the basis for the new home waypoint. All other fields
+          will be ignored.
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Waypoint'
+        responses:
+          '200':
+            description: Successfully set new home position
+          '400':
+            description: Home position could not be set
+        tags:
+        - landing
+    /flightmode:
+      put:
+        summary: Change flight mode of the aircraft
+        description: Set the flight mode of the aircraft to Loiter, Stabilize, Auto,
+          or Guided, or set the current aircraft type to Copter or Plane.
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mode:
+                    type: string
+                    enum:
+                    - STABILIZE
+                    - ACRO
+                    - ALT_HOLD
+                    - AUTO
+                    - GUIDED
+                    - LOITER
+                    - RTL
+                    - CIRCLE
+                    - POSITION
+                    - LAND
+                    - OF_LOITER
+                    - DRIFT
+                    - SPORT
+                    - FLIP
+                    - AUTOTUNE
+                    - POSHOLD
+                    - BRAKE
+                    - THROW
+                    - AVOID_ADSB
+                    - GUIDED_NOGPS
+                    - SMART_RTL
+                    - FLOWHOLD
+                    - FOLLOW
+                    - ZIGZAG
+                    - SYSTEMID
+                    - AUTOROTATE
+                    - AUTO_RTL
+        responses:
+          '200':
+            description: Operation processed
+          '400':
+            description: Unrecognized mode
+        tags:
+        - options
+    /aeac_scan:
+      post:
+        summary: Scan a circular target area in a spiral path.
+        description: TODO
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  center_lat:
+                    type: number
+                    format: float64
+                  center_lng:
+                    type: number
+                    format: float64
+                  altitude:
+                    type: number
+                    format: float64
+                  target_area_radius:
+                    type: number
+                    format: float64
+        responses:
+          '200':
+            description: Scan Mission Set
+          '400':
+            description: Invalid input
+        tags:
+        - feature
+    /aeac_deliver:
+      post:
+        summary: Deliver water operation
+        description: 'For AEAC 2025, while in autonomous mode, hovers down to specific
+          altitude for ''deliver_duration'' seconds, and then returns to original
+          altitude ready for reentering manual control.
+
+          '
+        requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current_alt:
+                    type: number
+                    description: Current altitude of the drone
+                  deliver_alt:
+                    type: number
+                    description: Altitude to lower to for delivery
+                  deliver_duration_secs:
+                    type: number
+                    description: Duration in seconds to stay at the delivery altitude
+                  curr_lat:
+                    type: number
+                    description: Current latitude of the drone
+                  curr_lon:
+                    type: number
+                    description: Current longitude of the drone
+        responses:
+          '200':
+            description: Commencing Deliver operation
+          '400':
+            description: Invalid input, missing a parameter or Mission request failed
+        tags:
+        - delivery
+components:
+  schemas:
+    Waypoint:
+      type: object
+      required:
+      - id
+      - name
+      - latitude
+      - longitude
+      properties:
+        id:
+          type: number
+          format: integer
+          description: Waypoint identifier
+        name:
+          type: string
+          description: 'Waypoint name (note: not preserved through MAVLink protocol,
+            will be regenerated as ''Mission Waypoint N'')'
+        latitude:
+          type: number
+          format: float64
+          description: Latitude in decimal degrees
+        longitude:
+          type: number
+          format: float64
+          description: Longitude in decimal degrees
+        altitude:
+          type: number
+          format: float64
+          description: Altitude in meters MSL. If omitted, uses previous waypoint's
+            altitude (or 50m for first waypoint)
+        command:
+          type: string
+          description: 'MAVLink command type (e.g., ''WAYPOINT'', ''LOITER_UNLIM'',
+            ''DO_CHANGE_SPEED''). Default: ''WAYPOINT'''
+          default: WAYPOINT
+        param1:
+          type: number
+          format: float
+          description: 'Command parameter 1. For WAYPOINT: hold time in seconds (multicopter
+            only). Default: 0'
+          default: 0
+        param2:
+          type: number
+          format: float
+          description: 'Command parameter 2. For WAYPOINT: acceptance radius in meters
+            (NOTE: ignored by ArduPilot, use WPNAV_RADIUS parameter instead). Default:
+            0'
+          default: 0
+        param3:
+          type: number
+          format: float
+          description: 'Command parameter 3. For WAYPOINT: pass-through radius (NOTE:
+            ignored by ArduPilot). Default: 0'
+          default: 0
+        param4:
+          type: number
+          format: float
+          description: 'Command parameter 4. For WAYPOINT: desired yaw angle (NOTE:
+            ignored by ArduPilot in most cases). Default: 0'
+          default: 0
+    Status:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          format: double
+        current_wpn:
+          type: integer
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        altitude:
+          type: number
+          format: double
+        roll:
+          type: number
+          format: double
+        pitch:
+          type: number
+          format: double
+        airspeed:
+          type: number
+          format: double
+        groundspeed:
+          type: number
+          format: double
+        heading:
+          type: number
+          format: double
+        batteryvoltage:
+          type: number
+          format: double
+        winddirection:
+          type: number
+          format: double
+        windvelocity:
+          type: number
+          format: double
+openapi: 3.0.2
+servers:
+- url: http://localhost:9000
+tags:
+- name: queue
+  description: Access to the waypoint queue
+- name: status
+  description: Access to aircraft status
+- name: feature
+  description: Access to competition-specific behaviour
+- name: landing
+  description: Access to landing, RTL, and home waypoint
+- name: options
+  description: Access to flight options
+- name: delivery
+  description: Access to delivery operations
+- name: takeoff
+  description: Access to takeoff operations

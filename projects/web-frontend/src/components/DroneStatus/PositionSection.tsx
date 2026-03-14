@@ -7,11 +7,13 @@ export default function PositionSection({
     latitude,
     longitude,
     altitude,
+    relativeAltitude,
     heading,
 }: {
     latitude: number;
     longitude: number;
     altitude: number;
+    relativeAltitude: number;
     heading: number;
 }) {
     return (
@@ -28,15 +30,16 @@ export default function PositionSection({
                 sx={{
                     display: "grid",
                     gap: 1,
-                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gridTemplateColumns: "1fr 1fr",
                 }}
             >
-                <Widget text="Longitude" data={longitude} />
                 <Widget text="Latitude" data={latitude} />
-                <Widget text="Altitude" data={`${altitude}m`} />
+                <Widget text="Longitude" data={longitude} />
+                <Widget text="Altitude (MSL)" data={`${altitude}m`} />
+                <Widget text="Altitude (Rel)" data={`${relativeAltitude}m`} />
                 <Widget
                     sx={{
-                        gridColumn: "span 3",
+                        gridColumn: "span 2",
                     }}
                     text="Heading"
                     data={<>{heading}&deg;</>}
