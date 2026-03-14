@@ -4,7 +4,7 @@ import { SIGNALING_SERVER_URL } from "../constants";
 import { saveOldcSession } from "../api/endpoints";
 import { OldcImageSchema } from "../schemas/oldc";
 import { useAppDispatch, useAppSelector } from "../store/store";
-import { appendOldcImage, selectOldcImages } from "../store/slices/dataSlice";
+import { appendNodeLog, appendOldcImage, selectOldcImages } from "../store/slices/dataSlice";
 
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
@@ -161,6 +161,27 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
                     saveOldcSession(sessionIdRef.current, oldcImagesRef.current).catch((err) => {
                         console.error("Failed to save OLDC session:", err);
                     });
+                });
+            }
+
+            if (channel.label === "logs") {
+                channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
+                    try {
+                        const log = JSON.parse(msgEvent.data);
+                        dispatch(
+                            appendNodeLog({
+                                level: log.level,
+                                node: log.node,
+                                message: log.message,
+                                timestamp: log.timestamp,
+                                file: log.file,
+                                function: log.function,
+                                line: log.line,
+                            }),
+                        );
+                    } catch {
+                        console.error("Failed to parse log message:", msgEvent.data);
+                    }
                 });
             }
         });
