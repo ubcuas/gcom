@@ -3,8 +3,9 @@ requests
 pymavlink
 matplotlib
 flask-socketio
+websocket-client
 MAVProxy
 future
-gnureadline
+pyreadline3
 flasgger
 openapi-spec-validator

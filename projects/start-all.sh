@@ -9,8 +9,7 @@ NETWORK_NAME="gcom-x_uasnet"
 
 select_python() {
     if command -v python3 &>/dev/null; then
-        PY_CMD="python3"
-    elif command -v python &>/dev/null; then
+        echo "USING PYTHON3"PY_CMD="python3" elif command -v python &>/dev/null; then echo "USING PYTHON"
         PY_CMD="python"
     else
         echo "Error: Python is not installed on this system."

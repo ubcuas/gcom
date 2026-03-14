@@ -28,11 +28,11 @@ class Status_Client:
 
     def connect_to(self, production: bool, host: str, port: int):
         logger.info("Status Websocket Client starting...")
-        self._url = f"ws://{host}:{port}"
-        self.sio = socketio.Client()
-        self.sio.on("error", self.handle_error)
+        self._url = f"http://{host}:{port}"
 
         while self._running:
+            self.sio = socketio.Client()
+            self.sio.on("error", self.handle_error)
             try:
                 self.sio.connect(self._url)
                 logger.info("Connected to websocket server.")

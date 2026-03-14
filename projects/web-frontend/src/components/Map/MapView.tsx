@@ -72,6 +72,7 @@ export default function MapView() {
         >
             <Map
                 ref={mapRef}
+                touchPitch={true}
                 initialViewState={{
                     longitude: aircraftStatus.longitude,
                     latitude: aircraftStatus.latitude,
