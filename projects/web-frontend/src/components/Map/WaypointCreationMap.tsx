@@ -4,7 +4,6 @@ import { CropFree, Flight, MyLocation, Place } from "@mui/icons-material";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import { Fragment, useRef, useState } from "react";
 import { Layer, LayerProps, Map, MapRef, MapLayerMouseEvent, Marker, Source } from "react-map-gl/maplibre";
-import { selectMapCenterCoords } from "../../store/slices/appSlice";
 import {
     addWaypointToCurrentRoute,
     editWaypointInCurrentRoute,
@@ -31,7 +30,6 @@ type CreationMapProps = {
 };
 
 export default function WaypointCreationMap({ handleDelete, handleEdit, editState }: CreationMapProps) {
-    const coords = useAppSelector(selectMapCenterCoords);
     const clientWPQueue = useAppSelector(selectCurrentRouteWaypoints);
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const dispatch = useAppDispatch();
@@ -108,9 +106,9 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
         <Map
             ref={mapRef}
             initialViewState={{
-                longitude: coords.long,
-                latitude: coords.lat,
-                zoom: 14,
+                longitude: aircraftStatus.longitude,
+                latitude: aircraftStatus.latitude,
+                zoom: 16,
             }}
             mapStyle={
                 window.navigator.onLine
