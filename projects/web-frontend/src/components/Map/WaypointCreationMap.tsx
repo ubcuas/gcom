@@ -9,7 +9,9 @@ import {
     editWaypointInCurrentRoute,
     selectAircraftStatus,
     selectCurrentRouteWaypoints,
+    selectTakeoffWaypoint,
 } from "../../store/slices/dataSlice";
+import { openSnackbar } from "../../store/slices/appSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
 import { roundTo } from "../../utils/routeTo";
@@ -32,6 +34,7 @@ type CreationMapProps = {
 export default function WaypointCreationMap({ handleDelete, handleEdit, editState }: CreationMapProps) {
     const clientWPQueue = useAppSelector(selectCurrentRouteWaypoints);
     const aircraftStatus = useAppSelector(selectAircraftStatus);
+    const takeoffWaypoint = useAppSelector(selectTakeoffWaypoint);
     const dispatch = useAppDispatch();
     const mapRef = useRef<MapRef>(null);
     const [selectedWaypoints, setSelectedWaypoints] = useState<boolean[]>(clientWPQueue.map(() => false));
@@ -82,11 +85,22 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
         const unnamedCount = clientWPQueue.filter((wp) => wp.name?.startsWith("Unnamed Waypoint")).length;
         const newName = `Unnamed Waypoint ${unnamedCount + 1}`;
 
+        const defaultAltitude = takeoffWaypoint?.altitude ?? 30;
+        if (!takeoffWaypoint?.altitude) {
+            dispatch(
+                openSnackbar({
+                    message: "Takeoff altitude unknown. Waypoint altitude set to 30m automatically.",
+                    severity: "warning",
+                }),
+            );
+        }
+
         dispatch(
             addWaypointToCurrentRoute({
                 id: "-1",
                 latitude: roundTo(event.lngLat.lat, 7),
                 longitude: roundTo(event.lngLat.lng, 7),
+                altitude: defaultAltitude,
                 name: newName,
             }),
         );
