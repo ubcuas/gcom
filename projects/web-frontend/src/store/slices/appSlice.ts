@@ -11,7 +11,7 @@ type AppState = {
     globalSnackbar: {
         message: string;
         open: boolean;
-        severity: "success" | "error";
+        severity: "success" | "error" | "warning";
     };
     telemetrySockets: boolean;
     bypassArmingRestriction: boolean;
@@ -45,7 +45,10 @@ const appSlice = createSlice({
         setPreferredTheme: (state, action: PayloadAction<"light" | "dark">) => {
             state.preferredTheme = action.payload;
         },
-        openSnackbar: (state, action: PayloadAction<{ message: string; severity?: "success" | "error" }>) => {
+        openSnackbar: (
+            state,
+            action: PayloadAction<{ message: string; severity?: "success" | "error" | "warning" }>,
+        ) => {
             state.globalSnackbar = {
                 message: action.payload.message,
                 open: true,

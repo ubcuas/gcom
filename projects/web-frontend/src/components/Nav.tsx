@@ -1,5 +1,6 @@
 import { EditLocationAlt } from "@mui/icons-material";
 import Home from "@mui/icons-material/Home";
+import ImageSearchIcon from "@mui/icons-material/ImageSearch";
 import MapIcon from "@mui/icons-material/Map";
 import Settings from "@mui/icons-material/Settings";
 import VideocamIcon from "@mui/icons-material/Videocam";
@@ -12,7 +13,8 @@ const linkMap: Record<string, number> = {
     map: 1,
     queue: 2,
     "webrtc-test": 3,
-    settings: 4,
+    "oldc-images": 4,
+    settings: 5,
 };
 
 export default function Nav() {
@@ -91,6 +93,14 @@ export default function Nav() {
                     }}
                     label={<VideocamIcon />}
                     href="/webrtc-test"
+                    LinkComponent={Link}
+                />
+                <Tab
+                    sx={{
+                        minWidth: 0,
+                    }}
+                    label={<ImageSearchIcon />}
+                    href="/oldc-images"
                     LinkComponent={Link}
                 />
                 <Tab

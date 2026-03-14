@@ -4,7 +4,6 @@ import { Fragment, useEffect, useRef } from "react";
 import Map, { Layer, LayerProps, MapRef, Marker, Source } from "react-map-gl/maplibre";
 import {
     initializeMpsWaypointMapState,
-    selectMapCenterCoords,
     selectMpsWaypointMapState,
     toggleMpsWaypointMapState,
 } from "../../store/slices/appSlice";
@@ -17,7 +16,6 @@ export default function MapView() {
     const mpsWaypoints = useAppSelector(selectCurrentRouteWaypoints);
     const mpsWaypointMapState = useAppSelector(selectMpsWaypointMapState);
     const aircraftStatus = useAppSelector(selectAircraftStatus);
-    const coords = useAppSelector(selectMapCenterCoords);
     const takeoffWaypoint = useAppSelector(selectTakeoffWaypoint);
     const dispatch = useAppDispatch();
     const mapRef = useRef<MapRef>(null);
@@ -75,9 +73,9 @@ export default function MapView() {
             <Map
                 ref={mapRef}
                 initialViewState={{
-                    longitude: coords.long,
-                    latitude: coords.lat,
-                    zoom: 10,
+                    longitude: aircraftStatus.longitude,
+                    latitude: aircraftStatus.latitude,
+                    zoom: 16,
                 }}
                 mapStyle={
                     window.navigator.onLine

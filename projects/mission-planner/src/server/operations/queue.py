@@ -46,7 +46,7 @@ def new_mission(handler: MavlinkHandler, waypoint_queue: WaypointQueue) -> bool:
     seq = 0
     wp_list.append(
         mavutil.mavlink.MAVLink_mission_item_int_message(
-            0, 0, seq, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            0, 0, seq, 3, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0
         )
     )
 
@@ -59,7 +59,8 @@ def new_mission(handler: MavlinkHandler, waypoint_queue: WaypointQueue) -> bool:
                 handler.target_system,
                 handler.target_component,
                 seq,
-                0,
+                # https://mavlink.io/en/messages/common.html#MAV_FRAME
+                3,  # altitude is RELATIVE to the starting altitude of the drone
                 command_string_to_int(wp._com),
                 0,
                 1,
@@ -98,7 +99,7 @@ def send_waypoints(handler: MavlinkHandler, wp_list: list) -> bool:
         if not msg:
             logger.warning("No waypoint request received")
             return False
-        logger.info(f"Sending waypoint {msg.seq}/{len(wp_list)-1}")
+        logger.info(f"Sending waypoint {msg.seq}/{len(wp_list) - 1}")
         handler.mav.send(wp_list[msg.seq])
 
         if msg.seq == len(wp_list) - 1:
