@@ -3,7 +3,7 @@
 SESSION_NAME="gcom"
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 
-VENV_PATH="venv"
+VENV_PATH=".venv"
 ARCH=$(uname -m)
 NETWORK_NAME="gcom-x_uasnet"
 
