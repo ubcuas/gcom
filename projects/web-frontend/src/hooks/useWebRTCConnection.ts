@@ -152,7 +152,11 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             const channel = event.channel;
             if (channel.label === "odlc_images") {
                 channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
-                    const result = OdlcImageSchema.safeParse(JSON.parse(msgEvent.data));
+                    console.log("📸 ODLC Image Message Received:", msgEvent.data);
+                    const parsedMessage = JSON.parse(msgEvent.data);
+                    console.log("📸 ODLC Image Message Parsed:", parsedMessage);
+                    const result = OdlcImageSchema.safeParse(parsedMessage);
+                    console.log("📸 ODLC Image Validation Result:", result);
                     if (!result.success) {
                         console.error("Invalid ODLC image data received:", result.error);
                         return;

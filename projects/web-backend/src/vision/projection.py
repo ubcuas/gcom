@@ -2,69 +2,46 @@ import math
 
 FLT_EPSILON = 1e-6
 
+# Fixed camera intrinsics (Brown-Conrady / plumb_bob model)
+CAMERA_INTRINSICS = {
+    'fx': 643.4216918945312,
+    'fy': 642.5718994140625,
+    'ppx': 638.689453125,
+    'ppy': 383.8777160644531,
+}
+
+# Brown-Conrady distortion coefficients [k1, k2, p1, p2, k3]
+DISTORTION_COEFFS = [
+    -0.05599868297576904,
+    0.06472615152597427,
+    -8.93151736818254e-05,
+    -7.332695531658828e-05,
+    -0.020574895665049553,
+]
+
 
 def _is_distortion_zero(coeffs: list[float]) -> bool:
     return all(abs(c) < FLT_EPSILON for c in coeffs)
 
 
-def deproject_pixel_to_point(intrinsics: dict, pixel: list[float], depth: float) -> list[float]:
-    """Re-implemented from https://github.com/realsenseai/librealsense/blob/78cb605b11f5ba80176e7b8d70292f76ba625565/src/rs.cpp#L4273"""
+def deproject_pixel_to_point(pixel: list[float], depth: float) -> list[float]:
+    """Deproject a 2D pixel coordinate to a 3D point using Brown-Conrady distortion model.
 
-    model = intrinsics['model']
-    coeffs = intrinsics['coeffs']
-
-    if model == 'RS2_DISTORTION_MODIFIED_BROWN_CONRADY':
-        raise ValueError("Cannot deproject from a forward-distorted image")
-
-    x = (pixel[0] - intrinsics['ppx']) / intrinsics['fx']
-    y = (pixel[1] - intrinsics['ppy']) / intrinsics['fy']
+    Re-implemented from https://github.com/realsenseai/librealsense/blob/78cb605b11f5ba80176e7b8d70292f76ba625565/src/rs.cpp#L4273
+    """
+    x = (pixel[0] - CAMERA_INTRINSICS['ppx']) / CAMERA_INTRINSICS['fx']
+    y = (pixel[1] - CAMERA_INTRINSICS['ppy']) / CAMERA_INTRINSICS['fy']
 
     xo = x
     yo = y
 
-    if not _is_distortion_zero(coeffs):
-        if model == 'RS2_DISTORTION_INVERSE_BROWN_CONRADY':
-            for _ in range(10):
-                r2 = x * x + y * y
-                icdist = 1.0 / (1 + ((coeffs[4] * r2 + coeffs[1]) * r2 + coeffs[0]) * r2)
-                xq = x / icdist
-                yq = y / icdist
-                delta_x = 2 * coeffs[2] * xq * yq + coeffs[3] * (r2 + 2 * xq * xq)
-                delta_y = 2 * coeffs[3] * xq * yq + coeffs[2] * (r2 + 2 * yq * yq)
-                x = (xo - delta_x) * icdist
-                y = (yo - delta_y) * icdist
-
-        if model == 'RS2_DISTORTION_BROWN_CONRADY':
-            for _ in range(10):
-                r2 = x * x + y * y
-                icdist = 1.0 / (1 + ((coeffs[4] * r2 + coeffs[1]) * r2 + coeffs[0]) * r2)
-                delta_x = 2 * coeffs[2] * x * y + coeffs[3] * (r2 + 2 * x * x)
-                delta_y = 2 * coeffs[3] * x * y + coeffs[2] * (r2 + 2 * y * y)
-                x = (xo - delta_x) * icdist
-                y = (yo - delta_y) * icdist
-
-    if model == 'RS2_DISTORTION_KANNALA_BRANDT4':
-        rd = math.sqrt(x * x + y * y)
-        rd = max(rd, FLT_EPSILON)
-
-        theta = rd
-        theta2 = rd * rd
-        for _ in range(4):
-            f = theta * (1 + theta2 * (coeffs[0] + theta2 * (coeffs[1] + theta2 * (coeffs[2] + theta2 * coeffs[3])))) - rd
-            if abs(f) < FLT_EPSILON:
-                break
-            df = 1 + theta2 * (3 * coeffs[0] + theta2 * (5 * coeffs[1] + theta2 * (7 * coeffs[2] + 9 * theta2 * coeffs[3])))
-            theta -= f / df
-            theta2 = theta * theta
-        r = math.tan(theta)
-        x *= r / rd
-        y *= r / rd
-
-    if model == 'RS2_DISTORTION_FTHETA':
-        rd = math.sqrt(x * x + y * y)
-        rd = max(rd, FLT_EPSILON)
-        r = 0.0 if abs(coeffs[0]) < FLT_EPSILON else math.tan(coeffs[0] * rd) / math.atan(2 * math.tan(coeffs[0] / 2.0))
-        x *= r / rd
-        y *= r / rd
+    if not _is_distortion_zero(DISTORTION_COEFFS):
+        for _ in range(10):
+            r2 = x * x + y * y
+            icdist = 1.0 / (1 + ((DISTORTION_COEFFS[4] * r2 + DISTORTION_COEFFS[1]) * r2 + DISTORTION_COEFFS[0]) * r2)
+            delta_x = 2 * DISTORTION_COEFFS[2] * x * y + DISTORTION_COEFFS[3] * (r2 + 2 * x * x)
+            delta_y = 2 * DISTORTION_COEFFS[3] * x * y + DISTORTION_COEFFS[2] * (r2 + 2 * y * y)
+            x = (xo - delta_x) * icdist
+            y = (yo - delta_y) * icdist
 
     return [depth * x, depth * y, depth]

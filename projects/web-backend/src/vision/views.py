@@ -20,7 +20,6 @@ def deproject_pixel(request):
     try:
         data = json.loads(request.body)
         pixel = data.get("pixel")
-        intrinsics = data.get("intrinsics")
         depth = data.get("depth")
 
         if not isinstance(pixel, list) or len(pixel) != 2:
