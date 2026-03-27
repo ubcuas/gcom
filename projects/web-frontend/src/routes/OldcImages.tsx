@@ -1,5 +1,6 @@
-import { Box, Paper, Stack, Typography } from "@mui/material";
-import { useState } from "react";
+import { Box, IconButton, Paper, Stack, Typography } from "@mui/material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "../store/store";
 import { selectOldcImages } from "../store/slices/dataSlice";
 import type { OldcImage } from "../schemas/oldc";
@@ -77,6 +78,8 @@ function ImageMetadata({ image }: { image: OldcImage }) {
     );
 }
 
+const THUMBNAILS_PER_PAGE = 20;
+
 function ThumbnailGallery({
     images,
     selectedIndex,
@@ -86,40 +89,73 @@ function ThumbnailGallery({
     selectedIndex: number;
     onSelect: (index: number) => void;
 }) {
+    const totalPages = Math.max(1, Math.ceil(images.length / THUMBNAILS_PER_PAGE));
+    const [page, setPage] = useState(0);
+
+    // Auto-advance page when selected index falls outside the current page
+    useEffect(() => {
+        const selectedPage = Math.floor(selectedIndex / THUMBNAILS_PER_PAGE);
+        if (selectedPage !== page) {
+            setPage(selectedPage);
+        }
+    }, [selectedIndex]);
+
+    const pageStart = page * THUMBNAILS_PER_PAGE;
+    const pageImages = images.slice(pageStart, pageStart + THUMBNAILS_PER_PAGE);
+
     return (
-        <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 1 }}>
-            {images.map((image, i) => (
-                <Box
-                    key={i}
-                    onClick={() => onSelect(i)}
-                    sx={{
-                        flexShrink: 0,
-                        width: 72,
-                        height: 72,
-                        borderRadius: 1,
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        border: "2px solid",
-                        borderColor: i === selectedIndex ? "primary.main" : "transparent",
-                        transition: "border-color 0.15s ease",
-                        "&:hover": {
-                            borderColor: i === selectedIndex ? "primary.main" : "divider",
-                        },
-                    }}
-                >
-                    <Box
-                        component="img"
-                        src={`data:image/jpeg;base64,${image.image_data}`}
-                        alt={`OLDC capture ${i + 1}`}
-                        sx={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            display: "block",
-                        }}
-                    />
-                </Box>
-            ))}
+        <Stack spacing={1}>
+            <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 1 }}>
+                {pageImages.map((image, i) => {
+                    const globalIndex = pageStart + i;
+                    return (
+                        <Box
+                            key={globalIndex}
+                            onClick={() => onSelect(globalIndex)}
+                            sx={{
+                                flexShrink: 0,
+                                width: 72,
+                                height: 72,
+                                borderRadius: 1,
+                                overflow: "hidden",
+                                cursor: "pointer",
+                                border: "2px solid",
+                                borderColor: globalIndex === selectedIndex ? "primary.main" : "transparent",
+                                transition: "border-color 0.15s ease",
+                                "&:hover": {
+                                    borderColor: globalIndex === selectedIndex ? "primary.main" : "divider",
+                                },
+                            }}
+                        >
+                            <Box
+                                component="img"
+                                src={`data:image/jpeg;base64,${image.image_data}`}
+                                alt={`OLDC capture ${globalIndex + 1}`}
+                                sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    display: "block",
+                                }}
+                            />
+                        </Box>
+                    );
+                })}
+            </Stack>
+
+            {totalPages > 1 && (
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                    <IconButton size="small" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+                        <ChevronLeft fontSize="small" />
+                    </IconButton>
+                    <Typography variant="caption" color="text.secondary">
+                        {page + 1} / {totalPages}
+                    </Typography>
+                    <IconButton size="small" disabled={page === totalPages - 1} onClick={() => setPage((p) => p + 1)}>
+                        <ChevronRight fontSize="small" />
+                    </IconButton>
+                </Stack>
+            )}
         </Stack>
     );
 }
