@@ -208,7 +208,7 @@ export default function OdlcImages() {
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
 
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 6;
     const [page, setPage] = useState(0);
 
     const filteredSorted = useMemo(
