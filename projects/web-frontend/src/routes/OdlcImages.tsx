@@ -256,8 +256,13 @@ export default function OdlcImages() {
             createDummyOdlcImage([255, 0, 0], 92),
             createDummyOdlcImage([255, 0, 0], 88),
             createDummyOdlcImage([255, 200, 0], 85),
+            createDummyOdlcImage([255, 200, 0], 85),
+            createDummyOdlcImage([255, 200, 0], 85),
             createDummyOdlcImage([255, 200, 0], 78),
             createDummyOdlcImage([0, 180, 0], 95),
+            createDummyOdlcImage([0, 180, 0], 70),
+            createDummyOdlcImage([0, 180, 0], 60),
+            createDummyOdlcImage([0, 180, 0], 55),
         ];
         samples.forEach((img) => dispatch(appendOdlcImage(img)));
     }, [dispatch]);
