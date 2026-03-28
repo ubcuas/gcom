@@ -1,7 +1,7 @@
 services:
   # ArduCopter SITL with ARM64 support
   sitl:
-    image: ubcuas/uasitl:copter-arm-4.5.5
+    image: ubcuas/uasitl:copter-4.5.5
     container_name: acom-sitl
     ports:
       - "5760:5760"
@@ -16,7 +16,7 @@ services:
 
   # Mavproxy - Communication Hub
   mavproxy:
-    image: python:3.13-slim
+    image: python:3.12-slim
     container_name: acom-mavproxy
 #    depends_on:
 #      sitl:
