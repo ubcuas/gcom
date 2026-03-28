@@ -120,7 +120,7 @@ export const deprojectPixel = async (
     pixel: [number, number],
     depth: number,
 ): Promise<{ point: [number, number, number] }> => {
-    const response = await api.post<{ point: [number, number, number] }>("/vision/deproject_pixel/", {
+    const response = await api.post<{ point: [number, number, number] }>("/vision/deproject-pixel/", {
         pixel,
         depth,
     });

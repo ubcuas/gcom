@@ -64,6 +64,7 @@ def save_odlc_session(request):
     except (KeyError, ValueError, TypeError) as e:
         return JsonResponse({"error": "Invalid input", "details": str(e)}, status=400)
     except Exception as e:
+        print(f"Error saving ODLC session: {e}")
         return JsonResponse(
             {"error": "Internal server error", "details": str(e)}, status=500
         )
