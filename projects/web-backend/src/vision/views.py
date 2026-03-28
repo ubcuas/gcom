@@ -20,7 +20,6 @@ def deproject_pixel(request):
     try:
         data = json.loads(request.body)
         pixel = data.get("pixel")
-        intrinsics = data.get("intrinsics")
         depth = data.get("depth")
 
         if not isinstance(pixel, list) or len(pixel) != 2:
@@ -28,19 +27,12 @@ def deproject_pixel(request):
                 {"error": "Invalid input: pixel must be a list of 2 floats"}, status=400
             )
 
-        if not isinstance(intrinsics, dict):
-            return JsonResponse(
-                {"error": "Invalid input: intrinsics must be an object"}, status=400
-            )
-
         if not isinstance(depth, (int, float)):
             return JsonResponse(
                 {"error": "Invalid input: depth must be a float"}, status=400
             )
 
-        point = deproject_pixel_to_point(
-            intrinsics=intrinsics, pixel=pixel, depth=float(depth)
-        )
+        point = deproject_pixel_to_point(pixel=pixel, depth=float(depth))
 
         return JsonResponse({"point": point})
     except (ValueError, NotImplementedError) as e:
