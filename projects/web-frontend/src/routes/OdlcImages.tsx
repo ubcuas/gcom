@@ -200,7 +200,6 @@ export default function OdlcImages() {
     const records = useAppSelector(selectOdlcImageRecords);
     const selectedId = useAppSelector(selectSelectedOdlcImageId);
     const selectedRecord = useAppSelector(selectSelectedOdlcImageRecord);
-    console.log("records:", records);
 
     const [flaggedOnly, setFlaggedOnly] = useState(false);
     const [sortBy, setSortBy] = useState<SortBy>("time");
