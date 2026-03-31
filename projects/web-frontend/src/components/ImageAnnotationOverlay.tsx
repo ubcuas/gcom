@@ -225,31 +225,31 @@ export default function ImageAnnotationOverlay({
                                 />
                             );
                         })()}
-                    {annotations.map((a) => (
-                        <g key={a.id}>
-                            <line
-                                x1={a.p1.x}
-                                y1={a.p1.y}
-                                x2={a.p2.x}
-                                y2={a.p2.y}
-                                stroke="red"
-                                strokeWidth={0.008}
-                                strokeLinecap="round"
-                            />
-                            {a.distance != null && (
-                                <text
-                                    x={(a.p1.x + a.p2.x) / 2}
-                                    y={(a.p1.y + a.p2.y) / 2}
-                                    fontSize={0.03}
-                                    fill="red"
-                                    textAnchor="middle"
-                                    dominantBaseline="middle"
-                                >
-                                    {a.distance.toFixed(2)}
-                                </text>
-                            )}
-                        </g>
-                    ))}
+                    {annotations.map((a, i) => (
+  <g key={a.id}>
+    <line
+      x1={a.p1.x}
+      y1={a.p1.y}
+      x2={a.p2.x}
+      y2={a.p2.y}
+      stroke="red"
+      strokeWidth={0.008}
+      strokeLinecap="round"
+    />
+    {a.distance != null && (
+      <text
+        x={(a.p1.x + a.p2.x) / 2}
+        y={(a.p1.y + a.p2.y) / 2 - 0.03}
+        fontSize={0.03}
+        fill="blue"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        {a.distance.toFixed(2)}m
+      </text>
+    )}
+  </g>
+))}
                     {dragging && (
                         <line
                             x1={dragging.p1.x}

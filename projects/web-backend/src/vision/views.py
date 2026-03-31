@@ -20,6 +20,7 @@ def deproject_pixel(request):
     try:
         data = json.loads(request.body)
         pixel = data.get("pixel")
+        intrinsics = data.get("intrinsics")
         depth = data.get("depth")
 
         if not isinstance(pixel, list) or len(pixel) != 2:
@@ -38,7 +39,7 @@ def deproject_pixel(request):
             )
 
         point = deproject_pixel_to_point(
-            intrinsics=intrinsics, pixel=pixel, depth=float(depth)
+            pixel=pixel, depth=float(depth), intrinsics=intrinsics
         )
 
         return JsonResponse({"point": point})
