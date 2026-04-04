@@ -2,20 +2,7 @@ import { deprojectPixel } from "../api/endpoints";
 import { decode } from "fast-png";
 
 
-/**
- * Hardcoded RealSense D435i color camera intrinsics at 1280x720.
- * These are nominal values — per-unit calibration will differ slightly.
- * Replace with per-device values once intrinsics are included in the WebRTC payload.
- */
-// Values from: ros2 topic echo /camera/camera/color/camera_info (1280x720)
-const REALSENSE_INTRINSICS = {
-    fx: 643.2360229492188,
-    fy: 642.1893920898438,
-    ppx: 661.8545532226562,
-    ppy: 365.9696044921875,
-    model: "RS2_DISTORTION_BROWN_CONRADY",
-    coeffs: [-0.05651168152689934, 0.06660270690917969, -0.00015544862253591418, 0.0008432056056335568, -0.02149238809943199],
-};
+
 
 /** 
  * Decodes a base64-encoded 16-bit grayscale PNG (ROS2 CompressedImage 16UC1 format)
@@ -141,8 +128,8 @@ export const calculateAnnotationDistance = async (
 
     try {
             const [res1, res2] = await Promise.all([
-                deprojectPixel([p1.x * width, p1.y * height], REALSENSE_INTRINSICS, d1Mm / 1000),
-                deprojectPixel([p2.x * width, p2.y * height], REALSENSE_INTRINSICS, d2Mm / 1000),
+                deprojectPixel([p1.x * width, p1.y * height], d1Mm / 1000),
+                deprojectPixel([p2.x * width, p2.y * height], d2Mm / 1000),
             ]);
             console.log("Deprojection results:", res1, res2);
 

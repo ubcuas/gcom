@@ -1,3 +1,4 @@
+# This is chosen by me (mercury), might need to change.
 FLT_EPSILON = 1e-6
 
 # Fixed camera intrinsics (Brown-Conrady / plumb_bob model)
@@ -25,17 +26,15 @@ def _is_distortion_zero(coeffs: list[float]) -> bool:
 
 
 def deproject_pixel_to_point(
-    pixel: list[float], depth: float, intrinsics: dict | None = None
-) -> list[float]:
+    pixel: list[float], depth: float) -> list[float]:
     """Deproject a 2D pixel coordinate to a 3D point using Brown-Conrady distortion model.
 
     Re-implemented from https://github.com/realsenseai/librealsense/blob/78cb605b11f5ba80176e7b8d70292f76ba625565/src/rs.cpp#L4273
     """
-    intrinsics = intrinsics or CAMERA_INTRINSICS
-    fx = intrinsics["fx"]
-    fy = intrinsics["fy"]
-    ppx = intrinsics["ppx"]
-    ppy = intrinsics["ppy"]
+    fx = CAMERA_INTRINSICS["fx"]
+    fy = CAMERA_INTRINSICS["fy"]
+    ppx = CAMERA_INTRINSICS["ppx"]
+    ppy = CAMERA_INTRINSICS["ppy"]
     coeffs = DISTORTION_COEFFS
 
     x = (pixel[0] - ppx) / fx
@@ -47,7 +46,8 @@ def deproject_pixel_to_point(
     if not _is_distortion_zero(coeffs):
         for _ in range(10):
             r2 = x * x + y * y
-            icdist = 1.0 / (1 + ((coeffs[4] * r2 + coeffs[1]) * r2 + coeffs[0]) * r2)
+            icdist = 1.0 / (
+                1 + ((coeffs[4] * r2 + coeffs[1]) * r2 + coeffs[0]) * r2)
             delta_x = 2 * coeffs[2] * x * y + coeffs[3] * (r2 + 2 * x * x)
             delta_y = 2 * coeffs[3] * x * y + coeffs[2] * (r2 + 2 * y * y)
             x = (xo - delta_x) * icdist
