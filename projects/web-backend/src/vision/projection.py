@@ -1,5 +1,3 @@
-import math
-
 FLT_EPSILON = 1e-6
 
 # Fixed camera intrinsics (Brown-Conrady / plumb_bob model)

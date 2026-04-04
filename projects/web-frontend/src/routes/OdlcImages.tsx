@@ -12,6 +12,8 @@ import {
     ToggleButtonGroup,
     Typography,
 } from "@mui/material";
+import ChevronLeft from "@mui/icons-material/ChevronLeft";
+import ChevronRight from "@mui/icons-material/ChevronRight";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import Flag from "@mui/icons-material/Flag";
@@ -97,7 +99,7 @@ function formatImageMetadata(record: OdlcImageRecord): string {
     const [r, g, b] = image.color_detection;
     const lines = [
         `Received: ${new Date(receivedAt).toISOString()}`,
-        `Confidence: ${image.confidence_level}%`,
+        `Confidence: ${image.confidence_level}`,
         `Color (RGB): ${r}, ${g}, ${b}`,
         `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
     ];
@@ -183,7 +185,7 @@ function ColorGroupDropdown({
                                 }}
                             />
                             <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                                {new Date(record.receivedAt).toLocaleTimeString()} · {record.image.confidence_level}%
+                                {new Date(record.receivedAt).toLocaleTimeString()} · {record.image.confidence_level}
                             </Typography>
                             {record.flagged && <Flag sx={{ fontSize: 14, color: "warning.main" }} />}
                         </Box>
@@ -205,11 +207,26 @@ export default function OdlcImages() {
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
 
+    const PAGE_SIZE = 6;
+    const [page, setPage] = useState(0);
+
     const filteredSorted = useMemo(
         () => filterAndSortRecords(records, flaggedOnly, sortBy),
         [records, flaggedOnly, sortBy],
     );
-    const grouped = useMemo(() => groupByColor(filteredSorted), [filteredSorted]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredSorted.length / PAGE_SIZE));
+    const clampedPage = Math.min(page, totalPages - 1);
+    const paginatedRecords = useMemo(
+        () => filteredSorted.slice(clampedPage * PAGE_SIZE, (clampedPage + 1) * PAGE_SIZE),
+        [filteredSorted, clampedPage],
+    );
+    const grouped = useMemo(() => groupByColor(paginatedRecords), [paginatedRecords]);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setPage(0);
+    }, [flaggedOnly, sortBy]);
 
     /** Flagged records in current filter/sort order (export includes only these). */
     const flaggedForExport = useMemo(() => filteredSorted.filter((r) => r.flagged), [filteredSorted]);
@@ -239,8 +256,13 @@ export default function OdlcImages() {
             createDummyOdlcImage([255, 0, 0], 92),
             createDummyOdlcImage([255, 0, 0], 88),
             createDummyOdlcImage([255, 200, 0], 85),
+            createDummyOdlcImage([255, 200, 0], 85),
+            createDummyOdlcImage([255, 200, 0], 85),
             createDummyOdlcImage([255, 200, 0], 78),
             createDummyOdlcImage([0, 180, 0], 95),
+            createDummyOdlcImage([0, 180, 0], 70),
+            createDummyOdlcImage([0, 180, 0], 60),
+            createDummyOdlcImage([0, 180, 0], 55),
         ];
         samples.forEach((img) => dispatch(appendOdlcImage(img)));
     }, [dispatch]);
@@ -335,6 +357,40 @@ export default function OdlcImages() {
                             />
                         ))}
                     </Stack>
+
+                    {filteredSorted.length > PAGE_SIZE && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mt: 2,
+                                pt: 1,
+                                borderTop: 1,
+                                borderColor: "divider",
+                            }}
+                        >
+                            <IconButton
+                                size="small"
+                                disabled={clampedPage === 0}
+                                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                                aria-label="Previous page"
+                            >
+                                <ChevronLeft />
+                            </IconButton>
+                            <Typography variant="caption" color="text.secondary">
+                                {clampedPage + 1} / {totalPages}
+                            </Typography>
+                            <IconButton
+                                size="small"
+                                disabled={clampedPage >= totalPages - 1}
+                                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                                aria-label="Next page"
+                            >
+                                <ChevronRight />
+                            </IconButton>
+                        </Box>
+                    )}
                 </Paper>
 
                 {/* Main panel */}
