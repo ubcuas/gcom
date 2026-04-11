@@ -10,9 +10,26 @@ export const OdlcImageSchema = z.object({
     yaw_deg: z.number().nullable().optional().default(null), // Aircraft yaw at capture time, degrees clockwise from north
 });
 
-export const OdlcSessionPayloadSchema = z.object({
-    sessionId: z.string().uuid(),
-    images: z.array(OdlcImageSchema),
+export const OdlcImageAnnotationSchema = z.object({
+    id: z.string(),
+    p1: z.object({ x: z.number(), y: z.number() }),
+    p2: z.object({ x: z.number(), y: z.number() }),
+    distance: z.number().optional(),
+});
+
+export const OdlcImageRecordSchema = z.object({
+    id: z.string(),
+    receivedAt: z.number(),
+    image: OdlcImageSchema,
+    flagged: z.boolean(),
+    textInput: z.string(),
+    metadata: z.string(),
+    annotations: z.array(OdlcImageAnnotationSchema),
+});
+
+export const OdlcSessionSchema = z.object({
+    sessionId: z.string(),
+    records: z.array(OdlcImageRecordSchema),
 });
 
 export type OdlcImage = z.infer<typeof OdlcImageSchema>;

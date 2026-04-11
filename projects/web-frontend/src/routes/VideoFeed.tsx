@@ -64,15 +64,17 @@ export default function VideoFeed() {
                 >
                     <Grid container spacing={3}>
                         <Grid item xs={12} lg={8}>
-                            <Typography
-                                variant="h4"
-                                sx={{
-                                    fontWeight: "bold",
-                                    mb: 3,
-                                }}
-                            >
-                                WebRTC Video Stream
-                            </Typography>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                                <Typography
+                                    variant="h4"
+                                    sx={{
+                                        fontWeight: "bold",
+                                    }}
+                                >
+                                    WebRTC Video Stream
+                                </Typography>
+                                <SessionIdDisplay />
+                            </Stack>
                             <Stack spacing={2}>
                                 <Box
                                     sx={{
