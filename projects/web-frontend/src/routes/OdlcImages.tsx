@@ -1,9 +1,9 @@
 import {
     Box,
     Button,
-    Collapse,
     FormControlLabel,
     IconButton,
+    MenuItem,
     Paper,
     Stack,
     Switch,
@@ -14,8 +14,6 @@ import {
 } from "@mui/material";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
 import Flag from "@mui/icons-material/Flag";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../store/store";
@@ -34,12 +32,13 @@ import {
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
-import { getColorGroupKey, getColorGroupLabel } from "../utils/odlcColorGroup";
-import type { RGB } from "../utils/odlcColorGroup";
+import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
+import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
 import type { OdlcImage } from "../schemas/odlc";
 import { calculateAnnotationDistance } from "../utils/odlcImageAnnotationUtils";
 
-type SortBy = "time" | "confidence";
+type SortBy = "recency" | "confidence";
+type ColorFilter = OdlcColor | "all";
 
 /** Build a colored square image as base64 JPEG for testing without a stream. */
 function createDummyImageBase64(width: number, height: number, r: number, g: number, b: number): string {
@@ -83,10 +82,18 @@ function createDummyOdlcImage(color: [number, number, number], confidenceLevel: 
     };
 }
 
-function filterAndSortRecords(records: OdlcImageRecord[], flaggedOnly: boolean, sortBy: SortBy): OdlcImageRecord[] {
-    const list = flaggedOnly ? records.filter((r) => r.flagged) : [...records];
-    if (sortBy === "time") {
-        list.sort((a, b) => a.receivedAt - b.receivedAt);
+function filterAndSortRecords(
+    records: OdlcImageRecord[],
+    flaggedOnly: boolean,
+    sortBy: SortBy,
+    colorFilter: ColorFilter,
+): OdlcImageRecord[] {
+    let list = flaggedOnly ? records.filter((r) => r.flagged) : [...records];
+    if (colorFilter !== "all") {
+        list = list.filter((r) => classifyOdlcColor(r.image.color_detection as RGB) === colorFilter);
+    }
+    if (sortBy === "recency") {
+        list.sort((a, b) => b.receivedAt - a.receivedAt);
     } else {
         list.sort((a, b) => b.image.confidence_level - a.image.confidence_level);
     }
@@ -97,103 +104,14 @@ function filterAndSortRecords(records: OdlcImageRecord[], flaggedOnly: boolean, 
 function formatImageMetadata(record: OdlcImageRecord): string {
     const { image, receivedAt } = record;
     const [r, g, b] = image.color_detection;
+    const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
     const lines = [
         `Received: ${new Date(receivedAt).toISOString()}`,
         `Confidence: ${image.confidence_level}`,
-        `Color (RGB): ${r}, ${g}, ${b}`,
+        `Color: ${colorName} (RGB: ${r}, ${g}, ${b})`,
         `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
     ];
     return lines.join("\n");
-}
-
-function groupByColor(records: OdlcImageRecord[]): Map<string, { label: string; records: OdlcImageRecord[] }> {
-    const map = new Map<string, { label: string; records: OdlcImageRecord[] }>();
-    for (const record of records) {
-        const rgb = record.image.color_detection as RGB;
-        const key = getColorGroupKey(rgb);
-        const label = getColorGroupLabel(rgb);
-        if (!map.has(key)) map.set(key, { label, records: [] });
-        map.get(key)!.records.push(record);
-    }
-    return map;
-}
-
-function ColorGroupDropdown({
-    _groupKey,
-    label,
-    records,
-    selectedId,
-    onSelect,
-}: {
-    _groupKey: string;
-    label: string;
-    records: OdlcImageRecord[];
-    selectedId: string | null;
-    onSelect: (id: string) => void;
-}) {
-    const [open, setOpen] = useState(true);
-    return (
-        <Box sx={{ mb: 0.5 }}>
-            <Box
-                onClick={() => setOpen((o) => !o)}
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    py: 0.5,
-                    px: 1,
-                    borderRadius: 1,
-                    "&:hover": { bgcolor: "action.hover" },
-                }}
-            >
-                <Typography variant="body2" fontWeight="medium" sx={{ flex: 1 }}>
-                    {label}
-                </Typography>
-                <IconButton size="small" aria-label={open ? "Collapse" : "Expand"}>
-                    {open ? <ExpandLess /> : <ExpandMore />}
-                </IconButton>
-            </Box>
-            <Collapse in={open}>
-                <Stack spacing={0.25} sx={{ pl: 1, mt: 0.5 }}>
-                    {records.map((record) => (
-                        <Box
-                            key={record.id}
-                            onClick={() => onSelect(record.id)}
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                p: 0.75,
-                                borderRadius: 1,
-                                cursor: "pointer",
-                                border: "1px solid",
-                                borderColor: selectedId === record.id ? "primary.main" : "transparent",
-                                bgcolor: selectedId === record.id ? "action.selected" : "transparent",
-                                "&:hover": { bgcolor: "action.hover" },
-                            }}
-                        >
-                            <Box
-                                component="img"
-                                src={`data:image/jpeg;base64,${record.image.image_data}`}
-                                alt=""
-                                sx={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: 0.5,
-                                    objectFit: "cover",
-                                    flexShrink: 0,
-                                }}
-                            />
-                            <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                                {new Date(record.receivedAt).toLocaleTimeString()} · {record.image.confidence_level}
-                            </Typography>
-                            {record.flagged && <Flag sx={{ fontSize: 14, color: "warning.main" }} />}
-                        </Box>
-                    ))}
-                </Stack>
-            </Collapse>
-        </Box>
-    );
 }
 
 export default function OdlcImages() {
@@ -202,7 +120,8 @@ export default function OdlcImages() {
     const selectedRecord = useAppSelector(selectSelectedOdlcImageRecord);
 
     const [flaggedOnly, setFlaggedOnly] = useState(false);
-    const [sortBy, setSortBy] = useState<SortBy>("time");
+    const [sortBy, setSortBy] = useState<SortBy>("recency");
+    const [colorFilter, setColorFilter] = useState<ColorFilter>("all");
 
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
@@ -211,8 +130,8 @@ export default function OdlcImages() {
     const [page, setPage] = useState(0);
 
     const filteredSorted = useMemo(
-        () => filterAndSortRecords(records, flaggedOnly, sortBy),
-        [records, flaggedOnly, sortBy],
+        () => filterAndSortRecords(records, flaggedOnly, sortBy, colorFilter),
+        [records, flaggedOnly, sortBy, colorFilter],
     );
 
     const totalPages = Math.max(1, Math.ceil(filteredSorted.length / PAGE_SIZE));
@@ -221,12 +140,11 @@ export default function OdlcImages() {
         () => filteredSorted.slice(clampedPage * PAGE_SIZE, (clampedPage + 1) * PAGE_SIZE),
         [filteredSorted, clampedPage],
     );
-    const grouped = useMemo(() => groupByColor(paginatedRecords), [paginatedRecords]);
 
     // Reset to first page when filters change
     useEffect(() => {
         setPage(0);
-    }, [flaggedOnly, sortBy]);
+    }, [flaggedOnly, sortBy, colorFilter]);
 
     /** Flagged records in current filter/sort order (export includes only these). */
     const flaggedForExport = useMemo(() => filteredSorted.filter((r) => r.flagged), [filteredSorted]);
@@ -336,26 +254,71 @@ export default function OdlcImages() {
                                 onChange={(_, v) => v != null && setSortBy(v)}
                                 fullWidth
                             >
-                                <ToggleButton value="time">Time</ToggleButton>
+                                <ToggleButton value="recency">Recency</ToggleButton>
                                 <ToggleButton value="confidence">Confidence</ToggleButton>
                             </ToggleButtonGroup>
                         </Box>
+                        <TextField
+                            select
+                            size="small"
+                            label="Color"
+                            value={colorFilter}
+                            onChange={(e) => setColorFilter(e.target.value as ColorFilter)}
+                            fullWidth
+                        >
+                            <MenuItem value="all">Show all</MenuItem>
+                            {ODLC_COLORS.map((c) => (
+                                <MenuItem key={c} value={c}>
+                                    {ODLC_COLOR_LABELS[c]}
+                                </MenuItem>
+                            ))}
+                        </TextField>
                     </Stack>
 
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Images by color
+                        Images
                     </Typography>
-                    <Stack spacing={0}>
-                        {Array.from(grouped.entries()).map(([key, { label, records: groupRecords }]) => (
-                            <ColorGroupDropdown
-                                key={key}
-                                _groupKey={key}
-                                label={label}
-                                records={groupRecords}
-                                selectedId={selectedId}
-                                onSelect={handleSelect}
-                            />
+                    <Stack spacing={0.25} sx={{ minHeight: PAGE_SIZE * 72 }}>
+                        {paginatedRecords.map((record) => (
+                            <Box
+                                key={record.id}
+                                onClick={() => handleSelect(record.id)}
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    p: 0.75,
+                                    borderRadius: 1,
+                                    cursor: "pointer",
+                                    border: "1px solid",
+                                    borderColor: selectedId === record.id ? "primary.main" : "transparent",
+                                    bgcolor: selectedId === record.id ? "action.selected" : "transparent",
+                                    "&:hover": { bgcolor: "action.hover" },
+                                }}
+                            >
+                                <Box
+                                    component="img"
+                                    src={`data:image/jpeg;base64,${record.image.image_data}`}
+                                    alt=""
+                                    sx={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 0.5,
+                                        objectFit: "cover",
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Typography variant="caption" noWrap sx={{ flex: 1 }}>
+                                    {new Date(record.receivedAt).toLocaleTimeString()} · {record.image.confidence_level}
+                                </Typography>
+                                {record.flagged && <Flag sx={{ fontSize: 14, color: "warning.main" }} />}
+                            </Box>
                         ))}
+                        {paginatedRecords.length === 0 && (
+                            <Typography variant="caption" color="text.secondary" sx={{ px: 1, py: 0.5 }}>
+                                No images match current filters.
+                            </Typography>
+                        )}
                     </Stack>
 
                     {filteredSorted.length > PAGE_SIZE && (
