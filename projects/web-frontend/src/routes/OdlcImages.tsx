@@ -15,7 +15,7 @@ import {
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 import Flag from "@mui/icons-material/Flag";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import {
     selectOdlcImageRecords,
@@ -134,12 +134,16 @@ export default function OdlcImages() {
 
     // Thumbnail row: 40px img + 0.75*2 padding (12) + 1px border*2 + 0.25*8 spacing gap
     const ROW_HEIGHT_PX = 56;
-    const listContainerRef = useRef<HTMLDivElement | null>(null);
     const [pageSize, setPageSize] = useState(1);
     const [page, setPage] = useState(0);
 
-    useLayoutEffect(() => {
-        const el = listContainerRef.current;
+    // Callback ref: fires on attach/detach so we measure correctly even when
+    // the list container isn't in the DOM on first render (e.g. empty state
+    // then session restore populates records and mounts the main layout).
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
+    const listContainerCallbackRef = useCallback((el: HTMLDivElement | null) => {
+        resizeObserverRef.current?.disconnect();
+        resizeObserverRef.current = null;
         if (!el) return;
         const recompute = () => {
             const available = el.clientHeight;
@@ -149,7 +153,7 @@ export default function OdlcImages() {
         recompute();
         const ro = new ResizeObserver(recompute);
         ro.observe(el);
-        return () => ro.disconnect();
+        resizeObserverRef.current = ro;
     }, []);
 
     const filteredSorted = useMemo(
@@ -317,7 +321,7 @@ export default function OdlcImages() {
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Images
                     </Typography>
-                    <Box ref={listContainerRef} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                    <Box ref={listContainerCallbackRef} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
                         <Stack spacing={0.25}>
                             {paginatedRecords.map((record) => (
                                 <Box
