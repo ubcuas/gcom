@@ -19,24 +19,27 @@ type AppState = {
     mapViewOpen: boolean;
     mapCenterCoords: Coords;
     showParamValues: boolean;
+    odlcSessionId: string | null;
 };
 
-const initialState: AppState = localStorage.getItem("appSlice")
-    ? JSON.parse(localStorage.getItem("appSlice")!)
-    : {
-          preferredTheme: "dark",
-          globalSnackbar: {
-              message: "",
-              open: false,
-              severity: "error",
-          },
-          telemetrySockets: false,
-          bypassArmingRestriction: false,
-          mpsWaypointMapState: [],
-          mapViewOpen: false,
-          mapCenterCoords: defaultCoords,
-          showParamValues: false,
-      };
+const defaultState: AppState = {
+    preferredTheme: "dark",
+    globalSnackbar: {
+        message: "",
+        open: false,
+        severity: "error",
+    },
+    telemetrySockets: false,
+    bypassArmingRestriction: false,
+    mpsWaypointMapState: [],
+    mapViewOpen: false,
+    mapCenterCoords: defaultCoords,
+    showParamValues: false,
+    odlcSessionId: null,
+};
+
+const persisted = localStorage.getItem("appSlice");
+const initialState: AppState = persisted ? { ...defaultState, ...JSON.parse(persisted) } : defaultState;
 
 const appSlice = createSlice({
     name: "app",
@@ -87,6 +90,9 @@ const appSlice = createSlice({
         setShowParamValues: (state, action: PayloadAction<boolean>) => {
             state.showParamValues = action.payload;
         },
+        setOdlcSessionId: (state, action: PayloadAction<string | null>) => {
+            state.odlcSessionId = action.payload;
+        },
     },
 });
 
@@ -102,6 +108,7 @@ export const {
     setMapViewOpen,
     setMapCenterCoords,
     setShowParamValues,
+    setOdlcSessionId,
 } = appSlice.actions;
 
 export const selectAppSlice = (state: RootState) => state.app;
@@ -114,6 +121,7 @@ export const selectMpsWaypointMapState = (state: RootState) => state.app.mpsWayp
 export const selectMapViewOpen = (state: RootState) => state.app.mapViewOpen;
 export const selectMapCenterCoords = (state: RootState) => state.app.mapCenterCoords;
 export const selectShowParamValues = (state: RootState) => state.app.showParamValues;
+export const selectOdlcSessionId = (state: RootState) => state.app.odlcSessionId;
 
 const appReducer = appSlice.reducer;
 export default appReducer;
