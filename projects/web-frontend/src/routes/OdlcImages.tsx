@@ -15,7 +15,7 @@ import {
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 import Flag from "@mui/icons-material/Flag";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import {
     selectOdlcImageRecords,
@@ -126,25 +126,42 @@ export default function OdlcImages() {
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
 
-    const PAGE_SIZE = 6;
+    // Thumbnail row: 40px img + 0.75*2 padding (12) + 1px border*2 + 0.25*8 spacing gap
+    const ROW_HEIGHT_PX = 56;
+    const listContainerRef = useRef<HTMLDivElement | null>(null);
+    const [pageSize, setPageSize] = useState(1);
     const [page, setPage] = useState(0);
+
+    useLayoutEffect(() => {
+        const el = listContainerRef.current;
+        if (!el) return;
+        const recompute = () => {
+            const available = el.clientHeight;
+            const next = Math.max(1, Math.floor(available / ROW_HEIGHT_PX));
+            setPageSize((prev) => (prev === next ? prev : next));
+        };
+        recompute();
+        const ro = new ResizeObserver(recompute);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
 
     const filteredSorted = useMemo(
         () => filterAndSortRecords(records, flaggedOnly, sortBy, colorFilter),
         [records, flaggedOnly, sortBy, colorFilter],
     );
 
-    const totalPages = Math.max(1, Math.ceil(filteredSorted.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
     const clampedPage = Math.min(page, totalPages - 1);
     const paginatedRecords = useMemo(
-        () => filteredSorted.slice(clampedPage * PAGE_SIZE, (clampedPage + 1) * PAGE_SIZE),
-        [filteredSorted, clampedPage],
+        () => filteredSorted.slice(clampedPage * pageSize, (clampedPage + 1) * pageSize),
+        [filteredSorted, clampedPage, pageSize],
     );
 
-    // Reset to first page when filters change
+    // Reset to first page when filters or pageSize change
     useEffect(() => {
         setPage(0);
-    }, [flaggedOnly, sortBy, colorFilter]);
+    }, [flaggedOnly, sortBy, colorFilter, pageSize]);
 
     /** Flagged records in current filter/sort order (export includes only these). */
     const flaggedForExport = useMemo(() => filteredSorted.filter((r) => r.flagged), [filteredSorted]);
@@ -232,7 +249,17 @@ export default function OdlcImages() {
 
             <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
                 {/* Left sidebar */}
-                <Paper sx={{ width: 280, flexShrink: 0, p: 1.5, overflow: "auto" }}>
+                <Paper
+                    sx={{
+                        width: 280,
+                        flexShrink: 0,
+                        p: 1.5,
+                        display: "flex",
+                        flexDirection: "column",
+                        minHeight: 0,
+                        overflow: "hidden",
+                    }}
+                >
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Filters
                     </Typography>
@@ -278,50 +305,53 @@ export default function OdlcImages() {
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Images
                     </Typography>
-                    <Stack spacing={0.25} sx={{ minHeight: PAGE_SIZE * 72 }}>
-                        {paginatedRecords.map((record) => (
-                            <Box
-                                key={record.id}
-                                onClick={() => handleSelect(record.id)}
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    p: 0.75,
-                                    borderRadius: 1,
-                                    cursor: "pointer",
-                                    border: "1px solid",
-                                    borderColor: selectedId === record.id ? "primary.main" : "transparent",
-                                    bgcolor: selectedId === record.id ? "action.selected" : "transparent",
-                                    "&:hover": { bgcolor: "action.hover" },
-                                }}
-                            >
+                    <Box ref={listContainerRef} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                        <Stack spacing={0.25}>
+                            {paginatedRecords.map((record) => (
                                 <Box
-                                    component="img"
-                                    src={`data:image/jpeg;base64,${record.image.image_data}`}
-                                    alt=""
+                                    key={record.id}
+                                    onClick={() => handleSelect(record.id)}
                                     sx={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 0.5,
-                                        objectFit: "cover",
-                                        flexShrink: 0,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        p: 0.75,
+                                        borderRadius: 1,
+                                        cursor: "pointer",
+                                        border: "1px solid",
+                                        borderColor: selectedId === record.id ? "primary.main" : "transparent",
+                                        bgcolor: selectedId === record.id ? "action.selected" : "transparent",
+                                        "&:hover": { bgcolor: "action.hover" },
                                     }}
-                                />
-                                <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                                    {new Date(record.receivedAt).toLocaleTimeString()} · {record.image.confidence_level}
+                                >
+                                    <Box
+                                        component="img"
+                                        src={`data:image/jpeg;base64,${record.image.image_data}`}
+                                        alt=""
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            borderRadius: 0.5,
+                                            objectFit: "cover",
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                    <Typography variant="caption" noWrap sx={{ flex: 1 }}>
+                                        {new Date(record.receivedAt).toLocaleTimeString()} ·{" "}
+                                        {record.image.confidence_level}
+                                    </Typography>
+                                    {record.flagged && <Flag sx={{ fontSize: 14, color: "warning.main" }} />}
+                                </Box>
+                            ))}
+                            {paginatedRecords.length === 0 && (
+                                <Typography variant="caption" color="text.secondary" sx={{ px: 1, py: 0.5 }}>
+                                    No images match current filters.
                                 </Typography>
-                                {record.flagged && <Flag sx={{ fontSize: 14, color: "warning.main" }} />}
-                            </Box>
-                        ))}
-                        {paginatedRecords.length === 0 && (
-                            <Typography variant="caption" color="text.secondary" sx={{ px: 1, py: 0.5 }}>
-                                No images match current filters.
-                            </Typography>
-                        )}
-                    </Stack>
+                            )}
+                        </Stack>
+                    </Box>
 
-                    {filteredSorted.length > PAGE_SIZE && (
+                    {filteredSorted.length > pageSize && (
                         <Box
                             sx={{
                                 display: "flex",
