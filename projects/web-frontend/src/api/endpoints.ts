@@ -116,6 +116,10 @@ export const saveOdlcSession = async (sessionId: string, images: OdlcImage[]): P
  * @param depth - Depth at the pixel in meters
  * @returns A 3D point [x, y, z] in camera coordinate space, in meters
  */
+export const requestManualCapture = async (): Promise<void> => {
+    await api.post("/vision/capture/");
+};
+
 export const deprojectPixel = async (
     pixel: [number, number],
     depth: number,

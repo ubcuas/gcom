@@ -1,13 +1,16 @@
 import { Box, Button, Paper, Stack, Typography, Chip, Grid } from "@mui/material";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useWebRTCContext } from "../context/WebRTCContext";
+import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import DroneStatusCard from "../components/DroneStatusCard";
+import { requestManualCapture } from "../api/endpoints";
 
 export default function VideoFeed() {
     const { signalingStatus, peerStatus, remoteStream, connect, disconnect, isConnecting } = useWebRTCContext();
 
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [capturing, setCapturing] = useState(false);
 
     useEffect(() => {
         if (videoRef.current && remoteStream) {
@@ -173,6 +176,22 @@ export default function VideoFeed() {
                                                 fullWidth
                                             >
                                                 Disconnect
+                                            </Button>
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<PhotoCamera />}
+                                                disabled={capturing || peerStatus !== "connected"}
+                                                onClick={async () => {
+                                                    setCapturing(true);
+                                                    try {
+                                                        await requestManualCapture();
+                                                    } finally {
+                                                        setCapturing(false);
+                                                    }
+                                                }}
+                                                fullWidth
+                                            >
+                                                {capturing ? "Capturing..." : "Capture"}
                                             </Button>
                                         </Stack>
                                     </Stack>

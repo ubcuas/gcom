@@ -64,6 +64,13 @@ function randomIn(min: number, max: number): number {
     return Math.random() * (max - min) + min;
 }
 
+/** Convert yaw degrees (clockwise from north) to cardinal/intercardinal label. */
+function yawToCompass(deg: number): string {
+    const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    const index = Math.round((((deg % 360) + 360) % 360) / 45) % 8;
+    return dirs[index];
+}
+
 function createDummyOdlcImage(color: [number, number, number], confidenceLevel: number): OdlcImage {
     const width = randomInt(40, 120);
     const height = randomInt(40, 120);
@@ -80,6 +87,7 @@ function createDummyOdlcImage(color: [number, number, number], confidenceLevel: 
             [x2, y2],
         ],
         confidence_level: confidenceLevel,
+        yaw_deg: Math.round(randomIn(0, 360)),
     };
 }
 
@@ -97,10 +105,15 @@ function filterAndSortRecords(records: OdlcImageRecord[], flaggedOnly: boolean, 
 function formatImageMetadata(record: OdlcImageRecord): string {
     const { image, receivedAt } = record;
     const [r, g, b] = image.color_detection;
+    const directionLine =
+        image.yaw_deg != null
+            ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
+            : `Direction: N/A`;
     const lines = [
         `Received: ${new Date(receivedAt).toISOString()}`,
         `Confidence: ${image.confidence_level}`,
         `Color (RGB): ${r}, ${g}, ${b}`,
+        directionLine,
         `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
     ];
     return lines.join("\n");
@@ -424,15 +437,52 @@ export default function OdlcImages() {
                         }}
                     >
                         {selectedRecord ? (
-                            <ImageAnnotationOverlay
-                                imageSrc={`data:image/jpeg;base64,${selectedRecord.image.image_data}`}
-                                annotations={selectedRecord.annotations}
-                                recordId={selectedRecord.id}
-                                boundingBox={selectedRecord.image.bounding_box}
-                                onAddAnnotation={handleImageAnnotation}
-                                onUndo={(id) => dispatch(undoLastOdlcImageAnnotation(id))}
-                                onDeleteAnnotation={(args) => dispatch(deleteOdlcImageAnnotation(args))}
-                            />
+                            <>
+                                <ImageAnnotationOverlay
+                                    imageSrc={`data:image/jpeg;base64,${selectedRecord.image.image_data}`}
+                                    annotations={selectedRecord.annotations}
+                                    recordId={selectedRecord.id}
+                                    boundingBox={selectedRecord.image.bounding_box}
+                                    depthData={selectedRecord.image.depth_data}
+                                    onAddAnnotation={handleImageAnnotation}
+                                    onUndo={(id) => dispatch(undoLastOdlcImageAnnotation(id))}
+                                    onDeleteAnnotation={(args) => dispatch(deleteOdlcImageAnnotation(args))}
+                                />
+                                {selectedRecord.image.yaw_deg != null && (
+                                    <Box
+                                        sx={{
+                                            position: "absolute",
+                                            top: 8,
+                                            left: 8,
+                                            bgcolor: "rgba(0,0,0,0.6)",
+                                            color: "#fff",
+                                            borderRadius: 1,
+                                            px: 1,
+                                            py: 0.25,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 0.5,
+                                            pointerEvents: "none",
+                                        }}
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                display: "inline-block",
+                                                transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
+                                                fontSize: "1rem",
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            ↑
+                                        </Box>
+                                        <Typography variant="caption" sx={{ color: "#fff", fontFamily: "monospace" }}>
+                                            {selectedRecord.image.yaw_deg.toFixed(1)}°{" "}
+                                            {yawToCompass(selectedRecord.image.yaw_deg)}
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </>
                         ) : (
                             <Typography color="text.secondary">Select an image</Typography>
                         )}

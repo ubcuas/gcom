@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     GroundObjectViewset,
     ImageViewset,
+    capture_image,
     deproject_pixel,
     save_odlc_session,
 )
@@ -16,4 +17,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("odlc-session/save/", save_odlc_session, name="save_odlc_session"),
     path("deproject-pixel/", deproject_pixel, name="deproject_pixel"),
+    path("capture/", capture_image, name="capture_image"),
 ]
