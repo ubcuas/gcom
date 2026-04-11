@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from "./store/store";
 import { socket } from "./api/socket";
 import { parseAndTransformDroneData } from "./types/AircraftStatus";
 import { WebRTCProvider } from "./context/WebRTCContext";
+import { restoreOdlcSession } from "./store/thunks/odlcSessionThunks";
 
 function App() {
     const colorScheme = useAppSelector(selectPreferredTheme);
@@ -84,6 +85,10 @@ function App() {
             ),
         [colorScheme],
     );
+
+    useEffect(() => {
+        dispatch(restoreOdlcSession());
+    }, [dispatch]);
 
     useEffect(() => {
         socket.on("drone_update", (data) => {

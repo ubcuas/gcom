@@ -31,6 +31,8 @@ import {
     appendOdlcImage,
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
+import SessionIdDisplay from "../components/SessionIdDisplay";
+import { syncOdlcImageToBackend } from "../store/thunks/odlcSessionThunks";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
 import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
@@ -125,6 +127,10 @@ export default function OdlcImages() {
 
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
+
+    // Tracks the textInput value at the moment the field gained focus so onBlur
+    // can skip syncing no-op edits (tab-through with no changes).
+    const textInputFocusValueRef = useRef<string | null>(null);
 
     // Thumbnail row: 40px img + 0.75*2 padding (12) + 1px border*2 + 0.25*8 spacing gap
     const ROW_HEIGHT_PX = 56;
@@ -225,9 +231,12 @@ export default function OdlcImages() {
     if (records.length === 0) {
         return (
             <Box sx={{ p: 3, width: "100%" }}>
-                <Typography variant="h5" fontWeight="bold" mb={3}>
-                    ODLC Images
-                </Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                    <Typography variant="h5" fontWeight="bold">
+                        ODLC Images
+                    </Typography>
+                    <SessionIdDisplay />
+                </Stack>
                 <Paper sx={{ p: 4, textAlign: "center" }}>
                     <Typography color="text.secondary">No ODLC images captured yet.</Typography>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
@@ -243,9 +252,12 @@ export default function OdlcImages() {
 
     return (
         <Box sx={{ p: 3, width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
-            <Typography variant="h5" fontWeight="bold" mb={2}>
-                ODLC Images
-            </Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+                <Typography variant="h5" fontWeight="bold">
+                    ODLC Images
+                </Typography>
+                <SessionIdDisplay />
+            </Stack>
 
             <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
                 {/* Left sidebar */}
@@ -440,6 +452,16 @@ export default function OdlcImages() {
                                 multiline
                                 minRows={2}
                                 value={selectedRecord.textInput}
+                                onFocus={() => {
+                                    textInputFocusValueRef.current = selectedRecord.textInput;
+                                }}
+                                onBlur={() => {
+                                    const initial = textInputFocusValueRef.current;
+                                    textInputFocusValueRef.current = null;
+                                    if (initial !== null && initial !== selectedRecord.textInput) {
+                                        dispatch(syncOdlcImageToBackend(selectedRecord.id));
+                                    }
+                                }}
                                 onChange={(e) => {
                                     const next = e.target.value;
                                     const wasEmpty = selectedRecord.textInput.trim() === "";
