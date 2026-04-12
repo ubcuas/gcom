@@ -2,9 +2,13 @@ import json
 import threading
 from pathlib import Path
 
+import paho.mqtt.publish as mqtt_publish
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+
+MQTT_BROKER = "broker.hivemq.com"
+MQTT_TOPIC_CMD = "ubc_uas/drone_01/commands"
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 
@@ -166,6 +170,23 @@ def patch_odlc_record(request, session_id: str, record_id: str):
         print(f"Error patching ODLC record: {e}")
         return JsonResponse(
             {"error": "Internal server error", "details": str(e)}, status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def capture_image(request):
+    try:
+        mqtt_publish.single(
+            MQTT_TOPIC_CMD,
+            payload=json.dumps({"action": "TAKE_PHOTO"}),
+            hostname=MQTT_BROKER,
+            port=1883,
+        )
+        return HttpResponse(status=200)
+    except Exception as e:
+        return JsonResponse(
+            {"error": "Failed to send capture command", "details": str(e)}, status=500
         )
 
 

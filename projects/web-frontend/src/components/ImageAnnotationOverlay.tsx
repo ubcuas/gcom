@@ -1,4 +1,8 @@
-import { Box } from "@mui/material";
+import { Box, IconButton, Slider, Typography } from "@mui/material";
+import DragIndicator from "@mui/icons-material/DragIndicator";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { decode } from "fast-png";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OdlcImageAnnotation } from "../store/slices/dataSlice";
 
@@ -45,6 +49,24 @@ function hitTestSegment(nx: number, ny: number, p1: { x: number; y: number }, p2
     return Math.hypot(nx - px, ny - py);
 }
 
+function decodeDepth(base64: string): { data: Uint16Array; width: number; height: number } {
+    const binaryStr = atob(base64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+    }
+    const png = decode(bytes);
+    return { data: png.data as Uint16Array, width: png.width, height: png.height };
+}
+
+/** Jet colormap: t=0 → blue, t=0.5 → green/yellow, t=1 → red. */
+function jetColormap(t: number): [number, number, number] {
+    const r = Math.max(0, Math.min(255, Math.round(255 * (1.5 - Math.abs(4 * t - 3)))));
+    const g = Math.max(0, Math.min(255, Math.round(255 * (1.5 - Math.abs(4 * t - 2)))));
+    const b = Math.max(0, Math.min(255, Math.round(255 * (1.5 - Math.abs(4 * t - 1)))));
+    return [r, g, b];
+}
+
 /** Bounding box as array of [x, y] in normalized 0-1 coords. Two points define the rectangle. */
 export type BoundingBox = Array<[number, number]>;
 
@@ -54,6 +76,8 @@ type ImageAnnotationOverlayProps = {
     recordId: string;
     /** Image bounding box (e.g. from ODLC image data); drawn as a rectangle from the first two points. */
     boundingBox?: BoundingBox;
+    /** Base64-encoded 16UC1 PNG depth map, or null if unavailable. */
+    depthData?: string | null;
     onAddAnnotation: (args: {
         id: string;
         annotationId: string;
@@ -70,6 +94,7 @@ export default function ImageAnnotationOverlay({
     annotations,
     recordId,
     boundingBox,
+    depthData,
     onAddAnnotation,
     onUndo,
     onDeleteAnnotation,
@@ -80,6 +105,99 @@ export default function ImageAnnotationOverlay({
     const [dragging, setDragging] = useState<{ p1: { x: number; y: number }; p2: { x: number; y: number } } | null>(
         null,
     );
+
+    // Depth map state
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [depthOpacity, setDepthOpacity] = useState(0.5);
+    const [depthSliderVisible, setDepthSliderVisible] = useState(true);
+    const [depthDecoded, setDepthDecoded] = useState<{ data: Uint16Array; width: number; height: number } | null>(null);
+
+    // Drag state for the depth control bar
+    const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 });
+    const dragRef = useRef<{ mx: number; my: number; dx: number; dy: number } | null>(null);
+
+    const handleDragStart = (e: React.PointerEvent) => {
+        e.stopPropagation();
+        dragRef.current = { mx: e.clientX, my: e.clientY, dx: dragDelta.x, dy: dragDelta.y };
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    };
+
+    const handleDragMove = (e: React.PointerEvent) => {
+        if (!dragRef.current) return;
+        e.stopPropagation();
+        setDragDelta({
+            x: dragRef.current.dx + e.clientX - dragRef.current.mx,
+            y: dragRef.current.dy + e.clientY - dragRef.current.my,
+        });
+    };
+
+    const handleDragEnd = (e: React.PointerEvent) => {
+        e.stopPropagation();
+        dragRef.current = null;
+    };
+
+    useEffect(() => {
+        if (!depthData) {
+            setDepthDecoded(null);
+            return;
+        }
+        try {
+            setDepthDecoded(decodeDepth(depthData));
+        } catch (e) {
+            console.error("Failed to decode depth data:", e);
+            setDepthDecoded(null);
+        }
+    }, [depthData]);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || !depthDecoded || !overlayRect) return;
+
+        const w = Math.round(overlayRect.width);
+        const h = Math.round(overlayRect.height);
+        canvas.width = w;
+        canvas.height = h;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const { data, width, height } = depthDecoded;
+
+        let min = Infinity;
+        let max = 0;
+        for (const v of data) {
+            if (v > 0) {
+                if (v < min) min = v;
+                if (v > max) max = v;
+            }
+        }
+        if (!isFinite(min) || max === min) {
+            ctx.clearRect(0, 0, w, h);
+            return;
+        }
+
+        const range = max - min;
+        const imgData = ctx.createImageData(w, h);
+        for (let py = 0; py < h; py++) {
+            for (let px = 0; px < w; px++) {
+                const sx = Math.floor((px / w) * width);
+                const sy = Math.floor((py / h) * height);
+                const val = data[sy * width + sx];
+                const i = (py * w + px) * 4;
+                if (val === 0) {
+                    imgData.data[i + 3] = 0; // transparent for missing depth
+                } else {
+                    const t = (val - min) / range;
+                    const [r, g, b] = jetColormap(t);
+                    imgData.data[i] = r;
+                    imgData.data[i + 1] = g;
+                    imgData.data[i + 2] = b;
+                    imgData.data[i + 3] = 255;
+                }
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+    }, [depthDecoded, overlayRect]);
 
     const getNormalizedCoords = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
         const el = imageRef.current;
@@ -190,6 +308,21 @@ export default function ImageAnnotationOverlay({
                     pointerEvents: "none",
                 }}
             />
+            {/* Depth map color overlay */}
+            {depthDecoded && overlayRect && (
+                <canvas
+                    ref={canvasRef}
+                    style={{
+                        position: "absolute",
+                        left: overlayRect.left,
+                        top: overlayRect.top,
+                        width: overlayRect.width,
+                        height: overlayRect.height,
+                        opacity: depthOpacity,
+                        pointerEvents: "none",
+                    }}
+                />
+            )}
             {overlayRect && (
                 <Box
                     component="svg"
@@ -225,7 +358,7 @@ export default function ImageAnnotationOverlay({
                                 />
                             );
                         })()}
-                    {annotations.map((a, i) => (
+                    {annotations.map((a) => (
                         <g key={a.id}>
                             <line
                                 x1={a.p1.x}
@@ -241,7 +374,7 @@ export default function ImageAnnotationOverlay({
                                     x={(a.p1.x + a.p2.x) / 2}
                                     y={(a.p1.y + a.p2.y) / 2 - 0.03}
                                     fontSize={0.03}
-                                    fill="blue"
+                                    fill="white"
                                     textAnchor="middle"
                                     dominantBaseline="middle"
                                 >
@@ -277,6 +410,79 @@ export default function ImageAnnotationOverlay({
                     }}
                 >
                     {instructions}
+                </Box>
+            )}
+            {/* Depth map opacity control — draggable */}
+            {depthDecoded && (
+                <Box
+                    sx={{
+                        position: "absolute",
+                        bottom: 8,
+                        left: 8,
+                        transform: `translate(${dragDelta.x}px, ${dragDelta.y}px)`,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        bgcolor: "rgba(0,0,0,0.55)",
+                        borderRadius: 1,
+                        pl: 0.5,
+                        pr: 1.5,
+                        py: 0.75,
+                        zIndex: 10,
+                        pointerEvents: "auto",
+                        userSelect: "none",
+                        ...(depthSliderVisible && { minWidth: 200 }),
+                    }}
+                >
+                    {/* Drag handle */}
+                    <Box
+                        onPointerDown={handleDragStart}
+                        onPointerMove={handleDragMove}
+                        onPointerUp={handleDragEnd}
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            cursor: "grab",
+                            "&:active": { cursor: "grabbing" },
+                            color: "rgba(255,255,255,0.6)",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <DragIndicator fontSize="small" />
+                    </Box>
+                    <Typography variant="caption" sx={{ color: "white", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        Depth
+                    </Typography>
+                    <IconButton
+                        size="small"
+                        onClick={() => setDepthSliderVisible((v) => !v)}
+                        sx={{ color: "white", p: 0.25, flexShrink: 0 }}
+                        aria-label={depthSliderVisible ? "Hide opacity slider" : "Show opacity slider"}
+                    >
+                        {depthSliderVisible ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                    </IconButton>
+                    {depthSliderVisible && (
+                        <>
+                            <Slider
+                                size="small"
+                                value={depthOpacity}
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                onChange={(_, v) => setDepthOpacity(v as number)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onPointerMove={(e) => e.stopPropagation()}
+                                onPointerUp={(e) => e.stopPropagation()}
+                                sx={{ color: "white", "& .MuiSlider-thumb": { width: 12, height: 12 } }}
+                            />
+                            <Typography
+                                variant="caption"
+                                sx={{ color: "white", whiteSpace: "nowrap", flexShrink: 0, minWidth: 30 }}
+                            >
+                                {Math.round(depthOpacity * 100)}%
+                            </Typography>
+                        </>
+                    )}
                 </Box>
             )}
         </Box>

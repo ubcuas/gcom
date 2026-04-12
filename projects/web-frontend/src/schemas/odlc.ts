@@ -7,6 +7,7 @@ export const OdlcImageSchema = z.object({
     color_detection: z.tuple([z.number().int(), z.number().int(), z.number().int()]),
     bounding_box: z.array(z.tuple([z.number(), z.number()])),
     confidence_level: z.number(),
+    yaw_deg: z.number().nullable().optional().default(null), // Aircraft yaw at capture time, degrees clockwise from north
 });
 
 export const OdlcImageAnnotationSchema = z.object({
