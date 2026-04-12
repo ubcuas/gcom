@@ -2,8 +2,9 @@ import { Waypoint } from "../types/Waypoint";
 import { Route } from "../types/Route";
 import api from "./api";
 import { WaypointSchema, RouteSchema, PartialWaypointSchema } from "../schemas/waypoint";
-import { OdlcSessionPayloadSchema } from "../schemas/odlc";
-import type { OdlcImage } from "../schemas/odlc";
+import { OdlcSessionSchema } from "../schemas/odlc";
+import type { OdlcImageRecord } from "../store/slices/dataSlice";
+import type { z } from "zod";
 
 // TODO: Implement new endpoint logic
 
@@ -102,9 +103,31 @@ export const getDroneParameter = async (
     return response.data;
 };
 
-export const saveOdlcSession = async (sessionId: string, images: OdlcImage[]): Promise<void> => {
-    const payload = OdlcSessionPayloadSchema.parse({ sessionId, images });
-    await api.post("/vision/odlc-session/save/", payload);
+export type OdlcSessionPayload = z.infer<typeof OdlcSessionSchema>;
+
+export const getOdlcSession = async (sessionId: string): Promise<OdlcSessionPayload | null> => {
+    try {
+        const response = await api.get(`/vision/odlc-session/${sessionId}/`);
+        return OdlcSessionSchema.parse(response.data);
+    } catch (err: unknown) {
+        if (typeof err === "object" && err !== null && "response" in err) {
+            const status = (err as { response?: { status?: number } }).response?.status;
+            if (status === 404) return null;
+        }
+        throw err;
+    }
+};
+
+export const postOdlcRecord = async (sessionId: string, record: OdlcImageRecord): Promise<void> => {
+    await api.post(`/vision/odlc-session/${sessionId}/records/`, record);
+};
+
+export const patchOdlcRecord = async (
+    sessionId: string,
+    recordId: string,
+    updates: Partial<Pick<OdlcImageRecord, "flagged" | "textInput" | "metadata" | "annotations">>,
+): Promise<void> => {
+    await api.patch(`/vision/odlc-session/${sessionId}/records/${recordId}/`, updates);
 };
 
 /**

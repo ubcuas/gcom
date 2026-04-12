@@ -439,7 +439,14 @@ export default function ImageAnnotationOverlay({
                         onPointerDown={handleDragStart}
                         onPointerMove={handleDragMove}
                         onPointerUp={handleDragEnd}
-                        sx={{ display: "flex", alignItems: "center", cursor: "grab", "&:active": { cursor: "grabbing" }, color: "rgba(255,255,255,0.6)", flexShrink: 0 }}
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            cursor: "grab",
+                            "&:active": { cursor: "grabbing" },
+                            color: "rgba(255,255,255,0.6)",
+                            flexShrink: 0,
+                        }}
                     >
                         <DragIndicator fontSize="small" />
                     </Box>
@@ -468,7 +475,10 @@ export default function ImageAnnotationOverlay({
                                 onPointerUp={(e) => e.stopPropagation()}
                                 sx={{ color: "white", "& .MuiSlider-thumb": { width: 12, height: 12 } }}
                             />
-                            <Typography variant="caption" sx={{ color: "white", whiteSpace: "nowrap", flexShrink: 0, minWidth: 30 }}>
+                            <Typography
+                                variant="caption"
+                                sx={{ color: "white", whiteSpace: "nowrap", flexShrink: 0, minWidth: 30 }}
+                            >
                                 {Math.round(depthOpacity * 100)}%
                             </Typography>
                         </>

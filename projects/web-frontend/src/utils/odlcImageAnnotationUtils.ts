@@ -1,10 +1,7 @@
 import { deprojectPixel } from "../api/endpoints";
 import { decode } from "fast-png";
 
-
-
-
-/** 
+/**
  * Decodes a base64-encoded 16-bit grayscale PNG (ROS2 CompressedImage 16UC1 format)
  * into a flat Uint16Array of depth values in millimeters, plus image dimensions.
  **/
@@ -15,7 +12,7 @@ function decodeDepthPngToJson(base64: string): { data: Uint16Array; width: numbe
     for (let i = 0; i < binaryStr.length; i++) {
         bytes[i] = binaryStr.charCodeAt(i);
     }
-    
+
     // Assuming 'decode' is imported from your PNG library (like fast-png)
     const png = decode(bytes);
     const data = png.data as Uint16Array;
@@ -24,13 +21,13 @@ function decodeDepthPngToJson(base64: string): { data: Uint16Array; width: numbe
     // This perfectly matches the format your Python script was reading.
     const depthDict: Record<string, number> = {};
     for (let i = 0; i < data.length; i++) {
-        depthDict[i.toString()] = data[i]; 
+        depthDict[i.toString()] = data[i];
     }
 
     // 2. Convert the Dictionary to a JSON text string
     const jsonString = JSON.stringify(depthDict);
 
-    // 3. Create a Blob (a file-like object of raw data) 
+    // 3. Create a Blob (a file-like object of raw data)
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
@@ -38,11 +35,11 @@ function decodeDepthPngToJson(base64: string): { data: Uint16Array; width: numbe
     const link = document.createElement("a");
     link.href = url;
     link.download = `depth_data_${Date.now()}.json`;
-    
+
     // Best practice: Append to body before clicking for Firefox compatibility
-    document.body.appendChild(link); 
+    document.body.appendChild(link);
     link.click();
-    
+
     // 5. Clean up the DOM and clear the URL from memory
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
@@ -115,7 +112,6 @@ export const calculateAnnotationDistance = async (
 
     const { data, width, height } = decodeDepthPngToJson(depthData);
     console.log("Depth data:", data);
-        
 
     const d1Mm = sampleDepth(data, width, height, p1.x, p1.y);
     const d2Mm = sampleDepth(data, width, height, p2.x, p2.y);
@@ -127,11 +123,11 @@ export const calculateAnnotationDistance = async (
     }
 
     try {
-            const [res1, res2] = await Promise.all([
-                deprojectPixel([p1.x * width, p1.y * height], d1Mm / 1000),
-                deprojectPixel([p2.x * width, p2.y * height], d2Mm / 1000),
-            ]);
-            console.log("Deprojection results:", res1, res2);
+        const [res1, res2] = await Promise.all([
+            deprojectPixel([p1.x * width, p1.y * height], d1Mm / 1000),
+            deprojectPixel([p2.x * width, p2.y * height], d2Mm / 1000),
+        ]);
+        console.log("Deprojection results:", res1, res2);
 
         const [x1, y1, z1] = res1.point;
         const [x2, y2, z2] = res2.point;

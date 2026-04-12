@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { SIGNALING_SERVER_URL } from "../constants";
-import { saveOdlcSession } from "../api/endpoints";
 import { OdlcImageSchema } from "../schemas/odlc";
-import { useAppDispatch, useAppSelector } from "../store/store";
-import { appendOdlcImage, selectOdlcImageRecords } from "../store/slices/dataSlice";
+import { useAppDispatch } from "../store/store";
+import { appendOdlcImage } from "../store/slices/dataSlice";
 
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
@@ -37,16 +36,12 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const [isConnecting, setIsConnecting] = useState(false);
 
     const dispatch = useAppDispatch();
-    const odlcImageRecords = useAppSelector(selectOdlcImageRecords);
 
     const socketRef = useRef<Socket | null>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const iceCandidateQueueRef = useRef<RTCIceCandidateInit[]>([]);
     const remotePeerIdRef = useRef<string | null>(null);
     const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const sessionIdRef = useRef<string>(crypto.randomUUID());
-    const odlcImageRecordsRef = useRef(odlcImageRecords);
-    odlcImageRecordsRef.current = odlcImageRecords;
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
@@ -162,12 +157,6 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
                         return;
                     }
                     dispatch(appendOdlcImage(result.data));
-                    saveOdlcSession(sessionIdRef.current, [
-                        ...odlcImageRecordsRef.current.map((r) => r.image),
-                        result.data,
-                    ]).catch((err) => {
-                        console.error("Failed to save ODLC session:", err);
-                    });
                 });
             }
         });

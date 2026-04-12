@@ -1,4 +1,5 @@
 import json
+import threading
 from pathlib import Path
 
 import paho.mqtt.publish as mqtt_publish
@@ -16,6 +17,41 @@ from .projection import deproject_pixel_to_point
 from .serializers import GroundObjectSerializer, ImageSerializer
 
 ODLC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "odlc_sessions"
+_SESSION_LOCK = threading.Lock()
+_PATCHABLE_FIELDS = {"flagged", "textInput", "metadata", "annotations"}
+
+
+def _session_path(session_id: str) -> Path:
+    return ODLC_SESSIONS_DIR / f"{session_id}.json"
+
+
+def _read_session(session_id: str) -> dict | None:
+    path = _session_path(session_id)
+    if not path.exists():
+        return None
+    return json.loads(path.read_text())
+
+
+def _write_session(session_id: str, data: dict) -> None:
+    ODLC_SESSIONS_DIR.mkdir(exist_ok=True)
+    _session_path(session_id).write_text(json.dumps(data))
+
+
+def _empty_session(session_id: str) -> dict:
+    return {"sessionId": session_id, "records": []}
+
+
+def _stub_record(record_id: str, updates: dict) -> dict:
+    return {
+        "id": record_id,
+        "receivedAt": 0,
+        "image": None,
+        "flagged": False,
+        "textInput": "",
+        "metadata": "",
+        "annotations": [],
+        **{k: v for k, v in updates.items() if k in _PATCHABLE_FIELDS},
+    }
 
 
 @csrf_exempt
@@ -36,9 +72,7 @@ def deproject_pixel(request):
                 {"error": "Invalid input: depth must be a float"}, status=400
             )
 
-        point = deproject_pixel_to_point(
-            pixel=pixel, depth=float(depth)
-        )
+        point = deproject_pixel_to_point(pixel=pixel, depth=float(depth))
 
         return JsonResponse({"point": point})
     except (ValueError, NotImplementedError) as e:
@@ -52,25 +86,88 @@ def deproject_pixel(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
-def save_odlc_session(request):
+@require_http_methods(["GET"])
+def get_odlc_session(request, session_id: str):
     try:
-        data = json.loads(request.body)
-        session_id = data.get("sessionId")
-        images = data.get("images")
+        with _SESSION_LOCK:
+            data = _read_session(session_id)
+        if data is None:
+            return JsonResponse({"error": "Session not found"}, status=404)
+        return JsonResponse(data)
+    except Exception as e:
+        print(f"Error reading ODLC session: {e}")
+        return JsonResponse(
+            {"error": "Internal server error", "details": str(e)}, status=500
+        )
 
-        if not session_id or not isinstance(images, list):
-            return JsonResponse({"error": "Invalid input"}, status=400)
 
-        ODLC_SESSIONS_DIR.mkdir(exist_ok=True)
-        session_file = ODLC_SESSIONS_DIR / f"{session_id}.json"
-        session_file.write_text(json.dumps({"sessionId": session_id, "images": images}))
+@csrf_exempt
+@require_http_methods(["POST"])
+def post_odlc_record(request, session_id: str):
+    try:
+        record = json.loads(request.body)
+        if not isinstance(record, dict) or not record.get("id"):
+            return JsonResponse({"error": "Invalid record"}, status=400)
+
+        with _SESSION_LOCK:
+            data = _read_session(session_id) or _empty_session(session_id)
+            records = data.get("records", [])
+            existing_idx = next(
+                (i for i, r in enumerate(records) if r.get("id") == record["id"]),
+                None,
+            )
+            if existing_idx is not None:
+                # Preserve any patched fields that may have landed before POST
+                merged = {**record}
+                for field in _PATCHABLE_FIELDS:
+                    if field in records[existing_idx] and records[existing_idx][
+                        field
+                    ] not in (None, "", [], False):
+                        merged[field] = records[existing_idx][field]
+                records[existing_idx] = merged
+            else:
+                records.append(record)
+            data["records"] = records
+            _write_session(session_id, data)
 
         return HttpResponse(status=200)
     except (KeyError, ValueError, TypeError) as e:
         return JsonResponse({"error": "Invalid input", "details": str(e)}, status=400)
     except Exception as e:
-        print(f"Error saving ODLC session: {e}")
+        print(f"Error posting ODLC record: {e}")
+        return JsonResponse(
+            {"error": "Internal server error", "details": str(e)}, status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["PATCH"])
+def patch_odlc_record(request, session_id: str, record_id: str):
+    try:
+        updates = json.loads(request.body)
+        if not isinstance(updates, dict):
+            return JsonResponse({"error": "Invalid updates"}, status=400)
+        filtered = {k: v for k, v in updates.items() if k in _PATCHABLE_FIELDS}
+
+        with _SESSION_LOCK:
+            data = _read_session(session_id) or _empty_session(session_id)
+            records = data.get("records", [])
+            existing_idx = next(
+                (i for i, r in enumerate(records) if r.get("id") == record_id),
+                None,
+            )
+            if existing_idx is not None:
+                records[existing_idx] = {**records[existing_idx], **filtered}
+            else:
+                records.append(_stub_record(record_id, filtered))
+            data["records"] = records
+            _write_session(session_id, data)
+
+        return HttpResponse(status=200)
+    except (KeyError, ValueError, TypeError) as e:
+        return JsonResponse({"error": "Invalid input", "details": str(e)}, status=400)
+    except Exception as e:
+        print(f"Error patching ODLC record: {e}")
         return JsonResponse(
             {"error": "Internal server error", "details": str(e)}, status=500
         )
@@ -88,7 +185,9 @@ def capture_image(request):
         )
         return HttpResponse(status=200)
     except Exception as e:
-        return JsonResponse({"error": "Failed to send capture command", "details": str(e)}, status=500)
+        return JsonResponse(
+            {"error": "Failed to send capture command", "details": str(e)}, status=500
+        )
 
 
 # Create your views here.

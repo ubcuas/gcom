@@ -1,9 +1,9 @@
 import {
     Box,
     Button,
-    Collapse,
     FormControlLabel,
     IconButton,
+    MenuItem,
     Paper,
     Stack,
     Switch,
@@ -14,10 +14,8 @@ import {
 } from "@mui/material";
 import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
 import Flag from "@mui/icons-material/Flag";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import {
     selectOdlcImageRecords,
@@ -33,13 +31,16 @@ import {
     appendOdlcImage,
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
+import SessionIdDisplay from "../components/SessionIdDisplay";
+import { syncOdlcImageToBackend } from "../store/thunks/odlcSessionThunks";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
-import { getColorGroupKey, getColorGroupLabel } from "../utils/odlcColorGroup";
-import type { RGB } from "../utils/odlcColorGroup";
+import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
+import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
 import type { OdlcImage } from "../schemas/odlc";
 import { calculateAnnotationDistance } from "../utils/odlcImageAnnotationUtils";
 
-type SortBy = "time" | "confidence";
+type SortBy = "recency" | "confidence";
+type ColorFilter = OdlcColor | "all";
 
 /** Build a colored square image as base64 JPEG for testing without a stream. */
 function createDummyImageBase64(width: number, height: number, r: number, g: number, b: number): string {
@@ -91,10 +92,18 @@ function createDummyOdlcImage(color: [number, number, number], confidenceLevel: 
     };
 }
 
-function filterAndSortRecords(records: OdlcImageRecord[], flaggedOnly: boolean, sortBy: SortBy): OdlcImageRecord[] {
-    const list = flaggedOnly ? records.filter((r) => r.flagged) : [...records];
-    if (sortBy === "time") {
-        list.sort((a, b) => a.receivedAt - b.receivedAt);
+function filterAndSortRecords(
+    records: OdlcImageRecord[],
+    flaggedOnly: boolean,
+    sortBy: SortBy,
+    colorFilter: ColorFilter,
+): OdlcImageRecord[] {
+    let list = flaggedOnly ? records.filter((r) => r.flagged) : [...records];
+    if (colorFilter !== "all") {
+        list = list.filter((r) => classifyOdlcColor(r.image.color_detection as RGB) === colorFilter);
+    }
+    if (sortBy === "recency") {
+        list.sort((a, b) => b.receivedAt - a.receivedAt);
     } else {
         list.sort((a, b) => b.image.confidence_level - a.image.confidence_level);
     }
@@ -105,6 +114,7 @@ function filterAndSortRecords(records: OdlcImageRecord[], flaggedOnly: boolean, 
 function formatImageMetadata(record: OdlcImageRecord): string {
     const { image, receivedAt } = record;
     const [r, g, b] = image.color_detection;
+    const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
     const directionLine =
         image.yaw_deg != null
             ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
@@ -112,101 +122,11 @@ function formatImageMetadata(record: OdlcImageRecord): string {
     const lines = [
         `Received: ${new Date(receivedAt).toISOString()}`,
         `Confidence: ${image.confidence_level}`,
-        `Color (RGB): ${r}, ${g}, ${b}`,
+        `Color: ${colorName} (RGB: ${r}, ${g}, ${b})`,
         directionLine,
         `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
     ];
     return lines.join("\n");
-}
-
-function groupByColor(records: OdlcImageRecord[]): Map<string, { label: string; records: OdlcImageRecord[] }> {
-    const map = new Map<string, { label: string; records: OdlcImageRecord[] }>();
-    for (const record of records) {
-        const rgb = record.image.color_detection as RGB;
-        const key = getColorGroupKey(rgb);
-        const label = getColorGroupLabel(rgb);
-        if (!map.has(key)) map.set(key, { label, records: [] });
-        map.get(key)!.records.push(record);
-    }
-    return map;
-}
-
-function ColorGroupDropdown({
-    _groupKey,
-    label,
-    records,
-    selectedId,
-    onSelect,
-}: {
-    _groupKey: string;
-    label: string;
-    records: OdlcImageRecord[];
-    selectedId: string | null;
-    onSelect: (id: string) => void;
-}) {
-    const [open, setOpen] = useState(true);
-    return (
-        <Box sx={{ mb: 0.5 }}>
-            <Box
-                onClick={() => setOpen((o) => !o)}
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    py: 0.5,
-                    px: 1,
-                    borderRadius: 1,
-                    "&:hover": { bgcolor: "action.hover" },
-                }}
-            >
-                <Typography variant="body2" fontWeight="medium" sx={{ flex: 1 }}>
-                    {label}
-                </Typography>
-                <IconButton size="small" aria-label={open ? "Collapse" : "Expand"}>
-                    {open ? <ExpandLess /> : <ExpandMore />}
-                </IconButton>
-            </Box>
-            <Collapse in={open}>
-                <Stack spacing={0.25} sx={{ pl: 1, mt: 0.5 }}>
-                    {records.map((record) => (
-                        <Box
-                            key={record.id}
-                            onClick={() => onSelect(record.id)}
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                p: 0.75,
-                                borderRadius: 1,
-                                cursor: "pointer",
-                                border: "1px solid",
-                                borderColor: selectedId === record.id ? "primary.main" : "transparent",
-                                bgcolor: selectedId === record.id ? "action.selected" : "transparent",
-                                "&:hover": { bgcolor: "action.hover" },
-                            }}
-                        >
-                            <Box
-                                component="img"
-                                src={`data:image/jpeg;base64,${record.image.image_data}`}
-                                alt=""
-                                sx={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: 0.5,
-                                    objectFit: "cover",
-                                    flexShrink: 0,
-                                }}
-                            />
-                            <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                                {new Date(record.receivedAt).toLocaleTimeString()} · {record.image.confidence_level}
-                            </Typography>
-                            {record.flagged && <Flag sx={{ fontSize: 14, color: "warning.main" }} />}
-                        </Box>
-                    ))}
-                </Stack>
-            </Collapse>
-        </Box>
-    );
 }
 
 export default function OdlcImages() {
@@ -215,31 +135,56 @@ export default function OdlcImages() {
     const selectedRecord = useAppSelector(selectSelectedOdlcImageRecord);
 
     const [flaggedOnly, setFlaggedOnly] = useState(false);
-    const [sortBy, setSortBy] = useState<SortBy>("time");
+    const [sortBy, setSortBy] = useState<SortBy>("recency");
+    const [colorFilter, setColorFilter] = useState<ColorFilter>("all");
 
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
 
-    const PAGE_SIZE = 6;
+    // Tracks the textInput value at the moment the field gained focus so onBlur
+    // can skip syncing no-op edits (tab-through with no changes).
+    const textInputFocusValueRef = useRef<string | null>(null);
+
+    // Thumbnail row: 40px img + 0.75*2 padding (12) + 1px border*2 + 0.25*8 spacing gap
+    const ROW_HEIGHT_PX = 56;
+    const [pageSize, setPageSize] = useState(1);
     const [page, setPage] = useState(0);
 
+    // Callback ref: fires on attach/detach so we measure correctly even when
+    // the list container isn't in the DOM on first render (e.g. empty state
+    // then session restore populates records and mounts the main layout).
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
+    const listContainerCallbackRef = useCallback((el: HTMLDivElement | null) => {
+        resizeObserverRef.current?.disconnect();
+        resizeObserverRef.current = null;
+        if (!el) return;
+        const recompute = () => {
+            const available = el.clientHeight;
+            const next = Math.max(1, Math.floor(available / ROW_HEIGHT_PX));
+            setPageSize((prev) => (prev === next ? prev : next));
+        };
+        recompute();
+        const ro = new ResizeObserver(recompute);
+        ro.observe(el);
+        resizeObserverRef.current = ro;
+    }, []);
+
     const filteredSorted = useMemo(
-        () => filterAndSortRecords(records, flaggedOnly, sortBy),
-        [records, flaggedOnly, sortBy],
+        () => filterAndSortRecords(records, flaggedOnly, sortBy, colorFilter),
+        [records, flaggedOnly, sortBy, colorFilter],
     );
 
-    const totalPages = Math.max(1, Math.ceil(filteredSorted.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(filteredSorted.length / pageSize));
     const clampedPage = Math.min(page, totalPages - 1);
     const paginatedRecords = useMemo(
-        () => filteredSorted.slice(clampedPage * PAGE_SIZE, (clampedPage + 1) * PAGE_SIZE),
-        [filteredSorted, clampedPage],
+        () => filteredSorted.slice(clampedPage * pageSize, (clampedPage + 1) * pageSize),
+        [filteredSorted, clampedPage, pageSize],
     );
-    const grouped = useMemo(() => groupByColor(paginatedRecords), [paginatedRecords]);
 
-    // Reset to first page when filters change
+    // Reset to first page when filters or pageSize change
     useEffect(() => {
         setPage(0);
-    }, [flaggedOnly, sortBy]);
+    }, [flaggedOnly, sortBy, colorFilter, pageSize]);
 
     /** Flagged records in current filter/sort order (export includes only these). */
     const flaggedForExport = useMemo(() => filteredSorted.filter((r) => r.flagged), [filteredSorted]);
@@ -303,9 +248,12 @@ export default function OdlcImages() {
     if (records.length === 0) {
         return (
             <Box sx={{ p: 3, width: "100%" }}>
-                <Typography variant="h5" fontWeight="bold" mb={3}>
-                    ODLC Images
-                </Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                    <Typography variant="h5" fontWeight="bold">
+                        ODLC Images
+                    </Typography>
+                    <SessionIdDisplay />
+                </Stack>
                 <Paper sx={{ p: 4, textAlign: "center" }}>
                     <Typography color="text.secondary">No ODLC images captured yet.</Typography>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
@@ -321,13 +269,26 @@ export default function OdlcImages() {
 
     return (
         <Box sx={{ p: 3, width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
-            <Typography variant="h5" fontWeight="bold" mb={2}>
-                ODLC Images
-            </Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+                <Typography variant="h5" fontWeight="bold">
+                    ODLC Images
+                </Typography>
+                <SessionIdDisplay />
+            </Stack>
 
             <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
                 {/* Left sidebar */}
-                <Paper sx={{ width: 280, flexShrink: 0, p: 1.5, overflow: "auto" }}>
+                <Paper
+                    sx={{
+                        width: 280,
+                        flexShrink: 0,
+                        p: 1.5,
+                        display: "flex",
+                        flexDirection: "column",
+                        minHeight: 0,
+                        overflow: "hidden",
+                    }}
+                >
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Filters
                     </Typography>
@@ -349,29 +310,77 @@ export default function OdlcImages() {
                                 onChange={(_, v) => v != null && setSortBy(v)}
                                 fullWidth
                             >
-                                <ToggleButton value="time">Time</ToggleButton>
+                                <ToggleButton value="recency">Recency</ToggleButton>
                                 <ToggleButton value="confidence">Confidence</ToggleButton>
                             </ToggleButtonGroup>
                         </Box>
+                        <TextField
+                            select
+                            size="small"
+                            label="Color"
+                            value={colorFilter}
+                            onChange={(e) => setColorFilter(e.target.value as ColorFilter)}
+                            fullWidth
+                        >
+                            <MenuItem value="all">Show all</MenuItem>
+                            {ODLC_COLORS.map((c) => (
+                                <MenuItem key={c} value={c}>
+                                    {ODLC_COLOR_LABELS[c]}
+                                </MenuItem>
+                            ))}
+                        </TextField>
                     </Stack>
 
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                        Images by color
+                        Images
                     </Typography>
-                    <Stack spacing={0}>
-                        {Array.from(grouped.entries()).map(([key, { label, records: groupRecords }]) => (
-                            <ColorGroupDropdown
-                                key={key}
-                                _groupKey={key}
-                                label={label}
-                                records={groupRecords}
-                                selectedId={selectedId}
-                                onSelect={handleSelect}
-                            />
-                        ))}
-                    </Stack>
+                    <Box ref={listContainerCallbackRef} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                        <Stack spacing={0.25}>
+                            {paginatedRecords.map((record) => (
+                                <Box
+                                    key={record.id}
+                                    onClick={() => handleSelect(record.id)}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        p: 0.75,
+                                        borderRadius: 1,
+                                        cursor: "pointer",
+                                        border: "1px solid",
+                                        borderColor: selectedId === record.id ? "primary.main" : "transparent",
+                                        bgcolor: selectedId === record.id ? "action.selected" : "transparent",
+                                        "&:hover": { bgcolor: "action.hover" },
+                                    }}
+                                >
+                                    <Box
+                                        component="img"
+                                        src={`data:image/jpeg;base64,${record.image.image_data}`}
+                                        alt=""
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            borderRadius: 0.5,
+                                            objectFit: "cover",
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                    <Typography variant="caption" noWrap sx={{ flex: 1 }}>
+                                        {new Date(record.receivedAt).toLocaleTimeString()} ·{" "}
+                                        {record.image.confidence_level}
+                                    </Typography>
+                                    {record.flagged && <Flag sx={{ fontSize: 14, color: "warning.main" }} />}
+                                </Box>
+                            ))}
+                            {paginatedRecords.length === 0 && (
+                                <Typography variant="caption" color="text.secondary" sx={{ px: 1, py: 0.5 }}>
+                                    No images match current filters.
+                                </Typography>
+                            )}
+                        </Stack>
+                    </Box>
 
-                    {filteredSorted.length > PAGE_SIZE && (
+                    {filteredSorted.length > pageSize && (
                         <Box
                             sx={{
                                 display: "flex",
@@ -497,6 +506,16 @@ export default function OdlcImages() {
                                 multiline
                                 minRows={2}
                                 value={selectedRecord.textInput}
+                                onFocus={() => {
+                                    textInputFocusValueRef.current = selectedRecord.textInput;
+                                }}
+                                onBlur={() => {
+                                    const initial = textInputFocusValueRef.current;
+                                    textInputFocusValueRef.current = null;
+                                    if (initial !== null && initial !== selectedRecord.textInput) {
+                                        dispatch(syncOdlcImageToBackend(selectedRecord.id));
+                                    }
+                                }}
                                 onChange={(e) => {
                                     const next = e.target.value;
                                     const wasEmpty = selectedRecord.textInput.trim() === "";
