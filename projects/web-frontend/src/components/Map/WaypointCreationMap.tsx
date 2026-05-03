@@ -15,7 +15,7 @@ import { openSnackbar } from "../../store/slices/appSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
 import { roundTo } from "../../utils/routeTo";
-import { MAPTILER_API_KEY } from "../../constants";
+import { MAP_STYLE } from "../../constants";
 import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
 import { WaypointEditState } from "../../types/Waypoint";
 
@@ -124,11 +124,7 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                 latitude: aircraftStatus.latitude,
                 zoom: 16,
             }}
-            mapStyle={
-                window.navigator.onLine
-                    ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`
-                    : "./src/mapStyles/osmbright.json"
-            }
+            mapStyle={MAP_STYLE}
             onClick={createNewWaypoint}
             doubleClickZoom={false}
             style={{

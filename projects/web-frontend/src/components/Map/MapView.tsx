@@ -10,7 +10,7 @@ import {
 import { selectAircraftStatus, selectCurrentRouteWaypoints, selectTakeoffWaypoint } from "../../store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
-import { MAPTILER_API_KEY } from "../../constants";
+import { MAP_STYLE } from "../../constants";
 
 export default function MapView() {
     const mpsWaypoints = useAppSelector(selectCurrentRouteWaypoints);
@@ -77,11 +77,7 @@ export default function MapView() {
                     latitude: aircraftStatus.latitude,
                     zoom: 16,
                 }}
-                mapStyle={
-                    window.navigator.onLine
-                        ? `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_API_KEY}`
-                        : "http://localhost:8000/api/map-tiles/osmbright"
-                }
+                mapStyle={MAP_STYLE}
                 doubleClickZoom={false}
             >
                 <Box
