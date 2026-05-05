@@ -31,19 +31,6 @@ function decodeDepthPngToJson(base64: string): { data: Uint16Array; width: numbe
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
-    // 4. Create an invisible link, attach the Blob, and click it to download
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `depth_data_${Date.now()}.json`;
-
-    // Best practice: Append to body before clicking for Firefox compatibility
-    document.body.appendChild(link);
-    link.click();
-
-    // 5. Clean up the DOM and clear the URL from memory
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
     return { data, width: png.width, height: png.height };
 }
 
