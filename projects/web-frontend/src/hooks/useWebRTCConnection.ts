@@ -27,6 +27,7 @@ type UseWebRTCConnectionResult = {
     connect: () => void;
     disconnect: () => void;
     isConnecting: boolean;
+    sendCommand: (message: object) => void;
 };
 
 export function useWebRTCConnection(): UseWebRTCConnectionResult {
@@ -39,6 +40,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
 
     const socketRef = useRef<Socket | null>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+    const dataChannelRef = useRef<RTCDataChannel | null>(null);
     const iceCandidateQueueRef = useRef<RTCIceCandidateInit[]>([]);
     const remotePeerIdRef = useRef<string | null>(null);
     const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -146,6 +148,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
         pc.addEventListener("datachannel", (event) => {
             const channel = event.channel;
             if (channel.label === "odlc_images") {
+                dataChannelRef.current = channel;
                 channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
                     console.log("📸 ODLC Image Message Received:", msgEvent.data);
                     const parsedMessage = JSON.parse(msgEvent.data);
@@ -280,7 +283,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             clearTimeout(connectionTimeoutRef.current);
         }
 
-        const timeout_seconds = 10;
+        const timeout_seconds = 20;
         connectionTimeoutRef.current = setTimeout(() => {
             console.error(`Connection attempt timed out after ${timeout_seconds} seconds`);
             disconnect();
@@ -344,12 +347,19 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             peerConnectionRef.current = null;
         }
 
+        dataChannelRef.current = null;
         iceCandidateQueueRef.current = [];
         remotePeerIdRef.current = null;
         setRemoteStream(null);
         setSignalingStatus("disconnected");
         setPeerStatus("disconnected");
         setIsConnecting(false);
+    };
+
+    const sendCommand = (message: object) => {
+        if (dataChannelRef.current?.readyState === "open") {
+            dataChannelRef.current.send(JSON.stringify(message));
+        }
     };
 
     return {
@@ -359,5 +369,6 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
         connect,
         disconnect,
         isConnecting,
+        sendCommand,
     };
 }
