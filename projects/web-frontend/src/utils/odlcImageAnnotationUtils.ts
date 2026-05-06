@@ -13,23 +13,8 @@ function decodeDepthPngToJson(base64: string): { data: Uint16Array; width: numbe
         bytes[i] = binaryStr.charCodeAt(i);
     }
 
-    // Assuming 'decode' is imported from your PNG library (like fast-png)
     const png = decode(bytes);
     const data = png.data as Uint16Array;
-
-    // 1. Convert the Uint16Array into a JavaScript Object (Dictionary)
-    // This perfectly matches the format your Python script was reading.
-    const depthDict: Record<string, number> = {};
-    for (let i = 0; i < data.length; i++) {
-        depthDict[i.toString()] = data[i];
-    }
-
-    // 2. Convert the Dictionary to a JSON text string
-    const jsonString = JSON.stringify(depthDict);
-
-    // 3. Create a Blob (a file-like object of raw data)
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
 
     return { data, width: png.width, height: png.height };
 }
