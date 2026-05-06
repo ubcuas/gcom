@@ -5,10 +5,10 @@ import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import DroneStatusCard from "../components/DroneStatusCard";
 import SessionIdDisplay from "../components/SessionIdDisplay";
-import { requestManualCapture } from "../api/endpoints";
 
 export default function VideoFeed() {
-    const { signalingStatus, peerStatus, remoteStream, connect, disconnect, isConnecting } = useWebRTCContext();
+    const { signalingStatus, peerStatus, remoteStream, connect, disconnect, isConnecting, sendCommand } =
+        useWebRTCContext();
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const [capturing, setCapturing] = useState(false);
@@ -184,13 +184,10 @@ export default function VideoFeed() {
                                                 variant="outlined"
                                                 startIcon={<PhotoCamera />}
                                                 disabled={capturing || peerStatus !== "connected"}
-                                                onClick={async () => {
+                                                onClick={() => {
                                                     setCapturing(true);
-                                                    try {
-                                                        await requestManualCapture();
-                                                    } finally {
-                                                        setCapturing(false);
-                                                    }
+                                                    sendCommand({ action: "TAKE_PHOTO" });
+                                                    setCapturing(false);
                                                 }}
                                                 fullWidth
                                             >
