@@ -6,6 +6,7 @@ PROJECTS_DIR="$REPO_ROOT/projects"
 
 VENV_PATH=".venv"
 ARCH=$(uname -m)
+OS_NAME=$(uname -s)
 NETWORK_NAME="gcom-x_uasnet"
 SKIP_MISSION=false
 RUN_TARGET=""
@@ -44,6 +45,17 @@ select_python() {
         echo "Error: Python is not installed on this system."
         exit 1
     fi
+}
+
+venv_activate_path() {
+    case "$OS_NAME" in
+        CYGWIN*|MINGW*|MSYS*)
+            echo "$VENV_PATH/Scripts/activate"
+            ;;
+        *)
+            echo "$VENV_PATH/bin/activate"
+            ;;
+    esac
 }
 
 prompt_inputs() {
@@ -162,28 +174,34 @@ setup_sitl() {
 
 setup_mavproxy() {
     local check
+    local activate_path
     check=$(require_venv_command "mission-planner" "$PROJECTS_DIR/mission-planner/$VENV_PATH")
+    activate_path=$(venv_activate_path)
     if [ -z "$MAV_CMD" ]; then
         tmux send-keys -t "$SESSION_NAME:0.0" "echo 'ERROR: setup required for MAVProxy. Neither mavproxy.py nor mavproxy was found on PATH.'; exec bash" C-m
         return
     fi
 
-    tmux send-keys -t "$SESSION_NAME:0.0" "$check; echo 'Starting MAVProxy'; cd '$PROJECTS_DIR/mission-planner' && source '$VENV_PATH/bin/activate' && $MAV_CMD $MAV_ARGS" C-m
+    tmux send-keys -t "$SESSION_NAME:0.0" "$check; echo 'Starting MAVProxy'; cd '$PROJECTS_DIR/mission-planner' && source '$activate_path' && $MAV_CMD $MAV_ARGS" C-m
     echo "Giving MAVProxy time to start..."
     sleep 3
 }
 
 setup_mission_planner() {
     local check
+    local activate_path
     check=$(require_venv_command "mission-planner" "$PROJECTS_DIR/mission-planner/$VENV_PATH")
-    tmux send-keys -t "$SESSION_NAME:0.1" "$check; echo 'Starting mission planner'; cd '$PROJECTS_DIR/mission-planner' && source '$VENV_PATH/bin/activate' && $PY_CMD src/main.py" C-m
+    activate_path=$(venv_activate_path)
+    tmux send-keys -t "$SESSION_NAME:0.1" "$check; echo 'Starting mission planner'; cd '$PROJECTS_DIR/mission-planner' && source '$activate_path' && $PY_CMD src/main.py" C-m
 }
 
 setup_web_backend() {
     local pane=$1
     local check
+    local activate_path
     check=$(require_venv_command "web-backend" "$PROJECTS_DIR/web-backend/$VENV_PATH")
-    tmux send-keys -t "$SESSION_NAME:0.$pane" "$check; echo 'Starting web backend'; cd '$PROJECTS_DIR/web-backend' && source '$VENV_PATH/bin/activate' && $PY_CMD src/server.py" C-m
+    activate_path=$(venv_activate_path)
+    tmux send-keys -t "$SESSION_NAME:0.$pane" "$check; echo 'Starting web backend'; cd '$PROJECTS_DIR/web-backend' && source '$activate_path' && $PY_CMD src/server.py" C-m
 }
 
 setup_web_frontend() {
