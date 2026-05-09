@@ -115,7 +115,7 @@ select_mavproxy_command() {
     if [ "$RUN_TARGET" = "sitl" ]; then
         MAV_ARGS="--master=tcp:127.0.0.1:5760 --out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551"
     else
-        MAV_ARGS="--out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551"
+        MAV_ARGS="--out=udp:127.0.0.1:14550 --out=udp:127.0.0.1:14551 --baudrate 115200" 
     fi
 }
 
