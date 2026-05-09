@@ -1,8 +1,10 @@
-import { Box, Button, Paper, Stack, Typography, Chip, Grid } from "@mui/material";
+import { Box, Button, Paper, Stack, Typography, Chip, Grid, IconButton, Tooltip } from "@mui/material";
 import { useRef, useEffect, useState } from "react";
 import { useWebRTCContext } from "../context/WebRTCContext";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import VideocamIcon from "@mui/icons-material/Videocam";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import DroneStatusCard from "../components/DroneStatusCard";
 import SessionIdDisplay from "../components/SessionIdDisplay";
 
@@ -12,6 +14,7 @@ export default function VideoFeed() {
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const [capturing, setCapturing] = useState(false);
+    const [statusCardVisible, setStatusCardVisible] = useState(true);
 
     useEffect(() => {
         if (videoRef.current && remoteStream) {
@@ -64,7 +67,7 @@ export default function VideoFeed() {
                     }}
                 >
                     <Grid container spacing={3}>
-                        <Grid item xs={12} lg={8}>
+                        <Grid item xs={12} lg={statusCardVisible ? 8 : 12}>
                             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                                 <Typography
                                     variant="h4"
@@ -74,7 +77,20 @@ export default function VideoFeed() {
                                 >
                                     WebRTC Video Stream
                                 </Typography>
-                                <SessionIdDisplay />
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                    {!statusCardVisible && (
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            startIcon={<Visibility fontSize="small" />}
+                                            onClick={() => setStatusCardVisible(true)}
+                                            aria-label="Show drone status"
+                                        >
+                                            Show Drone Status
+                                        </Button>
+                                    )}
+                                    <SessionIdDisplay />
+                                </Stack>
                             </Stack>
                             <Stack spacing={2}>
                                 <Box
@@ -199,9 +215,24 @@ export default function VideoFeed() {
                             </Stack>
                         </Grid>
 
-                        <Grid item xs={12} lg={4}>
-                            <DroneStatusCard />
-                        </Grid>
+                        {statusCardVisible && (
+                            <Grid item xs={12} lg={4}>
+                                <Stack spacing={1}>
+                                    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                                        <Tooltip title="Hide drone status">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setStatusCardVisible(false)}
+                                                aria-label="Hide drone status"
+                                            >
+                                                <VisibilityOff fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                    <DroneStatusCard />
+                                </Stack>
+                            </Grid>
+                        )}
                     </Grid>
                 </Paper>
             </Stack>
