@@ -1,12 +1,14 @@
 import { deprojectPixel } from "../api/endpoints";
 import { decode } from "fast-png";
 
+export type DecodedDepthImage = { data: Uint16Array; width: number; height: number };
+
 /**
  * Decodes a base64-encoded 16-bit grayscale PNG (ROS2 CompressedImage 16UC1 format)
  * into a flat Uint16Array of depth values in millimeters, plus image dimensions.
  **/
 
-function decodeDepthPngToJson(base64: string): { data: Uint16Array; width: number; height: number } {
+export function decodeDepthPng(base64: string): DecodedDepthImage {
     const binaryStr = atob(base64);
     const bytes = new Uint8Array(binaryStr.length);
     for (let i = 0; i < binaryStr.length; i++) {
@@ -61,6 +63,16 @@ function sampleDepth(data: Uint16Array, width: number, height: number, nx: numbe
     return count > 0 ? sum / count : median;
 }
 
+export function sampleDepthMeters(
+    decodedDepth: DecodedDepthImage | null,
+    point: { x: number; y: number },
+): number | null {
+    if (!decodedDepth) return null;
+
+    const depthMm = sampleDepth(decodedDepth.data, decodedDepth.width, decodedDepth.height, point.x, point.y);
+    return depthMm > 0 ? depthMm / 1000 : null;
+}
+
 /**
  * Computes the true 3D Euclidean distance (in meters) between two annotation points
  * drawn on a 2D ODLC image, using the associated depth map and camera intrinsics.
@@ -82,7 +94,7 @@ export const calculateAnnotationDistance = async (
 ): Promise<{ distance: number } | null> => {
     if (!depthData) return null;
 
-    const { data, width, height } = decodeDepthPngToJson(depthData);
+    const { data, width, height } = decodeDepthPng(depthData);
     console.log("Depth data:", data);
 
     const d1Mm = sampleDepth(data, width, height, p1.x, p1.y);

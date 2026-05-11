@@ -43,7 +43,7 @@ import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
 import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
 import type { OdlcImage } from "../schemas/odlc";
-import { calculateAnnotationDistance } from "../utils/odlcImageAnnotationUtils";
+import { calculateAnnotationDistance, decodeDepthPng, sampleDepthMeters } from "../utils/odlcImageAnnotationUtils";
 
 type SortBy = "recency" | "confidence";
 type ColorFilter = OdlcColor | "all";
@@ -133,6 +133,14 @@ function formatImageMetadata(record: OdlcImageRecord): string {
         `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
     ];
     return lines.join("\n");
+}
+
+function formatMeasurementNumber(value: number, digits: number): string {
+    return value.toFixed(digits);
+}
+
+function formatSignedMeasurementNumber(value: number, digits: number): string {
+    return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
 }
 
 export default function OdlcImages() {
@@ -269,6 +277,32 @@ export default function OdlcImages() {
     const handleMeasurementRowClick = useCallback((annotationId: string) => {
         setHighlightedAnnotationId((current) => (current === annotationId ? null : annotationId));
     }, []);
+
+    const decodedDepth = useMemo(() => {
+        if (!selectedRecord?.image.depth_data) return null;
+        try {
+            return decodeDepthPng(selectedRecord.image.depth_data);
+        } catch (error) {
+            console.error("Failed to decode depth data for measurements table:", error);
+            return null;
+        }
+    }, [selectedRecord?.image.depth_data]);
+
+    const measurementRows = useMemo(() => {
+        if (!selectedRecord) return [];
+
+        return selectedRecord.annotations.map((annotation) => {
+            const p1z = sampleDepthMeters(decodedDepth, annotation.p1);
+            const p2z = sampleDepthMeters(decodedDepth, annotation.p2);
+
+            return {
+                annotation,
+                deltaX: annotation.p2.x - annotation.p1.x,
+                deltaY: annotation.p2.y - annotation.p1.y,
+                deltaZ: p1z != null && p2z != null ? p2z - p1z : null,
+            };
+        });
+    }, [decodedDepth, selectedRecord]);
 
     if (records.length === 0) {
         return (
@@ -574,17 +608,20 @@ export default function OdlcImages() {
                                 <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                                     Measurements
                                 </Typography>
-                                <TableContainer component={Paper} variant="outlined">
+                                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto" }}>
                                     <Table size="small">
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell width="1%">#</TableCell>
                                                 <TableCell>Distance</TableCell>
+                                                <TableCell>dX</TableCell>
+                                                <TableCell>dY</TableCell>
+                                                <TableCell>dZ</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {selectedRecord.annotations.length > 0 ? (
-                                                selectedRecord.annotations.map((annotation, index) => {
+                                            {measurementRows.length > 0 ? (
+                                                measurementRows.map(({ annotation, deltaX, deltaY, deltaZ }, index) => {
                                                     const isSelected = highlightedAnnotationId === annotation.id;
                                                     return (
                                                         <TableRow
@@ -603,12 +640,15 @@ export default function OdlcImages() {
                                                                     ? `${annotation.distance.toFixed(2)} m`
                                                                     : "..."}
                                                             </TableCell>
+                                                            <TableCell>{formatSignedMeasurementNumber(deltaX, 3)}</TableCell>
+                                                            <TableCell>{formatSignedMeasurementNumber(deltaY, 3)}</TableCell>
+                                                            <TableCell>{deltaZ != null ? `${formatSignedMeasurementNumber(deltaZ, 2)} m` : "--"}</TableCell>
                                                         </TableRow>
                                                     );
                                                 })
                                             ) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={2} sx={{ color: "text.secondary" }}>
+                                                    <TableCell colSpan={5} sx={{ color: "text.secondary" }}>
                                                         No measurements yet
                                                     </TableCell>
                                                 </TableRow>
