@@ -7,6 +7,12 @@ import {
     Paper,
     Stack,
     Switch,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     TextField,
     ToggleButton,
     ToggleButtonGroup,
@@ -137,6 +143,7 @@ export default function OdlcImages() {
     const [flaggedOnly, setFlaggedOnly] = useState(false);
     const [sortBy, setSortBy] = useState<SortBy>("recency");
     const [colorFilter, setColorFilter] = useState<ColorFilter>("all");
+    const [highlightedAnnotationId, setHighlightedAnnotationId] = useState<string | null>(null);
 
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
@@ -209,6 +216,20 @@ export default function OdlcImages() {
         }
     }, [records, selectedId, dispatch]);
 
+    useEffect(() => {
+        setHighlightedAnnotationId(null);
+    }, [selectedRecord?.id]);
+
+    useEffect(() => {
+        if (
+            highlightedAnnotationId !== null &&
+            selectedRecord != null &&
+            !selectedRecord.annotations.some((annotation) => annotation.id === highlightedAnnotationId)
+        ) {
+            setHighlightedAnnotationId(null);
+        }
+    }, [highlightedAnnotationId, selectedRecord]);
+
     const loadSampleImages = useCallback(() => {
         const samples: OdlcImage[] = [
             createDummyOdlcImage([255, 0, 0], 92),
@@ -244,6 +265,10 @@ export default function OdlcImages() {
             );
         }
     };
+
+    const handleMeasurementRowClick = useCallback((annotationId: string) => {
+        setHighlightedAnnotationId((current) => (current === annotationId ? null : annotationId));
+    }, []);
 
     if (records.length === 0) {
         return (
@@ -451,6 +476,7 @@ export default function OdlcImages() {
                                     imageSrc={`data:image/jpeg;base64,${selectedRecord.image.image_data}`}
                                     annotations={selectedRecord.annotations}
                                     recordId={selectedRecord.id}
+                                    highlightedAnnotationId={highlightedAnnotationId}
                                     boundingBox={selectedRecord.image.bounding_box}
                                     depthData={selectedRecord.image.depth_data}
                                     onAddAnnotation={handleImageAnnotation}
@@ -544,6 +570,53 @@ export default function OdlcImages() {
                                     );
                                 }}
                             />
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                                    Measurements
+                                </Typography>
+                                <TableContainer component={Paper} variant="outlined">
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell width="1%">#</TableCell>
+                                                <TableCell>Distance</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {selectedRecord.annotations.length > 0 ? (
+                                                selectedRecord.annotations.map((annotation, index) => {
+                                                    const isSelected = highlightedAnnotationId === annotation.id;
+                                                    return (
+                                                        <TableRow
+                                                            key={annotation.id}
+                                                            hover
+                                                            selected={isSelected}
+                                                            onClick={() => handleMeasurementRowClick(annotation.id)}
+                                                            sx={{
+                                                                cursor: "pointer",
+                                                                "&:last-child td": { borderBottom: 0 },
+                                                            }}
+                                                        >
+                                                            <TableCell>{index + 1}</TableCell>
+                                                            <TableCell>
+                                                                {annotation.distance != null
+                                                                    ? `${annotation.distance.toFixed(2)} m`
+                                                                    : "..."}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={2} sx={{ color: "text.secondary" }}>
+                                                        No measurements yet
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Box>
                             <Box>
                                 <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                                     Metadata
