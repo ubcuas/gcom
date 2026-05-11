@@ -1,10 +1,25 @@
 import base64
+import json
+import re
 from datetime import datetime, timezone
+from typing import Any
 
 import boto3
 from django.conf import settings
 
 _client = None
+
+# Top-level prefix in the archive bucket where ODLC captures live.
+# The layout is intentionally flat (no session segment) so the depth archive
+# UI can browse by date alone:
+#
+#   odlc/<YYYY-MM-DD>/<record_id>.jpg            color image
+#   odlc/<YYYY-MM-DD>/<record_id>_depth.png      depth map (optional)
+#   odlc/<YYYY-MM-DD>/<record_id>.json           metadata sidecar (optional)
+_ARCHIVE_PREFIX = "odlc"
+
+# Strict YYYY-MM-DD; used to filter unrelated sub-prefixes when listing dates.
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _s3():
@@ -14,23 +29,28 @@ def _s3():
     return _client
 
 
-def _date_prefix(received_at_ms: int | None) -> str:
+def _date_segment(received_at_ms: int | None) -> str:
+    """Return the date portion of an upload key, e.g. ``2026-05-11``."""
     if received_at_ms:
         dt = datetime.fromtimestamp(received_at_ms / 1000, tz=timezone.utc)
     else:
         dt = datetime.now(timezone.utc)
-    return dt.strftime("%Y/%m/%d")
+    return dt.strftime("%Y-%m-%d")
+
+
+def _record_key(date: str, record_id: str, suffix: str) -> str:
+    return f"{_ARCHIVE_PREFIX}/{date}/{record_id}{suffix}"
 
 
 def _put(
-    session_id: str,
     record_id: str,
     b64: str,
     received_at_ms: int | None,
     suffix: str,
     content_type: str,
 ) -> str:
-    key = f"odlc/{_date_prefix(received_at_ms)}/{session_id}/{record_id}{suffix}"
+    date = _date_segment(received_at_ms)
+    key = _record_key(date, record_id, suffix)
     _s3().put_object(
         Bucket=settings.AWS_S3_BUCKET,
         Key=key,
@@ -41,14 +61,139 @@ def _put(
 
 
 def upload_odlc_image(
-    session_id: str, record_id: str, image_b64: str, received_at_ms: int | None
+    record_id: str, image_b64: str, received_at_ms: int | None
 ) -> str:
-    """Upload a base64 JPEG to odlc/YYYY/MM/DD/<session>/<record>.jpg."""
-    return _put(session_id, record_id, image_b64, received_at_ms, ".jpg", "image/jpeg")
+    """Upload a base64 JPEG to ``odlc/<YYYY-MM-DD>/<record_id>.jpg``."""
+    return _put(record_id, image_b64, received_at_ms, ".jpg", "image/jpeg")
 
 
 def upload_odlc_depth(
-    session_id: str, record_id: str, depth_b64: str, received_at_ms: int | None
+    record_id: str, depth_b64: str, received_at_ms: int | None
 ) -> str:
-    """Upload a base64 16UC1 PNG depthmap to odlc/YYYY/MM/DD/<session>/<record>_depth.png."""
-    return _put(session_id, record_id, depth_b64, received_at_ms, "_depth.png", "image/png")
+    """Upload a base64 16UC1 PNG depthmap to ``odlc/<YYYY-MM-DD>/<record_id>_depth.png``."""
+    return _put(record_id, depth_b64, received_at_ms, "_depth.png", "image/png")
+
+
+def upload_odlc_metadata(
+    record_id: str, received_at_ms: int | None, metadata: dict[str, Any]
+) -> str:
+    """Upload a JSON sidecar to ``odlc/<YYYY-MM-DD>/<record_id>.json``.
+
+    The sidecar carries non-pixel data (bounding box, color detection, yaw,
+    confidence) so the depth-archive UI can render the same overlays as the
+    live ODLC view. The depth archive tolerates missing or malformed sidecars
+    by falling back to neutral defaults.
+    """
+    date = _date_segment(received_at_ms)
+    key = _record_key(date, record_id, ".json")
+    payload = {"receivedAt": received_at_ms, **metadata}
+    _s3().put_object(
+        Bucket=settings.AWS_S3_BUCKET,
+        Key=key,
+        Body=json.dumps(payload).encode("utf-8"),
+        ContentType="application/json",
+    )
+    return f"https://{settings.AWS_S3_BUCKET}.s3.{settings.AWS_S3_REGION}.amazonaws.com/{key}"
+
+
+def list_archive_dates() -> list[str]:
+    """Return the sorted (newest first) list of dates that have any archive content."""
+    paginator = _s3().get_paginator("list_objects_v2")
+    dates: set[str] = set()
+    for page in paginator.paginate(
+        Bucket=settings.AWS_S3_BUCKET,
+        Prefix=f"{_ARCHIVE_PREFIX}/",
+        Delimiter="/",
+    ):
+        for entry in page.get("CommonPrefixes", []) or []:
+            sub = entry["Prefix"][len(_ARCHIVE_PREFIX) + 1 :].rstrip("/")
+            if _DATE_RE.match(sub):
+                dates.add(sub)
+    return sorted(dates, reverse=True)
+
+
+_METADATA_FIELDS = (
+    "receivedAt",
+    "boundingBox",
+    "confidenceLevel",
+    "yawDeg",
+    "colorDetection",
+)
+
+
+def list_archive_records(date: str) -> list[dict[str, Any]]:
+    """Return every archived record for a ``YYYY-MM-DD`` date.
+
+    Pairs ``<id>.jpg`` (color) with ``<id>_depth.png`` (optional) and
+    ``<id>.json`` (metadata sidecar, optional). Records without a color image
+    are skipped. The result is sorted newest-first.
+    """
+    if not _DATE_RE.match(date):
+        raise ValueError(f"Invalid date format: {date!r} (expected YYYY-MM-DD)")
+
+    bucket = settings.AWS_S3_BUCKET
+    prefix = f"{_ARCHIVE_PREFIX}/{date}/"
+    s3 = _s3()
+    paginator = s3.get_paginator("list_objects_v2")
+
+    color_objects: dict[str, dict[str, Any]] = {}
+    depth_filenames: dict[str, str] = {}
+    sidecar_filenames: dict[str, str] = {}
+
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []) or []:
+            name = obj["Key"][len(prefix) :]
+            if not name or "/" in name:
+                continue
+            if name.endswith("_depth.png"):
+                depth_filenames[name[: -len("_depth.png")]] = name
+            elif name.endswith(".jpg"):
+                color_objects[name[: -len(".jpg")]] = {
+                    "filename": name,
+                    "lastModified": obj.get("LastModified"),
+                }
+            elif name.endswith(".json"):
+                sidecar_filenames[name[: -len(".json")]] = name
+
+    records: list[dict[str, Any]] = []
+    for record_id, color in color_objects.items():
+        record: dict[str, Any] = {
+            "id": record_id,
+            "colorKey": f"{date}/{color['filename']}",
+        }
+        depth = depth_filenames.get(record_id)
+        record["depthKey"] = f"{date}/{depth}" if depth else None
+
+        sidecar = sidecar_filenames.get(record_id)
+        if sidecar:
+            try:
+                obj = s3.get_object(Bucket=bucket, Key=f"{prefix}{sidecar}")
+                metadata = json.loads(obj["Body"].read().decode("utf-8"))
+                if isinstance(metadata, dict):
+                    for field in _METADATA_FIELDS:
+                        if field in metadata and metadata[field] is not None:
+                            record[field] = metadata[field]
+            except Exception as e:
+                print(f"Failed to load sidecar for {date}/{record_id}: {e}")
+
+        if "receivedAt" not in record and color.get("lastModified") is not None:
+            record["receivedAt"] = int(color["lastModified"].timestamp() * 1000)
+
+        records.append(record)
+
+    records.sort(key=lambda r: r.get("receivedAt") or 0, reverse=True)
+    return records
+
+
+def download_archive_object(relative_key: str) -> tuple[bytes, str]:
+    """Fetch an arbitrary archive object and return ``(body, content_type)``.
+
+    ``relative_key`` is interpreted relative to the ``odlc/`` archive prefix.
+    The frontend gets keys like ``2026-05-11/<id>.jpg`` from
+    :func:`list_archive_records` and passes them straight through.
+    """
+    full_key = f"{_ARCHIVE_PREFIX}/{relative_key.lstrip('/')}"
+    obj = _s3().get_object(Bucket=settings.AWS_S3_BUCKET, Key=full_key)
+    body = obj["Body"].read()
+    content_type = obj.get("ContentType") or "application/octet-stream"
+    return body, content_type

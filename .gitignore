@@ -4,6 +4,7 @@
 **/.claude/**
 .mcp.json
 .serena
+.cursorignore
 
 .DS_Store
 *.env

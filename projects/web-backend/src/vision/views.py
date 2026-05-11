@@ -11,7 +11,14 @@ from rest_framework import viewsets
 from .models import GroundObject, Image
 from .projection import deproject_pixel_to_point
 from .serializers import GroundObjectSerializer, ImageSerializer
-from .storage import upload_odlc_depth, upload_odlc_image
+from .storage import (
+    download_archive_object,
+    list_archive_dates,
+    list_archive_records,
+    upload_odlc_depth,
+    upload_odlc_image,
+    upload_odlc_metadata,
+)
 
 ODLC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "odlc_sessions"
 _SESSION_LOCK = threading.Lock()
@@ -113,17 +120,31 @@ def post_odlc_record(request, session_id: str):
         if image_b64 and not image.get("image_url"):
             try:
                 record["image"]["image_url"] = upload_odlc_image(
-                    session_id, record["id"], image_b64, received_at
+                    record["id"], image_b64, received_at
                 )
             except Exception as e:
                 print(f"S3 image upload failed for record {record['id']}: {e}")
         if depth_b64 and not image.get("depth_url"):
             try:
                 record["image"]["depth_url"] = upload_odlc_depth(
-                    session_id, record["id"], depth_b64, received_at
+                    record["id"], depth_b64, received_at
                 )
             except Exception as e:
                 print(f"S3 depth upload failed for record {record['id']}: {e}")
+        if image:
+            try:
+                upload_odlc_metadata(
+                    record["id"],
+                    received_at,
+                    {
+                        "boundingBox": image.get("bounding_box"),
+                        "confidenceLevel": image.get("confidence_level"),
+                        "yawDeg": image.get("yaw_deg"),
+                        "colorDetection": image.get("color_detection"),
+                    },
+                )
+            except Exception as e:
+                print(f"S3 metadata upload failed for record {record['id']}: {e}")
 
         with _SESSION_LOCK:
             data = _read_session(session_id) or _empty_session(session_id)
@@ -154,6 +175,65 @@ def post_odlc_record(request, session_id: str):
         return JsonResponse(
             {"error": "Internal server error", "details": str(e)}, status=500
         )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_archive_dates(request):
+    """List dates (newest first) that have any archived ODLC content."""
+    try:
+        return JsonResponse(list_archive_dates(), safe=False)
+    except Exception as e:
+        print(f"Failed to list archive dates: {e}")
+        return JsonResponse(
+            {"error": "Failed to list archive dates", "details": str(e)},
+            status=502,
+        )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_archive_records_for_date(request, date: str):
+    """List every archived record for a given ``YYYY-MM-DD`` date."""
+    try:
+        return JsonResponse(list_archive_records(date), safe=False)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        print(f"Failed to list archive records for {date}: {e}")
+        return JsonResponse(
+            {
+                "error": f"Failed to list archive records for {date}",
+                "details": str(e),
+            },
+            status=502,
+        )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_archive_object(request):
+    """Proxy a single archive object identified by `?key=<relative_key>`.
+
+    Returns the raw bytes with the S3-reported `Content-Type`. The frontend
+    converts the response to base64 client-side via `fetchBinaryAsBase64`.
+    """
+    key = (request.GET.get("key") or "").strip()
+    if not key:
+        return JsonResponse(
+            {"error": "Missing 'key' query parameter"}, status=400
+        )
+    try:
+        body, content_type = download_archive_object(key)
+    except Exception as e:
+        print(f"Failed to fetch archive object {key}: {e}")
+        return JsonResponse(
+            {"error": "Failed to fetch archive object", "details": str(e)},
+            status=502,
+        )
+    response = HttpResponse(body, content_type=content_type)
+    response["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @csrf_exempt
