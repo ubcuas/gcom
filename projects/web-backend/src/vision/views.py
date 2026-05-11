@@ -11,6 +11,7 @@ from rest_framework import viewsets
 from .models import GroundObject, Image
 from .projection import deproject_pixel_to_point
 from .serializers import GroundObjectSerializer, ImageSerializer
+from .storage import upload_odlc_depth, upload_odlc_image
 
 ODLC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "odlc_sessions"
 _SESSION_LOCK = threading.Lock()
@@ -104,6 +105,25 @@ def post_odlc_record(request, session_id: str):
         record = json.loads(request.body)
         if not isinstance(record, dict) or not record.get("id"):
             return JsonResponse({"error": "Invalid record"}, status=400)
+
+        image = record.get("image") or {}
+        received_at = record.get("receivedAt")
+        image_b64 = image.get("image_data")
+        depth_b64 = image.get("depth_data")
+        if image_b64 and not image.get("image_url"):
+            try:
+                record["image"]["image_url"] = upload_odlc_image(
+                    session_id, record["id"], image_b64, received_at
+                )
+            except Exception as e:
+                print(f"S3 image upload failed for record {record['id']}: {e}")
+        if depth_b64 and not image.get("depth_url"):
+            try:
+                record["image"]["depth_url"] = upload_odlc_depth(
+                    session_id, record["id"], depth_b64, received_at
+                )
+            except Exception as e:
+                print(f"S3 depth upload failed for record {record['id']}: {e}")
 
         with _SESSION_LOCK:
             data = _read_session(session_id) or _empty_session(session_id)
