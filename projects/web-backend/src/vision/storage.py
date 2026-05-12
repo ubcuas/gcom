@@ -105,7 +105,7 @@ def list_archive_dates() -> list[str]:
         Prefix=f"{_ARCHIVE_PREFIX}/",
         Delimiter="/",
     ):
-        for entry in page.get("CommonPrefixes", []) or []:
+        for entry in page.get("CommonPrefixes", []):
             sub = entry["Prefix"][len(_ARCHIVE_PREFIX) + 1 :].rstrip("/")
             if _DATE_RE.match(sub):
                 dates.add(sub)
@@ -120,6 +120,13 @@ _METADATA_FIELDS = (
     "colorDetection",
 )
 
+def loadSideCarDict(sidecar_key: str) -> dict[str, Any]:
+    """Load JSON metadata relative to ``odlc/``, e.g. ``2026-05-12/<id>.json``."""
+    if not sidecar_key:
+        return {}
+    full_key = f"{_ARCHIVE_PREFIX}/{sidecar_key.lstrip('/')}"
+    obj = _s3().get_object(Bucket=settings.AWS_S3_BUCKET, Key=full_key)
+    return json.loads(obj["Body"].read().decode("utf-8"))
 
 def list_archive_records(date: str) -> list[dict[str, Any]]:
     """Return every archived record for a ``YYYY-MM-DD`` date.
@@ -136,50 +143,31 @@ def list_archive_records(date: str) -> list[dict[str, Any]]:
     s3 = _s3()
     paginator = s3.get_paginator("list_objects_v2")
 
-    color_objects: dict[str, dict[str, Any]] = {}
+    color_filenames: dict[str, str] = {}
     depth_filenames: dict[str, str] = {}
     sidecar_filenames: dict[str, str] = {}
 
     for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
-        for obj in page.get("Contents", []) or []:
+        for obj in page.get("Contents", []):
             name = obj["Key"][len(prefix) :]
-            if not name or "/" in name:
-                continue
+
             if name.endswith("_depth.png"):
                 depth_filenames[name[: -len("_depth.png")]] = name
             elif name.endswith(".jpg"):
-                color_objects[name[: -len(".jpg")]] = {
-                    "filename": name,
-                    "lastModified": obj.get("LastModified"),
-                }
+                color_filenames[name[: -len(".jpg")]] = name
             elif name.endswith(".json"):
                 sidecar_filenames[name[: -len(".json")]] = name
 
     records: list[dict[str, Any]] = []
-    for record_id, color in color_objects.items():
-        record: dict[str, Any] = {
+    for record_id, color_filename in color_filenames.items():
+        meta_name = sidecar_filenames.get(record_id)
+        records.append({
             "id": record_id,
-            "colorKey": f"{date}/{color['filename']}",
-        }
-        depth = depth_filenames.get(record_id)
-        record["depthKey"] = f"{date}/{depth}" if depth else None
-
-        sidecar = sidecar_filenames.get(record_id)
-        if sidecar:
-            try:
-                obj = s3.get_object(Bucket=bucket, Key=f"{prefix}{sidecar}")
-                metadata = json.loads(obj["Body"].read().decode("utf-8"))
-                if isinstance(metadata, dict):
-                    for field in _METADATA_FIELDS:
-                        if field in metadata and metadata[field] is not None:
-                            record[field] = metadata[field]
-            except Exception as e:
-                print(f"Failed to load sidecar for {date}/{record_id}: {e}")
-
-        if "receivedAt" not in record and color.get("lastModified") is not None:
-            record["receivedAt"] = int(color["lastModified"].timestamp() * 1000)
-
-        records.append(record)
+            "colorKey": f"{date}/{color_filename}",
+            "depthKey": f"{date}/{depth_filenames.get(record_id)}" if depth_filenames.get(record_id) else None,
+            #Loads optional metadata sidecar if present
+            **loadSideCarDict(f"{date}/{meta_name}"),
+        })
 
     records.sort(key=lambda r: r.get("receivedAt") or 0, reverse=True)
     return records
