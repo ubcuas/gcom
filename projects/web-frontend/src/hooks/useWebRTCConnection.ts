@@ -5,6 +5,12 @@ import { OdlcImageSchema } from "../schemas/odlc";
 import { useAppDispatch } from "../store/store";
 import { appendOdlcImage } from "../store/slices/dataSlice";
 
+export type DepthResult = {
+    u: number;
+    v: number;
+    depth_m: number | null;
+};
+
 type SignalingStatus = "disconnected" | "connecting" | "connected";
 type PeerStatus = "disconnected" | "connecting" | "connected" | "failed";
 
@@ -28,6 +34,7 @@ type UseWebRTCConnectionResult = {
     disconnect: () => void;
     isConnecting: boolean;
     sendCommand: (message: object) => void;
+    lastDepthResult: DepthResult | null;
 };
 
 export function useWebRTCConnection(): UseWebRTCConnectionResult {
@@ -35,6 +42,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
     const [peerStatus, setPeerStatus] = useState<PeerStatus>("disconnected");
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
+    const [lastDepthResult, setLastDepthResult] = useState<DepthResult | null>(null);
 
     const dispatch = useAppDispatch();
 
@@ -150,7 +158,18 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             if (channel.label === "odlc_images") {
                 dataChannelRef.current = channel;
                 channel.addEventListener("message", (msgEvent: MessageEvent<string>) => {
-                    const parsedMessage = JSON.parse(msgEvent.data);
+                    const parsedMessage = JSON.parse(msgEvent.data) as Record<string, unknown>;
+
+                    if (parsedMessage.action === "DEPTH_RESULT") {
+                        console.log("📏 Depth result received:", parsedMessage);
+                        setLastDepthResult({
+                            u: parsedMessage.u as number,
+                            v: parsedMessage.v as number,
+                            depth_m: parsedMessage.depth_m as number | null,
+                        });
+                        return;
+                    }
+
                     console.log("📸 ODLC Image Message Parsed:", parsedMessage);
                     const result = OdlcImageSchema.safeParse(parsedMessage);
                     console.log("📸 ODLC Image Validation Result:", result);
@@ -369,5 +388,6 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
         disconnect,
         isConnecting,
         sendCommand,
+        lastDepthResult,
     };
 }
