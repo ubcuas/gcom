@@ -3,7 +3,7 @@ import DragIndicator from "@mui/icons-material/DragIndicator";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { decode } from "fast-png";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { OdlcImageAnnotation } from "../store/slices/dataSlice";
 
 function useImageOverlayRect(imageRef: React.RefObject<HTMLImageElement | null>, imageSrc: string) {
@@ -38,6 +38,9 @@ function useImageOverlayRect(imageRef: React.RefObject<HTMLImageElement | null>,
 }
 
 const HIT_THRESHOLD = 0.02; // normalized units
+const DEFAULT_ANNOTATION_STROKE_WIDTH = 0.005;
+const DEFAULT_ANNOTATION_STROKE_COLOR = "red";
+const HIGHLIGHTED_ANNOTATION_STROKE_COLOR = "yellow";
 
 function hitTestSegment(nx: number, ny: number, p1: { x: number; y: number }, p2: { x: number; y: number }): number {
     const dx = p2.x - p1.x;
@@ -74,6 +77,7 @@ type ImageAnnotationOverlayProps = {
     imageSrc: string;
     annotations: OdlcImageAnnotation[];
     recordId: string;
+    highlightedAnnotationId?: string | null;
     /** Image bounding box (e.g. from ODLC image data); drawn as a rectangle from the first two points. */
     boundingBox?: BoundingBox;
     /** Base64-encoded 16UC1 PNG depth map, or null if unavailable. */
@@ -93,6 +97,7 @@ export default function ImageAnnotationOverlay({
     imageSrc,
     annotations,
     recordId,
+    highlightedAnnotationId = null,
     boundingBox,
     depthData,
     onAddAnnotation,
@@ -227,26 +232,6 @@ export default function ImageAnnotationOverlay({
     );
 
     const clamp = useCallback((x: number) => Math.max(0, Math.min(1, x)), []);
-
-    const sampleDepthAt = useCallback(
-        (nx: number, ny: number): number | null => {
-            if (!depthDecoded) return null;
-            const { data, width, height } = depthDecoded;
-            const px = Math.max(0, Math.min(width - 1, Math.floor(nx * width)));
-            const py = Math.max(0, Math.min(height - 1, Math.floor(ny * height)));
-            const val = data[py * width + px];
-            return val > 0 ? val / 1000 : null;
-        },
-        [depthDecoded],
-    );
-
-    const draggingDepths = useMemo(() => {
-        if (!dragging) return null;
-        return {
-            z1: sampleDepthAt(dragging.p1.x, dragging.p1.y),
-            z2: sampleDepthAt(dragging.p2.x, dragging.p2.y),
-        };
-    }, [dragging, sampleDepthAt]);
 
     const handlePointerUp = useCallback(
         (e: React.PointerEvent) => {
@@ -385,90 +370,27 @@ export default function ImageAnnotationOverlay({
                                 y1={a.p1.y}
                                 x2={a.p2.x}
                                 y2={a.p2.y}
-                                stroke="red"
-                                strokeWidth={0.008}
+                                stroke={
+                                    a.id === highlightedAnnotationId
+                                        ? HIGHLIGHTED_ANNOTATION_STROKE_COLOR
+                                        : DEFAULT_ANNOTATION_STROKE_COLOR
+                                }
+                                strokeWidth={DEFAULT_ANNOTATION_STROKE_WIDTH}
                                 strokeLinecap="round"
                             />
-                            {a.distance != null && (
-                                <text
-                                    x={(a.p1.x + a.p2.x) / 2}
-                                    y={(a.p1.y + a.p2.y) / 2 - 0.03}
-                                    fontSize={0.03}
-                                    fill="white"
-                                    stroke="black"
-                                    strokeWidth={0.004}
-                                    paintOrder="stroke"
-                                    textAnchor="middle"
-                                    dominantBaseline="middle"
-                                >
-                                    {a.distance.toFixed(2)}m
-                                </text>
-                            )}
-                            {[
-                                { p: a.p1, z: sampleDepthAt(a.p1.x, a.p1.y), label: "p1" },
-                                { p: a.p2, z: sampleDepthAt(a.p2.x, a.p2.y), label: "p2" },
-                            ].map(({ p, z, label }) => {
-                                const labelY = p.y < 0.08 ? p.y + 0.045 : p.y - 0.045;
-                                const coords = `x:${p.x.toFixed(3)} y:${p.y.toFixed(3)}${
-                                    z != null ? ` z:${z.toFixed(2)}m` : ""
-                                }`;
-                                return (
-                                    <text
-                                        key={label}
-                                        x={p.x}
-                                        y={labelY}
-                                        fontSize={0.025}
-                                        fill="white"
-                                        stroke="black"
-                                        strokeWidth={0.003}
-                                        paintOrder="stroke"
-                                        textAnchor="middle"
-                                        dominantBaseline="middle"
-                                    >
-                                        {coords}
-                                    </text>
-                                );
-                            })}
                         </g>
                     ))}
                     {dragging && (
-                        <>
-                            <line
-                                x1={dragging.p1.x}
-                                y1={dragging.p1.y}
-                                x2={dragging.p2.x}
-                                y2={dragging.p2.y}
-                                stroke="red"
-                                strokeWidth={0.008}
-                                strokeDasharray="0.02 0.02"
-                                strokeLinecap="round"
-                            />
-                            {[
-                                { p: dragging.p1, z: draggingDepths?.z1 ?? null, label: "P1" },
-                                { p: dragging.p2, z: draggingDepths?.z2 ?? null, label: "P2" },
-                            ].map(({ p, z, label }) => {
-                                const labelY = p.y < 0.08 ? p.y + 0.045 : p.y - 0.045;
-                                const coords = `x:${p.x.toFixed(3)} y:${p.y.toFixed(3)}${
-                                    z != null ? ` z:${z.toFixed(2)}m` : ""
-                                }`;
-                                return (
-                                    <text
-                                        key={label}
-                                        x={p.x}
-                                        y={labelY}
-                                        fontSize={0.025}
-                                        fill="white"
-                                        stroke="black"
-                                        strokeWidth={0.003}
-                                        paintOrder="stroke"
-                                        textAnchor="middle"
-                                        dominantBaseline="middle"
-                                    >
-                                        {coords}
-                                    </text>
-                                );
-                            })}
-                        </>
+                        <line
+                            x1={dragging.p1.x}
+                            y1={dragging.p1.y}
+                            x2={dragging.p2.x}
+                            y2={dragging.p2.y}
+                            stroke={DEFAULT_ANNOTATION_STROKE_COLOR}
+                            strokeWidth={DEFAULT_ANNOTATION_STROKE_WIDTH}
+                            strokeDasharray="0.02 0.02"
+                            strokeLinecap="round"
+                        />
                     )}
                 </Box>
             )}

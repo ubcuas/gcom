@@ -10,11 +10,18 @@ export const OdlcImageSchema = z.object({
     yaw_deg: z.number().nullable().optional().default(null), // Aircraft yaw at capture time, degrees clockwise from north
 });
 
+// Camera-frame 3D point in meters, produced by the backend deprojection of a
+// normalized (p1/p2) pixel + sampled depth. Persisted so dX/dY/dZ in the
+// measurements table can be rendered in meters across reloads.
+const CameraPoint3DSchema = z.tuple([z.number(), z.number(), z.number()]);
+
 export const OdlcImageAnnotationSchema = z.object({
     id: z.string(),
     p1: z.object({ x: z.number(), y: z.number() }),
     p2: z.object({ x: z.number(), y: z.number() }),
     distance: z.number().optional(),
+    p1_3d: CameraPoint3DSchema.optional(),
+    p2_3d: CameraPoint3DSchema.optional(),
 });
 
 export const OdlcImageRecordSchema = z.object({
