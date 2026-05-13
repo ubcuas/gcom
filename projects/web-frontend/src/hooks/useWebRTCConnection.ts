@@ -161,7 +161,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
                     const parsedMessage = JSON.parse(msgEvent.data) as Record<string, unknown>;
 
                     if (parsedMessage.action === "DEPTH_RESULT") {
-                        console.log("📏 Depth result received:", parsedMessage);
+                        console.log("Depth result received:", parsedMessage);
                         setLastDepthResult({
                             u: parsedMessage.u as number,
                             v: parsedMessage.v as number,
