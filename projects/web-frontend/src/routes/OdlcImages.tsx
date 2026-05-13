@@ -33,7 +33,7 @@ import {
     addOdlcImageAnnotation,
     undoLastOdlcImageAnnotation,
     deleteOdlcImageAnnotation,
-    setOdlcImageAnnotationDistance,
+    setOdlcImageAnnotationMeasurements,
     appendOdlcImage,
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
@@ -43,7 +43,7 @@ import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
 import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
 import type { OdlcImage } from "../schemas/odlc";
-import { calculateAnnotationDistance, decodeDepthPng, sampleDepthMeters } from "../utils/odlcImageAnnotationUtils";
+import { calculateAnnotationDistance } from "../utils/odlcImageAnnotationUtils";
 
 type SortBy = "recency" | "confidence";
 type ColorFilter = OdlcColor | "all";
@@ -135,12 +135,8 @@ function formatImageMetadata(record: OdlcImageRecord): string {
     return lines.join("\n");
 }
 
-function formatMeasurementNumber(value: number, digits: number): string {
-    return value.toFixed(digits);
-}
-
-function formatSignedMeasurementNumber(value: number, digits: number): string {
-    return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
+function formatSignedMeasurementMeters(value: number, digits: number): string {
+    return `${value >= 0 ? "+" : ""}${value.toFixed(digits)} m`;
 }
 
 export default function OdlcImages() {
@@ -265,10 +261,12 @@ export default function OdlcImages() {
         const res = await calculateAnnotationDistance(args.p1, args.p2, selectedRecord?.image.depth_data ?? null);
         if (res !== null) {
             dispatch(
-                setOdlcImageAnnotationDistance({
+                setOdlcImageAnnotationMeasurements({
                     id: args.id,
                     annotationId: args.annotationId,
                     distance: res.distance,
+                    p1_3d: res.p1_3d,
+                    p2_3d: res.p2_3d,
                 }),
             );
         }
@@ -278,31 +276,22 @@ export default function OdlcImages() {
         setHighlightedAnnotationId((current) => (current === annotationId ? null : annotationId));
     }, []);
 
-    const decodedDepth = useMemo(() => {
-        if (!selectedRecord?.image.depth_data) return null;
-        try {
-            return decodeDepthPng(selectedRecord.image.depth_data);
-        } catch (error) {
-            console.error("Failed to decode depth data for measurements table:", error);
-            return null;
-        }
-    }, [selectedRecord?.image.depth_data]);
-
+    // Deltas come from the deprojected camera-frame endpoints (meters) so that
+    // dX/dY share units with dZ and the Euclidean distance. They're null until
+    // the async deprojection completes (or stay null if no depth was sampled).
     const measurementRows = useMemo(() => {
         if (!selectedRecord) return [];
 
         return selectedRecord.annotations.map((annotation) => {
-            const p1z = sampleDepthMeters(decodedDepth, annotation.p1);
-            const p2z = sampleDepthMeters(decodedDepth, annotation.p2);
-
+            const haveCameraPoints = annotation.p1_3d != null && annotation.p2_3d != null;
             return {
                 annotation,
-                deltaX: annotation.p2.x - annotation.p1.x,
-                deltaY: annotation.p2.y - annotation.p1.y,
-                deltaZ: p1z != null && p2z != null ? p2z - p1z : null,
+                deltaX: haveCameraPoints ? annotation.p2_3d![0] - annotation.p1_3d![0] : null,
+                deltaY: haveCameraPoints ? annotation.p2_3d![1] - annotation.p1_3d![1] : null,
+                deltaZ: haveCameraPoints ? annotation.p2_3d![2] - annotation.p1_3d![2] : null,
             };
         });
-    }, [decodedDepth, selectedRecord]);
+    }, [selectedRecord]);
 
     if (records.length === 0) {
         return (
@@ -640,9 +629,21 @@ export default function OdlcImages() {
                                                                     ? `${annotation.distance.toFixed(2)} m`
                                                                     : "..."}
                                                             </TableCell>
-                                                            <TableCell>{formatSignedMeasurementNumber(deltaX, 3)}</TableCell>
-                                                            <TableCell>{formatSignedMeasurementNumber(deltaY, 3)}</TableCell>
-                                                            <TableCell>{deltaZ != null ? `${formatSignedMeasurementNumber(deltaZ, 2)} m` : "--"}</TableCell>
+                                                            <TableCell>
+                                                                {deltaX != null
+                                                                    ? formatSignedMeasurementMeters(deltaX, 2)
+                                                                    : "..."}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {deltaY != null
+                                                                    ? formatSignedMeasurementMeters(deltaY, 2)
+                                                                    : "..."}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {deltaZ != null
+                                                                    ? formatSignedMeasurementMeters(deltaZ, 2)
+                                                                    : "..."}
+                                                            </TableCell>
                                                         </TableRow>
                                                     );
                                                 })

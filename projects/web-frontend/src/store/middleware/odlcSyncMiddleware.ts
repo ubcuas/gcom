@@ -12,7 +12,7 @@ const SYNC_ACTION_TYPES = new Set([
     "data/updateOdlcImageAnnotations",
     "data/addOdlcImageAnnotation",
     "data/deleteOdlcImageAnnotation",
-    "data/setOdlcImageAnnotationDistance",
+    "data/setOdlcImageAnnotationMeasurements",
 ]);
 
 const UNDO_ACTION_TYPE = "data/undoLastOdlcImageAnnotation";
