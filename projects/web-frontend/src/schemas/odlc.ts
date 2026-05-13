@@ -15,6 +15,7 @@ export const OdlcImageAnnotationSchema = z.object({
     p1: z.object({ x: z.number(), y: z.number() }),
     p2: z.object({ x: z.number(), y: z.number() }),
     distance: z.number().optional(),
+    cameraDeltaM: z.object({ x: z.number(), y: z.number(), z: z.number() }).optional(),
 });
 
 export const OdlcImageRecordSchema = z.object({

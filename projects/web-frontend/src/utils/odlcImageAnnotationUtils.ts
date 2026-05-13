@@ -83,6 +83,7 @@ export function sampleDepthMeters(
  *  3. Calls the backend /vision/deproject_pixel/ for each point to get
  *     3D camera-space coordinates [x, y, z] in meters
  *  4. Returns the Euclidean distance sqrt((x2-x1)^2 + (y2-y1)^2 + (z2-z1)^2)
+ *     and per-axis deltas (x2-x1), (y2-y1), (z2-z1) in camera space (meters).
  *
  * Returns null if depth_data is unavailable or either sampled depth is zero
  * (meaning the depth sensor returned no reading at that pixel).
@@ -91,7 +92,10 @@ export const calculateAnnotationDistance = async (
     p1: { x: number; y: number },
     p2: { x: number; y: number },
     depthData: string | null,
-): Promise<{ distance: number } | null> => {
+): Promise<{
+    distance: number;
+    cameraDeltaM: { x: number; y: number; z: number };
+} | null> => {
     if (!depthData) return null;
 
     const { data, width, height } = decodeDepthPng(depthData);
@@ -116,9 +120,15 @@ export const calculateAnnotationDistance = async (
         const [x1, y1, z1] = res1.point;
         const [x2, y2, z2] = res2.point;
 
-        const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2);
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const dz = z2 - z1;
+        const dist = Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2);
         console.log("Calculated distance (m):", dist);
-        return { distance: dist };
+        return {
+            distance: dist,
+            cameraDeltaM: { x: dx, y: dy, z: dz },
+        };
     } catch (error) {
         console.error("Distance calculation failed during API call:", error);
         return null;

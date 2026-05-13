@@ -11,6 +11,8 @@ export type OdlcImageAnnotation = {
     p1: { x: number; y: number };
     p2: { x: number; y: number };
     distance?: number;
+    /** Camera-frame Δx, Δy, Δz in meters (same deprojection as `distance`). */
+    cameraDeltaM?: { x: number; y: number; z: number };
 };
 
 // One ODLC image plus UI state (flag, text, metadata, annotations).
@@ -206,11 +208,19 @@ const dataSlice = createSlice({
         },
         setOdlcImageAnnotationDistance: (
             state,
-            action: PayloadAction<{ id: string; annotationId: string; distance: number }>,
+            action: PayloadAction<{
+                id: string;
+                annotationId: string;
+                distance: number;
+                cameraDeltaM: { x: number; y: number; z: number };
+            }>,
         ) => {
             const r = state.odlcImageRecords.find((x) => x.id === action.payload.id);
             const a = r?.annotations.find((x) => x.id === action.payload.annotationId);
-            if (a) a.distance = action.payload.distance;
+            if (a) {
+                a.distance = action.payload.distance;
+                a.cameraDeltaM = action.payload.cameraDeltaM;
+            }
         },
     },
 });

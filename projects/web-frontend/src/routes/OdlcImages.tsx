@@ -43,7 +43,7 @@ import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
 import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
 import type { OdlcImage } from "../schemas/odlc";
-import { calculateAnnotationDistance, decodeDepthPng, sampleDepthMeters } from "../utils/odlcImageAnnotationUtils";
+import { calculateAnnotationDistance } from "../utils/odlcImageAnnotationUtils";
 
 type SortBy = "recency" | "confidence";
 type ColorFilter = OdlcColor | "all";
@@ -133,10 +133,6 @@ function formatImageMetadata(record: OdlcImageRecord): string {
         `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
     ];
     return lines.join("\n");
-}
-
-function formatMeasurementNumber(value: number, digits: number): string {
-    return value.toFixed(digits);
 }
 
 function formatSignedMeasurementNumber(value: number, digits: number): string {
@@ -269,6 +265,7 @@ export default function OdlcImages() {
                     id: args.id,
                     annotationId: args.annotationId,
                     distance: res.distance,
+                    cameraDeltaM: res.cameraDeltaM,
                 }),
             );
         }
@@ -278,31 +275,19 @@ export default function OdlcImages() {
         setHighlightedAnnotationId((current) => (current === annotationId ? null : annotationId));
     }, []);
 
-    const decodedDepth = useMemo(() => {
-        if (!selectedRecord?.image.depth_data) return null;
-        try {
-            return decodeDepthPng(selectedRecord.image.depth_data);
-        } catch (error) {
-            console.error("Failed to decode depth data for measurements table:", error);
-            return null;
-        }
-    }, [selectedRecord?.image.depth_data]);
-
     const measurementRows = useMemo(() => {
         if (!selectedRecord) return [];
 
         return selectedRecord.annotations.map((annotation) => {
-            const p1z = sampleDepthMeters(decodedDepth, annotation.p1);
-            const p2z = sampleDepthMeters(decodedDepth, annotation.p2);
-
+            const d = annotation.cameraDeltaM;
             return {
                 annotation,
-                deltaX: annotation.p2.x - annotation.p1.x,
-                deltaY: annotation.p2.y - annotation.p1.y,
-                deltaZ: p1z != null && p2z != null ? p2z - p1z : null,
+                deltaXM: d?.x ?? null,
+                deltaYM: d?.y ?? null,
+                deltaZM: d?.z ?? null,
             };
         });
-    }, [decodedDepth, selectedRecord]);
+    }, [selectedRecord]);
 
     if (records.length === 0) {
         return (
@@ -606,7 +591,7 @@ export default function OdlcImages() {
                             />
                             <Box>
                                 <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                                    Measurements
+                                    Measurements (camera frame, meters)
                                 </Typography>
                                 <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto" }}>
                                     <Table size="small">
@@ -621,7 +606,7 @@ export default function OdlcImages() {
                                         </TableHead>
                                         <TableBody>
                                             {measurementRows.length > 0 ? (
-                                                measurementRows.map(({ annotation, deltaX, deltaY, deltaZ }, index) => {
+                                                measurementRows.map(({ annotation, deltaXM, deltaYM, deltaZM }, index) => {
                                                     const isSelected = highlightedAnnotationId === annotation.id;
                                                     return (
                                                         <TableRow
@@ -640,9 +625,21 @@ export default function OdlcImages() {
                                                                     ? `${annotation.distance.toFixed(2)} m`
                                                                     : "..."}
                                                             </TableCell>
-                                                            <TableCell>{formatSignedMeasurementNumber(deltaX, 3)}</TableCell>
-                                                            <TableCell>{formatSignedMeasurementNumber(deltaY, 3)}</TableCell>
-                                                            <TableCell>{deltaZ != null ? `${formatSignedMeasurementNumber(deltaZ, 2)} m` : "--"}</TableCell>
+                                                            <TableCell>
+                                                                {deltaXM != null
+                                                                    ? `${formatSignedMeasurementNumber(deltaXM, 3)} m`
+                                                                    : "--"}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {deltaYM != null
+                                                                    ? `${formatSignedMeasurementNumber(deltaYM, 3)} m`
+                                                                    : "--"}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {deltaZM != null
+                                                                    ? `${formatSignedMeasurementNumber(deltaZM, 3)} m`
+                                                                    : "--"}
+                                                            </TableCell>
                                                         </TableRow>
                                                     );
                                                 })
