@@ -34,11 +34,10 @@ import {
     undoLastOdlcImageAnnotation,
     deleteOdlcImageAnnotation,
     setOdlcImageAnnotationMeasurements,
-    appendOdlcImage,
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
 import SessionIdDisplay from "../components/SessionIdDisplay";
-import { syncOdlcImageToBackend } from "../store/thunks/odlcSessionThunks";
+import { syncOdlcImageToBackend, appendOdlcImageFromAircraft } from "../store/thunks/odlcSessionThunks";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
 import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
@@ -248,7 +247,7 @@ export default function OdlcImages() {
             createDummyOdlcImage([0, 180, 0], 60),
             createDummyOdlcImage([0, 180, 0], 55),
         ];
-        samples.forEach((img) => dispatch(appendOdlcImage(img)));
+        samples.forEach((img) => dispatch(appendOdlcImageFromAircraft(img)));
     }, [dispatch]);
 
     const handleImageAnnotation = async (args: {
