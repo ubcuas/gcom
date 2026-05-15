@@ -5,6 +5,7 @@ import { RootState } from "../store";
 import { Waypoint } from "../../types/Waypoint";
 import type { OdlcImage } from "../../schemas/odlc";
 
+
 // Per-image annotation: line segment with optional backend-computed distance
 // and deprojected camera-frame endpoints (meters). The 3D points are populated
 // asynchronously alongside `distance` and used to render dX/dY/dZ in meters.
@@ -138,21 +139,16 @@ const dataSlice = createSlice({
         setTakeoffWaypoint: (state, action: PayloadAction<Waypoint | null>) => {
             state.takeoffWaypoint = action.payload;
         },
-        appendOdlcImage: {
-            reducer: (state, action: PayloadAction<OdlcImageRecord>) => {
-                state.odlcImageRecords.push(action.payload);
-            },
-            prepare: (image: OdlcImage) => ({
-                payload: {
-                    id: crypto.randomUUID(),
-                    receivedAt: Date.now(),
-                    image,
-                    flagged: false,
-                    textInput: "",
-                    metadata: "",
-                    annotations: [],
-                } as OdlcImageRecord,
-            }),
+        appendOdlcImage: (state, action: PayloadAction<OdlcImage>) => {
+            state.odlcImageRecords.push({
+                id: crypto.randomUUID(),
+                receivedAt: Date.now(),
+                image: action.payload,
+                flagged: false,
+                textInput: "",
+                metadata: `Direction: ${Math.round(state.aircraftStatus.heading)}°`,
+                annotations: [],
+            });
         },
         loadOdlcImageRecords: (state, action: PayloadAction<OdlcImageRecord[]>) => {
             state.odlcImageRecords = action.payload;

@@ -118,13 +118,14 @@ function filterAndSortRecords(
 
 /** Pretty-print image payload for read-only metadata display (not for export). */
 function formatImageMetadata(record: OdlcImageRecord): string {
-    const { image, receivedAt } = record;
+    const { image, receivedAt, metadata } = record;
     const [r, g, b] = image.color_detection;
     const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
-    const directionLine =
-        image.yaw_deg != null
-            ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
-            : `Direction: N/A`;
+    const directionLine = metadata.trim()
+        ? metadata.trim()
+        : image.yaw_deg != null
+          ? `Direction: ${image.yaw_deg.toFixed(1)}°`
+          : `Direction: N/A`;
     const lines = [
         `Received: ${new Date(receivedAt).toISOString()}`,
         `Confidence: ${image.confidence_level}`,
@@ -506,7 +507,7 @@ export default function OdlcImages() {
                                     onUndo={(id) => dispatch(undoLastOdlcImageAnnotation(id))}
                                     onDeleteAnnotation={(args) => dispatch(deleteOdlcImageAnnotation(args))}
                                 />
-                                {selectedRecord.image.yaw_deg != null && (
+                                {selectedRecord.metadata.trim() && (
                                     <Box
                                         sx={{
                                             position: "absolute",
@@ -523,20 +524,21 @@ export default function OdlcImages() {
                                             pointerEvents: "none",
                                         }}
                                     >
-                                        <Box
-                                            component="span"
-                                            sx={{
-                                                display: "inline-block",
-                                                transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
-                                                fontSize: "1rem",
-                                                lineHeight: 1,
-                                            }}
-                                        >
-                                            ↑
-                                        </Box>
+                                        {selectedRecord.image.yaw_deg != null && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: "inline-block",
+                                                    transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
+                                                    fontSize: "1rem",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                ↑
+                                            </Box>
+                                        )}
                                         <Typography variant="caption" sx={{ color: "#fff", fontFamily: "monospace" }}>
-                                            {selectedRecord.image.yaw_deg.toFixed(1)}°{" "}
-                                            {yawToCompass(selectedRecord.image.yaw_deg)}
+                                            {selectedRecord.metadata.trim()}
                                         </Typography>
                                     </Box>
                                 )}
