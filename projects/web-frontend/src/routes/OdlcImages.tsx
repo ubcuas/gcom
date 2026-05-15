@@ -507,7 +507,7 @@ export default function OdlcImages() {
                                     onUndo={(id) => dispatch(undoLastOdlcImageAnnotation(id))}
                                     onDeleteAnnotation={(args) => dispatch(deleteOdlcImageAnnotation(args))}
                                 />
-                                {selectedRecord.image.yaw_deg != null && (
+                                {selectedRecord.metadata.trim() && (
                                     <Box
                                         sx={{
                                             position: "absolute",
@@ -524,20 +524,21 @@ export default function OdlcImages() {
                                             pointerEvents: "none",
                                         }}
                                     >
-                                        <Box
-                                            component="span"
-                                            sx={{
-                                                display: "inline-block",
-                                                transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
-                                                fontSize: "1rem",
-                                                lineHeight: 1,
-                                            }}
-                                        >
-                                            ↑
-                                        </Box>
+                                        {selectedRecord.image.yaw_deg != null && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: "inline-block",
+                                                    transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
+                                                    fontSize: "1rem",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                ↑
+                                            </Box>
+                                        )}
                                         <Typography variant="caption" sx={{ color: "#fff", fontFamily: "monospace" }}>
-                                            {selectedRecord.image.yaw_deg.toFixed(1)}°{" "}
-                                            {yawToCompass(selectedRecord.image.yaw_deg)}
+                                            {selectedRecord.metadata.trim()}
                                         </Typography>
                                     </Box>
                                 )}

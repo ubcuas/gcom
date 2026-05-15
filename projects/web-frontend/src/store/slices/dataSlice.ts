@@ -7,7 +7,7 @@ import type { OdlcImage } from "../../schemas/odlc";
 
 const CARDINAL_DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 
-function toCardinal(degrees: number): string {
+function toCardinalAndReverse180Degree(degrees: number): string {
     const reversed = (degrees + 180) % 360;
     const index = Math.round(reversed / 45) % 8;
     return CARDINAL_DIRS[index];
@@ -153,7 +153,7 @@ const dataSlice = createSlice({
                 image: action.payload,
                 flagged: false,
                 textInput: "",
-                metadata: `Direction: ${Math.round(state.aircraftStatus.heading)}° ${toCardinal(state.aircraftStatus.heading)}`,
+                metadata: `Direction: ${Math.round(state.aircraftStatus.heading)}° ${toCardinalAndReverse180Degree(state.aircraftStatus.heading)}`,
                 annotations: [],
             });
         },
