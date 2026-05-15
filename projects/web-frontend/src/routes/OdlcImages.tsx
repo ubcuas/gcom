@@ -124,7 +124,7 @@ function formatImageMetadata(record: OdlcImageRecord): string {
     const directionLine = metadata.trim()
         ? metadata.trim()
         : image.yaw_deg != null
-          ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
+          ? `Direction: ${image.yaw_deg.toFixed(1)}°`
           : `Direction: N/A`;
     const lines = [
         `Received: ${new Date(receivedAt).toISOString()}`,

@@ -5,13 +5,6 @@ import { RootState } from "../store";
 import { Waypoint } from "../../types/Waypoint";
 import type { OdlcImage } from "../../schemas/odlc";
 
-const CARDINAL_DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
-
-function toCardinalAndReverse180Degree(degrees: number): string {
-    const reversed = (degrees + 180) % 360;
-    const index = Math.round(reversed / 45) % 8;
-    return CARDINAL_DIRS[index];
-}
 
 // Per-image annotation: line segment with optional backend-computed distance
 // and deprojected camera-frame endpoints (meters). The 3D points are populated
@@ -153,7 +146,7 @@ const dataSlice = createSlice({
                 image: action.payload,
                 flagged: false,
                 textInput: "",
-                metadata: `Direction: ${Math.round(state.aircraftStatus.heading)}° ${toCardinalAndReverse180Degree(state.aircraftStatus.heading)}`,
+                metadata: `Direction: ${Math.round(state.aircraftStatus.heading)}°`,
                 annotations: [],
             });
         },
