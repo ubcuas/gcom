@@ -118,13 +118,14 @@ function filterAndSortRecords(
 
 /** Pretty-print image payload for read-only metadata display (not for export). */
 function formatImageMetadata(record: OdlcImageRecord): string {
-    const { image, receivedAt } = record;
+    const { image, receivedAt, metadata } = record;
     const [r, g, b] = image.color_detection;
     const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
-    const directionLine =
-        image.yaw_deg != null
-            ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
-            : `Direction: N/A`;
+    const directionLine = metadata.trim()
+        ? metadata.trim()
+        : image.yaw_deg != null
+          ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
+          : `Direction: N/A`;
     const lines = [
         `Received: ${new Date(receivedAt).toISOString()}`,
         `Confidence: ${image.confidence_level}`,
