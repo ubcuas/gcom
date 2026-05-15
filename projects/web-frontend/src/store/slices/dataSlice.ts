@@ -5,12 +5,18 @@ import { RootState } from "../store";
 import { Waypoint } from "../../types/Waypoint";
 import type { OdlcImage } from "../../schemas/odlc";
 
-// Per-image annotation: line segment with optional backend-computed distance.
+// Per-image annotation: line segment with optional backend-computed distance
+// and deprojected camera-frame endpoints (meters). The 3D points are populated
+// asynchronously alongside `distance` and used to render dX/dY/dZ in meters.
+export type CameraPoint3D = [number, number, number];
+
 export type OdlcImageAnnotation = {
     id: string;
     p1: { x: number; y: number };
     p2: { x: number; y: number };
     distance?: number;
+    p1_3d?: CameraPoint3D;
+    p2_3d?: CameraPoint3D;
 };
 
 // One ODLC image plus UI state (flag, text, metadata, annotations).
@@ -204,13 +210,23 @@ const dataSlice = createSlice({
             const r = state.odlcImageRecords.find((x) => x.id === action.payload.id);
             if (r) r.annotations = r.annotations.filter((a) => a.id !== action.payload.annotationId);
         },
-        setOdlcImageAnnotationDistance: (
+        setOdlcImageAnnotationMeasurements: (
             state,
-            action: PayloadAction<{ id: string; annotationId: string; distance: number }>,
+            action: PayloadAction<{
+                id: string;
+                annotationId: string;
+                distance: number;
+                p1_3d: CameraPoint3D;
+                p2_3d: CameraPoint3D;
+            }>,
         ) => {
             const r = state.odlcImageRecords.find((x) => x.id === action.payload.id);
             const a = r?.annotations.find((x) => x.id === action.payload.annotationId);
-            if (a) a.distance = action.payload.distance;
+            if (a) {
+                a.distance = action.payload.distance;
+                a.p1_3d = action.payload.p1_3d;
+                a.p2_3d = action.payload.p2_3d;
+            }
         },
     },
 });
@@ -239,7 +255,7 @@ export const {
     addOdlcImageAnnotation,
     undoLastOdlcImageAnnotation,
     deleteOdlcImageAnnotation,
-    setOdlcImageAnnotationDistance,
+    setOdlcImageAnnotationMeasurements,
 } = dataSlice.actions;
 
 export const selectAircraftStatus = (state: RootState) => state.data.aircraftStatus;

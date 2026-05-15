@@ -38,6 +38,9 @@ function useImageOverlayRect(imageRef: React.RefObject<HTMLImageElement | null>,
 }
 
 const HIT_THRESHOLD = 0.02; // normalized units
+const DEFAULT_ANNOTATION_STROKE_WIDTH = 0.005;
+const DEFAULT_ANNOTATION_STROKE_COLOR = "red";
+const HIGHLIGHTED_ANNOTATION_STROKE_COLOR = "yellow";
 
 function hitTestSegment(nx: number, ny: number, p1: { x: number; y: number }, p2: { x: number; y: number }): number {
     const dx = p2.x - p1.x;
@@ -74,6 +77,7 @@ type ImageAnnotationOverlayProps = {
     imageSrc: string;
     annotations: OdlcImageAnnotation[];
     recordId: string;
+    highlightedAnnotationId?: string | null;
     /** Image bounding box (e.g. from ODLC image data); drawn as a rectangle from the first two points. */
     boundingBox?: BoundingBox;
     /** Base64-encoded 16UC1 PNG depth map, or null if unavailable. */
@@ -93,6 +97,7 @@ export default function ImageAnnotationOverlay({
     imageSrc,
     annotations,
     recordId,
+    highlightedAnnotationId = null,
     boundingBox,
     depthData,
     onAddAnnotation,
@@ -365,22 +370,14 @@ export default function ImageAnnotationOverlay({
                                 y1={a.p1.y}
                                 x2={a.p2.x}
                                 y2={a.p2.y}
-                                stroke="red"
-                                strokeWidth={0.008}
+                                stroke={
+                                    a.id === highlightedAnnotationId
+                                        ? HIGHLIGHTED_ANNOTATION_STROKE_COLOR
+                                        : DEFAULT_ANNOTATION_STROKE_COLOR
+                                }
+                                strokeWidth={DEFAULT_ANNOTATION_STROKE_WIDTH}
                                 strokeLinecap="round"
                             />
-                            {a.distance != null && (
-                                <text
-                                    x={(a.p1.x + a.p2.x) / 2}
-                                    y={(a.p1.y + a.p2.y) / 2 - 0.03}
-                                    fontSize={0.03}
-                                    fill="white"
-                                    textAnchor="middle"
-                                    dominantBaseline="middle"
-                                >
-                                    {a.distance.toFixed(2)}m
-                                </text>
-                            )}
                         </g>
                     ))}
                     {dragging && (
@@ -389,8 +386,8 @@ export default function ImageAnnotationOverlay({
                             y1={dragging.p1.y}
                             x2={dragging.p2.x}
                             y2={dragging.p2.y}
-                            stroke="red"
-                            strokeWidth={0.008}
+                            stroke={DEFAULT_ANNOTATION_STROKE_COLOR}
+                            strokeWidth={DEFAULT_ANNOTATION_STROKE_WIDTH}
                             strokeDasharray="0.02 0.02"
                             strokeLinecap="round"
                         />

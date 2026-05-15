@@ -7,6 +7,12 @@ import {
     Paper,
     Stack,
     Switch,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     TextField,
     ToggleButton,
     ToggleButtonGroup,
@@ -27,7 +33,7 @@ import {
     addOdlcImageAnnotation,
     undoLastOdlcImageAnnotation,
     deleteOdlcImageAnnotation,
-    setOdlcImageAnnotationDistance,
+    setOdlcImageAnnotationMeasurements,
     appendOdlcImage,
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
@@ -129,6 +135,10 @@ function formatImageMetadata(record: OdlcImageRecord): string {
     return lines.join("\n");
 }
 
+function formatSignedMeasurementMeters(value: number, digits: number): string {
+    return `${value >= 0 ? "+" : ""}${value.toFixed(digits)} m`;
+}
+
 export default function OdlcImages() {
     const records = useAppSelector(selectOdlcImageRecords);
     const selectedId = useAppSelector(selectSelectedOdlcImageId);
@@ -137,6 +147,7 @@ export default function OdlcImages() {
     const [flaggedOnly, setFlaggedOnly] = useState(false);
     const [sortBy, setSortBy] = useState<SortBy>("recency");
     const [colorFilter, setColorFilter] = useState<ColorFilter>("all");
+    const [highlightedAnnotationId, setHighlightedAnnotationId] = useState<string | null>(null);
 
     const dispatch = useAppDispatch();
     const handleSelect = useCallback((id: string) => dispatch(setSelectedOdlcImage(id)), [dispatch]);
@@ -209,6 +220,20 @@ export default function OdlcImages() {
         }
     }, [records, selectedId, dispatch]);
 
+    useEffect(() => {
+        setHighlightedAnnotationId(null);
+    }, [selectedRecord?.id]);
+
+    useEffect(() => {
+        if (
+            highlightedAnnotationId !== null &&
+            selectedRecord != null &&
+            !selectedRecord.annotations.some((annotation) => annotation.id === highlightedAnnotationId)
+        ) {
+            setHighlightedAnnotationId(null);
+        }
+    }, [highlightedAnnotationId, selectedRecord]);
+
     const loadSampleImages = useCallback(() => {
         const samples: OdlcImage[] = [
             createDummyOdlcImage([255, 0, 0], 92),
@@ -236,14 +261,37 @@ export default function OdlcImages() {
         const res = await calculateAnnotationDistance(args.p1, args.p2, selectedRecord?.image.depth_data ?? null);
         if (res !== null) {
             dispatch(
-                setOdlcImageAnnotationDistance({
+                setOdlcImageAnnotationMeasurements({
                     id: args.id,
                     annotationId: args.annotationId,
                     distance: res.distance,
+                    p1_3d: res.p1_3d,
+                    p2_3d: res.p2_3d,
                 }),
             );
         }
     };
+
+    const handleMeasurementRowClick = useCallback((annotationId: string) => {
+        setHighlightedAnnotationId((current) => (current === annotationId ? null : annotationId));
+    }, []);
+
+    // Deltas come from the deprojected camera-frame endpoints (meters) so that
+    // dX/dY share units with dZ and the Euclidean distance. They're null until
+    // the async deprojection completes (or stay null if no depth was sampled).
+    const measurementRows = useMemo(() => {
+        if (!selectedRecord) return [];
+
+        return selectedRecord.annotations.map((annotation) => {
+            const haveCameraPoints = annotation.p1_3d != null && annotation.p2_3d != null;
+            return {
+                annotation,
+                deltaX: haveCameraPoints ? annotation.p2_3d![0] - annotation.p1_3d![0] : null,
+                deltaY: haveCameraPoints ? annotation.p2_3d![1] - annotation.p1_3d![1] : null,
+                deltaZ: haveCameraPoints ? annotation.p2_3d![2] - annotation.p1_3d![2] : null,
+            };
+        });
+    }, [selectedRecord]);
 
     if (records.length === 0) {
         return (
@@ -451,6 +499,7 @@ export default function OdlcImages() {
                                     imageSrc={`data:image/jpeg;base64,${selectedRecord.image.image_data}`}
                                     annotations={selectedRecord.annotations}
                                     recordId={selectedRecord.id}
+                                    highlightedAnnotationId={highlightedAnnotationId}
                                     boundingBox={selectedRecord.image.bounding_box}
                                     depthData={selectedRecord.image.depth_data}
                                     onAddAnnotation={handleImageAnnotation}
@@ -544,6 +593,71 @@ export default function OdlcImages() {
                                     );
                                 }}
                             />
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                                    Measurements
+                                </Typography>
+                                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto" }}>
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell width="1%">#</TableCell>
+                                                <TableCell>Distance</TableCell>
+                                                <TableCell>dX</TableCell>
+                                                <TableCell>dY</TableCell>
+                                                <TableCell>dZ</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {measurementRows.length > 0 ? (
+                                                measurementRows.map(({ annotation, deltaX, deltaY, deltaZ }, index) => {
+                                                    const isSelected = highlightedAnnotationId === annotation.id;
+                                                    return (
+                                                        <TableRow
+                                                            key={annotation.id}
+                                                            hover
+                                                            selected={isSelected}
+                                                            onClick={() => handleMeasurementRowClick(annotation.id)}
+                                                            sx={{
+                                                                cursor: "pointer",
+                                                                "&:last-child td": { borderBottom: 0 },
+                                                            }}
+                                                        >
+                                                            <TableCell>{index + 1}</TableCell>
+                                                            <TableCell>
+                                                                {annotation.distance != null
+                                                                    ? `${annotation.distance.toFixed(2)} m`
+                                                                    : "..."}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {deltaX != null
+                                                                    ? formatSignedMeasurementMeters(deltaX, 2)
+                                                                    : "..."}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {deltaY != null
+                                                                    ? formatSignedMeasurementMeters(deltaY, 2)
+                                                                    : "..."}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {deltaZ != null
+                                                                    ? formatSignedMeasurementMeters(deltaZ, 2)
+                                                                    : "..."}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} sx={{ color: "text.secondary" }}>
+                                                        No measurements yet
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Box>
                             <Box>
                                 <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                                     Metadata

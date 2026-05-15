@@ -149,3 +149,32 @@ export const deprojectPixel = async (
     });
     return response.data;
 };
+
+/**
+ * List archive dates (newest first) for which any captured ODLC content lives
+ * in the bucket. The backend enumerates the `odlc/<YYYY-MM-DD>/` prefixes.
+ */
+export const getArchiveDates = async (): Promise<unknown> => {
+    const response = await api.get("/vision/archive/dates/");
+    return response.data;
+};
+
+/**
+ * List every archived record for the given `YYYY-MM-DD` date. Each entry
+ * includes the bucket-relative `colorKey` / `depthKey` plus any sidecar
+ * metadata (bounding box, confidence, color detection, yaw, receivedAt).
+ */
+export const getArchiveRecordsForDate = async (date: string): Promise<unknown> => {
+    const response = await api.get(`/vision/archive/dates/${encodeURIComponent(date)}/`);
+    return response.data;
+};
+
+/**
+ * Build the absolute backend URL for streaming a single archive object. The
+ * `key` is interpreted relative to the `odlc/` archive prefix on the server.
+ */
+export const getArchiveObjectFetchUrl = (key: string): string => {
+    const base = api.defaults.baseURL ?? "";
+    const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+    return `${normalizedBase}vision/archive/object/?key=${encodeURIComponent(key)}`;
+};

@@ -1,12 +1,14 @@
 import { deprojectPixel } from "../api/endpoints";
 import { decode } from "fast-png";
 
+export type DecodedDepthImage = { data: Uint16Array; width: number; height: number };
+
 /**
  * Decodes a base64-encoded 16-bit grayscale PNG (ROS2 CompressedImage 16UC1 format)
  * into a flat Uint16Array of depth values in millimeters, plus image dimensions.
  **/
 
-function decodeDepthPngToJson(base64: string): { data: Uint16Array; width: number; height: number } {
+export function decodeDepthPng(base64: string): DecodedDepthImage {
     const binaryStr = atob(base64);
     const bytes = new Uint8Array(binaryStr.length);
     for (let i = 0; i < binaryStr.length; i++) {
@@ -61,16 +63,35 @@ function sampleDepth(data: Uint16Array, width: number, height: number, nx: numbe
     return count > 0 ? sum / count : median;
 }
 
+export function sampleDepthMeters(
+    decodedDepth: DecodedDepthImage | null,
+    point: { x: number; y: number },
+): number | null {
+    if (!decodedDepth) return null;
+
+    const depthMm = sampleDepth(decodedDepth.data, decodedDepth.width, decodedDepth.height, point.x, point.y);
+    return depthMm > 0 ? depthMm / 1000 : null;
+}
+
+export type CameraPoint3D = [number, number, number];
+
+export type AnnotationMeasurement = {
+    distance: number;
+    p1_3d: CameraPoint3D;
+    p2_3d: CameraPoint3D;
+};
+
 /**
- * Computes the true 3D Euclidean distance (in meters) between two annotation points
- * drawn on a 2D ODLC image, using the associated depth map and camera intrinsics.
+ * Computes 3D measurements (in meters) for two annotation points drawn on a 2D
+ * ODLC image, using the associated depth map and camera intrinsics.
  *
  * Process:
  *  1. Decodes the base64-encoded 16UC1 PNG depth map into a Uint16Array of mm values
  *  2. Samples depth at each normalized (0-1) point coordinate via nearest-neighbor
  *  3. Calls the backend /vision/deproject_pixel/ for each point to get
  *     3D camera-space coordinates [x, y, z] in meters
- *  4. Returns the Euclidean distance sqrt((x2-x1)^2 + (y2-y1)^2 + (z2-z1)^2)
+ *  4. Returns those 3D points and their Euclidean distance.
+ *     Callers can derive dX/dY/dZ in meters from the two points.
  *
  * Returns null if depth_data is unavailable or either sampled depth is zero
  * (meaning the depth sensor returned no reading at that pixel).
@@ -79,10 +100,10 @@ export const calculateAnnotationDistance = async (
     p1: { x: number; y: number },
     p2: { x: number; y: number },
     depthData: string | null,
-): Promise<{ distance: number } | null> => {
+): Promise<AnnotationMeasurement | null> => {
     if (!depthData) return null;
 
-    const { data, width, height } = decodeDepthPngToJson(depthData);
+    const { data, width, height } = decodeDepthPng(depthData);
     console.log("Depth data:", data);
 
     const d1Mm = sampleDepth(data, width, height, p1.x, p1.y);
@@ -101,12 +122,14 @@ export const calculateAnnotationDistance = async (
         ]);
         console.log("Deprojection results:", res1, res2);
 
-        const [x1, y1, z1] = res1.point;
-        const [x2, y2, z2] = res2.point;
+        const p1_3d: CameraPoint3D = [res1.point[0], res1.point[1], res1.point[2]];
+        const p2_3d: CameraPoint3D = [res2.point[0], res2.point[1], res2.point[2]];
 
-        const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2);
+        const dist = Math.sqrt(
+            (p2_3d[0] - p1_3d[0]) ** 2 + (p2_3d[1] - p1_3d[1]) ** 2 + (p2_3d[2] - p1_3d[2]) ** 2,
+        );
         console.log("Calculated distance (m):", dist);
-        return { distance: dist };
+        return { distance: dist, p1_3d, p2_3d };
     } catch (error) {
         console.error("Distance calculation failed during API call:", error);
         return null;

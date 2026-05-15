@@ -4,6 +4,7 @@
 **/.claude/**
 .mcp.json
 .serena
+.cursorignore
 
 .DS_Store
 *.env
@@ -11,7 +12,7 @@ projects/web-backend/src/db.sqlite3-journal
 /.idea
 *.rdb
 
-*/.venv
+**/.venv
 
 mav.parm
 mav.tlog
