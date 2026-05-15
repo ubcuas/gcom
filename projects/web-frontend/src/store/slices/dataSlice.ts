@@ -139,16 +139,21 @@ const dataSlice = createSlice({
         setTakeoffWaypoint: (state, action: PayloadAction<Waypoint | null>) => {
             state.takeoffWaypoint = action.payload;
         },
-        appendOdlcImage: (state, action: PayloadAction<OdlcImage>) => {
-            state.odlcImageRecords.push({
-                id: crypto.randomUUID(),
-                receivedAt: Date.now(),
-                image: action.payload,
-                flagged: false,
-                textInput: "",
-                metadata: `Direction: ${Math.round(state.aircraftStatus.heading)}°`,
-                annotations: [],
-            });
+        appendOdlcImage: {
+            reducer: (state, action: PayloadAction<OdlcImageRecord>) => {
+                state.odlcImageRecords.push(action.payload);
+            },
+            prepare: (image: OdlcImage, heading: number) => ({
+                payload: {
+                    id: crypto.randomUUID(),
+                    receivedAt: Date.now(),
+                    image,
+                    flagged: false,
+                    textInput: "",
+                    metadata: `Direction: ${Math.round(heading)}°`,
+                    annotations: [],
+                } as OdlcImageRecord,
+            }),
         },
         loadOdlcImageRecords: (state, action: PayloadAction<OdlcImageRecord[]>) => {
             state.odlcImageRecords = action.payload;

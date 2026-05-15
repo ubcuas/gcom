@@ -3,7 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { SIGNALING_SERVER_URL } from "../constants";
 import { OdlcImageSchema } from "../schemas/odlc";
 import { useAppDispatch } from "../store/store";
-import { appendOdlcImage } from "../store/slices/dataSlice";
+import { appendOdlcImageFromAircraft } from "../store/thunks/odlcSessionThunks";
 
 export type DepthResult = {
     u: number;
@@ -177,7 +177,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
                         console.error("Invalid ODLC image data received:", result.error);
                         return;
                     }
-                    dispatch(appendOdlcImage(result.data));
+                    dispatch(appendOdlcImageFromAircraft(result.data));
                 });
             }
         });

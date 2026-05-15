@@ -1,8 +1,16 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getOdlcSession, patchOdlcRecord } from "../../api/endpoints";
-import { clearOdlcImages, loadOdlcImageRecords } from "../slices/dataSlice";
+import { appendOdlcImage, clearOdlcImages, loadOdlcImageRecords } from "../slices/dataSlice";
 import { setOdlcSessionId } from "../slices/appSlice";
-import { RootState } from "../store";
+import { AppDispatch, RootState } from "../store";
+import type { OdlcImage } from "../../schemas/odlc";
+
+export const appendOdlcImageFromAircraft =
+    (image: OdlcImage) =>
+    (dispatch: AppDispatch, getState: () => RootState) => {
+        const heading = getState().data.aircraftStatus.heading;
+        dispatch(appendOdlcImage(image, heading));
+    };
 
 export const syncOdlcImageToBackend = createAsyncThunk<void, string, { state: RootState }>(
     "odlcSession/syncImage",
