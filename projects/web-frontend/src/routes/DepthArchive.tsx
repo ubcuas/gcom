@@ -52,6 +52,7 @@ const ArchiveRecordSchema = z.object({
     confidenceLevel: z.number().optional(),
     yawDeg: z.number().nullable().optional(),
     colorDetection: z.tuple([z.number().int(), z.number().int(), z.number().int()]).optional(),
+    heading: z.string().nullable().optional(),
 });
 
 const ArchiveRecordsSchema = z.array(ArchiveRecordSchema);
@@ -86,13 +87,34 @@ function getRecordTimestamp(receivedAt: string | number | undefined): number {
     return Date.now();
 }
 
-function buildArchiveMetadata(date: string, entryId: string, colorKey: string, depthKey: string | null): string {
-    return [
-        `Archive date: ${date}`,
-        `Archive entry: ${entryId}`,
-        `Color key: ${colorKey}`,
-        `Depth key: ${depthKey ?? "None"}`,
-    ].join("\n");
+function formatArchiveMetadata(record: OdlcImageRecord): string {
+    const { image, receivedAt } = record;
+    const [r, g, b] = image.color_detection;
+    const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
+    const directionLine =
+        image.yaw_deg != null
+            ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
+            : "Direction: N/A";
+
+    // Derive archive date / entry id from the composite record id ("date:uuid").
+    const colonIdx = record.id.indexOf(":");
+    const archiveDate = colonIdx >= 0 ? record.id.slice(0, colonIdx) : "";
+    const archiveEntry = colonIdx >= 0 ? record.id.slice(colonIdx + 1) : record.id;
+
+    const lines = [
+        `Received: ${new Date(receivedAt).toISOString()}`,
+        `Confidence: ${image.confidence_level}`,
+        `Color: ${colorName} (RGB: ${r}, ${g}, ${b})`,
+        directionLine,
+        `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
+        ...(archiveDate ? [`Archive date: ${archiveDate}`, `Archive entry: ${archiveEntry}`] : []),
+    ];
+
+    if (record.metadata.trim().length > 0) {
+        lines.push("", record.metadata.trim());
+    }
+
+    return lines.join("\n");
 }
 
 function createArchiveImage(entry: ArchiveRecord, colorBase64: string, depthBase64: string | null): OdlcImage {
@@ -106,28 +128,6 @@ function createArchiveImage(entry: ArchiveRecord, colorBase64: string, depthBase
     };
 }
 
-function formatArchiveMetadata(record: OdlcImageRecord): string {
-    const { image, receivedAt } = record;
-    const [r, g, b] = image.color_detection;
-    const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
-    const directionLine =
-        image.yaw_deg != null
-            ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
-            : "Direction: N/A";
-    const lines = [
-        `Received: ${new Date(receivedAt).toISOString()}`,
-        `Confidence: ${image.confidence_level}`,
-        `Color: ${colorName} (RGB: ${r}, ${g}, ${b})`,
-        directionLine,
-        `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
-    ];
-
-    if (record.metadata.trim().length > 0) {
-        lines.push("", record.metadata.trim());
-    }
-
-    return lines.join("\n");
-}
 
 function getArchiveItemLabel(record: OdlcImageRecord): string {
     const entryId = record.id.split(":").slice(1).join(":") || record.id;
@@ -158,7 +158,7 @@ async function loadArchiveRecord(date: string, entry: ArchiveRecord): Promise<Od
         image: createArchiveImage(entry, imageData, depthData),
         flagged: false,
         textInput: "",
-        metadata: buildArchiveMetadata(date, entry.id, colorKey, depthKey),
+        metadata: entry.heading ?? "",
         annotations: [],
     };
 }
@@ -682,7 +682,7 @@ export default function DepthArchive() {
                                     onUndo={handleUndo}
                                     onDeleteAnnotation={handleDeleteAnnotation}
                                 />
-                                {selectedRecord.image.yaw_deg != null && (
+                                {(selectedRecord.metadata.trim() || selectedRecord.image.yaw_deg != null) && (
                                     <Box
                                         sx={{
                                             position: "absolute",
@@ -699,20 +699,22 @@ export default function DepthArchive() {
                                             pointerEvents: "none",
                                         }}
                                     >
-                                        <Box
-                                            component="span"
-                                            sx={{
-                                                display: "inline-block",
-                                                transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
-                                                fontSize: "1rem",
-                                                lineHeight: 1,
-                                            }}
-                                        >
-                                            ↑
-                                        </Box>
+                                        {selectedRecord.image.yaw_deg != null && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: "inline-block",
+                                                    transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
+                                                    fontSize: "1rem",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                ↑
+                                            </Box>
+                                        )}
                                         <Typography variant="caption" sx={{ color: "#fff", fontFamily: "monospace" }}>
-                                            {selectedRecord.image.yaw_deg.toFixed(1)}°{" "}
-                                            {yawToCompass(selectedRecord.image.yaw_deg)}
+                                            {selectedRecord.metadata.trim() ||
+                                                `${selectedRecord.image.yaw_deg!.toFixed(1)}° ${yawToCompass(selectedRecord.image.yaw_deg!)}`}
                                         </Typography>
                                     </Box>
                                 )}
