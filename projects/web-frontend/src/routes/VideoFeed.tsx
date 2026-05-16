@@ -11,8 +11,16 @@ import SessionIdDisplay from "../components/SessionIdDisplay";
 type DepthSampleMarker = { x: number; y: number };
 
 export default function VideoFeed() {
-    const { signalingStatus, peerStatus, remoteStream, connect, disconnect, isConnecting, sendCommand, lastDepthResult } =
-        useWebRTCContext();
+    const {
+        signalingStatus,
+        peerStatus,
+        remoteStream,
+        connect,
+        disconnect,
+        isConnecting,
+        sendCommand,
+        lastDepthResult,
+    } = useWebRTCContext();
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const [capturing, setCapturing] = useState(false);
@@ -289,15 +297,41 @@ export default function VideoFeed() {
                                                         rowGap: 0.5,
                                                     }}
                                                 >
-                                                    <Typography variant="caption" color="text.secondary" fontFamily="monospace">u</Typography>
-                                                    <Typography variant="caption" fontFamily="monospace">{lastDepthResult.u.toFixed(4)}</Typography>
-                                                    <Typography variant="caption" color="text.secondary" fontFamily="monospace">v</Typography>
-                                                    <Typography variant="caption" fontFamily="monospace">{lastDepthResult.v.toFixed(4)}</Typography>
-                                                    <Typography variant="caption" color="text.secondary" fontFamily="monospace">depth</Typography>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        fontFamily="monospace"
+                                                    >
+                                                        u
+                                                    </Typography>
+                                                    <Typography variant="caption" fontFamily="monospace">
+                                                        {lastDepthResult.u.toFixed(4)}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        fontFamily="monospace"
+                                                    >
+                                                        v
+                                                    </Typography>
+                                                    <Typography variant="caption" fontFamily="monospace">
+                                                        {lastDepthResult.v.toFixed(4)}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        fontFamily="monospace"
+                                                    >
+                                                        depth
+                                                    </Typography>
                                                     <Typography
                                                         variant="caption"
                                                         fontFamily="monospace"
-                                                        color={lastDepthResult.depth_m === null ? "text.secondary" : "text.primary"}
+                                                        color={
+                                                            lastDepthResult.depth_m === null
+                                                                ? "text.secondary"
+                                                                : "text.primary"
+                                                        }
                                                     >
                                                         {lastDepthResult.depth_m === null
                                                             ? "N/A"
