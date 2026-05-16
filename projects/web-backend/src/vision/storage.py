@@ -118,6 +118,7 @@ _METADATA_FIELDS = (
     "confidenceLevel",
     "yawDeg",
     "colorDetection",
+    "heading",
 )
 
 def loadSideCarDict(sidecar_key: str) -> dict[str, Any]:

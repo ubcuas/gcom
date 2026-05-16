@@ -141,6 +141,7 @@ def post_odlc_record(request, session_id: str):
                         "confidenceLevel": image.get("confidence_level"),
                         "yawDeg": image.get("yaw_deg"),
                         "colorDetection": image.get("color_detection"),
+                        "heading": record.get("metadata"),
                     },
                 )
             except Exception as e:
