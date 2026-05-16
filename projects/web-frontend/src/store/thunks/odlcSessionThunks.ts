@@ -5,12 +5,10 @@ import { setOdlcSessionId } from "../slices/appSlice";
 import { AppDispatch, RootState } from "../store";
 import type { OdlcImage } from "../../schemas/odlc";
 
-export const appendOdlcImageFromAircraft =
-    (image: OdlcImage) =>
-    (dispatch: AppDispatch, getState: () => RootState) => {
-        const heading = getState().data.aircraftStatus.heading;
-        dispatch(appendOdlcImage(image, heading));
-    };
+export const appendOdlcImageFromAircraft = (image: OdlcImage) => (dispatch: AppDispatch, getState: () => RootState) => {
+    const heading = getState().data.aircraftStatus.heading;
+    dispatch(appendOdlcImage(image, heading));
+};
 
 export const syncOdlcImageToBackend = createAsyncThunk<void, string, { state: RootState }>(
     "odlcSession/syncImage",

@@ -28,7 +28,7 @@ export default function Nav() {
     });
 
     useEffect(() => {
-        setTab(params?.route === undefined ? 0 : (linkMap[params.route] ?? false));
+        setTab(params?.route === undefined ? 0 : linkMap[params.route] ?? false);
     }, [params?.route]);
 
     const handleNav = (_event: React.SyntheticEvent, newValue: number) => {

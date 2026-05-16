@@ -5,7 +5,6 @@ import { RootState } from "../store";
 import { Waypoint } from "../../types/Waypoint";
 import type { OdlcImage } from "../../schemas/odlc";
 
-
 // Per-image annotation: line segment with optional backend-computed distance
 // and deprojected camera-frame endpoints (meters). The 3D points are populated
 // asynchronously alongside `distance` and used to render dX/dY/dZ in meters.
