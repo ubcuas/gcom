@@ -31,6 +31,7 @@ const DEFAULT_BOUNDING_BOX: Array<[number, number]> = [
     [0, 0],
     [1, 1],
 ];
+const ARCHIVE_POLL_INTERVAL_MS = 1000;
 
 /**
  * Backend endpoints consumed here:
@@ -173,6 +174,8 @@ export default function DepthArchive() {
     const [records, setRecords] = useState<OdlcImageRecord[]>([]);
     const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
     const [highlightedAnnotationId, setHighlightedAnnotationId] = useState<string | null>(null);
+    const [isPolling, setIsPolling] = useState(false);
+    const [lastPolledAt, setLastPolledAt] = useState<Date | null>(null);
 
     const recordsCacheRef = useRef(new Map<string, OdlcImageRecord[]>());
     const selectedDateRef = useRef(selectedDate);
@@ -191,15 +194,18 @@ export default function DepthArchive() {
         [records, selectedRecordId],
     );
 
-    const applyRecordsUpdate = useCallback((date: string, updater: (current: OdlcImageRecord[]) => OdlcImageRecord[]) => {
-        const current = recordsCacheRef.current.get(date) ?? [];
-        const next = updater(current);
-        recordsCacheRef.current.set(date, next);
+    const applyRecordsUpdate = useCallback(
+        (date: string, updater: (current: OdlcImageRecord[]) => OdlcImageRecord[]) => {
+            const current = recordsCacheRef.current.get(date) ?? [];
+            const next = updater(current);
+            recordsCacheRef.current.set(date, next);
 
-        if (selectedDateRef.current === date) {
-            setRecords(next);
-        }
-    }, []);
+            if (selectedDateRef.current === date) {
+                setRecords(next);
+            }
+        },
+        [],
+    );
 
     const loadDates = useCallback(async () => {
         setDatesLoading(true);
@@ -211,9 +217,7 @@ export default function DepthArchive() {
             recordsCacheRef.current.clear();
             setAvailableDates(parsedDates);
             setDatesLoaded(true);
-            setSelectedDate((current) =>
-                current && parsedDates.includes(current) ? current : (parsedDates[0] ?? ""),
-            );
+            setSelectedDate((current) => (current && parsedDates.includes(current) ? current : parsedDates[0] ?? ""));
         } catch (error) {
             setAvailableDates([]);
             setDatesLoaded(false);
@@ -232,6 +236,66 @@ export default function DepthArchive() {
 
     useEffect(() => {
         let cancelled = false;
+        let pollInFlight = false;
+        let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+        function cleanup() {
+            cancelled = true;
+            if (pollInterval !== null) {
+                clearInterval(pollInterval);
+            }
+            setIsPolling(false);
+            setLastPolledAt(null);
+        }
+
+        function startPolling() {
+            pollInterval = setInterval(() => {
+                if (cancelled || pollInFlight) {
+                    return;
+                }
+                pollInFlight = true;
+                setIsPolling(true);
+
+                void (async () => {
+                    try {
+                        const date = selectedDate;
+                        const entries = ArchiveRecordsSchema.parse(await getArchiveRecordsForDate(date));
+                        if (cancelled) {
+                            return;
+                        }
+
+                        const existingIds = new Set((recordsCacheRef.current.get(date) ?? []).map((r) => r.id));
+                        const newEntries = entries.filter((entry) => !existingIds.has(`${date}:${entry.id}`));
+
+                        if (newEntries.length > 0) {
+                            const settled = await Promise.allSettled(
+                                newEntries.map((entry) => loadArchiveRecord(date, entry)),
+                            );
+                            if (cancelled) {
+                                return;
+                            }
+
+                            const loadedRecords = settled
+                                .filter((r): r is PromiseFulfilledResult<OdlcImageRecord> => r.status === "fulfilled")
+                                .map((r) => r.value);
+
+                            if (loadedRecords.length > 0) {
+                                applyRecordsUpdate(date, (current) => [...current, ...loadedRecords]);
+                            }
+                        }
+
+                        setLastPolledAt(new Date());
+                    } catch {
+                        // silently skip — don't disrupt the existing view on transient failures
+                    } finally {
+                        pollInFlight = false;
+                        if (!cancelled) {
+                            setIsPolling(false);
+                        }
+                    }
+                })();
+            }, ARCHIVE_POLL_INTERVAL_MS);
+        }
 
         if (selectedDate.length === 0) {
             setRecords([]);
@@ -244,7 +308,8 @@ export default function DepthArchive() {
             setRecords(recordsCacheRef.current.get(selectedDate) ?? []);
             setRecordsError(null);
             setRecordsLoading(false);
-            return undefined;
+            startPolling();
+            return cleanup;
         }
 
         setRecords([]);
@@ -262,6 +327,7 @@ export default function DepthArchive() {
                 recordsCacheRef.current.set(selectedDate, []);
                 setRecords([]);
                 setRecordsLoading(false);
+                startPolling();
                 return;
             }
 
@@ -288,6 +354,8 @@ export default function DepthArchive() {
                         : `Failed to load archive images for ${selectedDate}`;
                 setRecordsError(formatArchiveError(prefix, failedResults[0].reason));
             }
+
+            startPolling();
         })().catch((error) => {
             if (cancelled) {
                 return;
@@ -299,10 +367,8 @@ export default function DepthArchive() {
             setRecordsError(formatArchiveError(`Failed to load archive images for ${selectedDate}`, error));
         });
 
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedDate]);
+        return cleanup;
+    }, [selectedDate, applyRecordsUpdate]);
 
     useEffect(() => {
         if (records.length === 0) {
@@ -351,7 +417,12 @@ export default function DepthArchive() {
     }, [selectedRecord]);
 
     const handleImageAnnotation = useCallback(
-        async (args: { id: string; annotationId: string; p1: { x: number; y: number }; p2: { x: number; y: number } }) => {
+        async (args: {
+            id: string;
+            annotationId: string;
+            p1: { x: number; y: number };
+            p2: { x: number; y: number };
+        }) => {
             const date = selectedDateRef.current;
             if (!date) {
                 return;
@@ -362,10 +433,7 @@ export default function DepthArchive() {
                     record.id === args.id
                         ? {
                               ...record,
-                              annotations: [
-                                  ...record.annotations,
-                                  { id: args.annotationId, p1: args.p1, p2: args.p2 },
-                              ],
+                              annotations: [...record.annotations, { id: args.annotationId, p1: args.p1, p2: args.p2 }],
                           }
                         : record,
                 ),
@@ -427,7 +495,9 @@ export default function DepthArchive() {
                     record.id === args.id
                         ? {
                               ...record,
-                              annotations: record.annotations.filter((annotation) => annotation.id !== args.annotationId),
+                              annotations: record.annotations.filter(
+                                  (annotation) => annotation.id !== args.annotationId,
+                              ),
                           }
                         : record,
                 ),
@@ -504,9 +574,23 @@ export default function DepthArchive() {
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                         Archive Images
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5 }}>
-                        {selectedDate ? `${records.length} loaded for ${selectedDate}` : "Select a date to load images"}
-                    </Typography>
+                    <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                            {selectedDate
+                                ? `${records.length} loaded for ${selectedDate}`
+                                : "Select a date to load images"}
+                        </Typography>
+                        {selectedDate && !recordsLoading && (isPolling || lastPolledAt !== null) && (
+                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5 }}>
+                                {isPolling && <CircularProgress size={10} />}
+                                <Typography variant="caption" color="text.secondary">
+                                    {isPolling
+                                        ? "Checking for new images..."
+                                        : `Updated ${lastPolledAt!.toLocaleTimeString()}`}
+                                </Typography>
+                            </Stack>
+                        )}
+                    </Box>
 
                     <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                         {recordsLoading ? (
@@ -530,7 +614,8 @@ export default function DepthArchive() {
                                             borderRadius: 1,
                                             cursor: "pointer",
                                             border: "1px solid",
-                                            borderColor: selectedRecordId === record.id ? "primary.main" : "transparent",
+                                            borderColor:
+                                                selectedRecordId === record.id ? "primary.main" : "transparent",
                                             bgcolor: selectedRecordId === record.id ? "action.selected" : "transparent",
                                             "&:hover": { bgcolor: "action.hover" },
                                         }}
@@ -567,7 +652,8 @@ export default function DepthArchive() {
 
                 <Paper sx={{ flex: 1, p: 2, display: "flex", flexDirection: "column", minWidth: 0 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-                        Click &amp; hold to draw a line between 2 points · Ctrl+Z to undo · Double-click a line to delete
+                        Click &amp; hold to draw a line between 2 points · Ctrl+Z to undo · Double-click a line to
+                        delete
                     </Typography>
 
                     <Box
