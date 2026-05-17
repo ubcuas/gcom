@@ -26,6 +26,26 @@ def _session_path(session_id: str) -> Path:
     return ODLC_SESSIONS_DIR / f"{session_id}.json"
 
 
+def _index_path(session_id: str) -> Path:
+    return ODLC_SESSIONS_DIR / f"{session_id}.index.json"
+
+
+def _read_index(session_id: str) -> list[dict] | None:
+    path = _index_path(session_id)
+    if not path.exists():
+        return None
+    return json.loads(path.read_text())
+
+
+def _write_index(session_id: str, records: list[dict]) -> None:
+    entries = [
+        {"id": r["id"], "receivedAt": r.get("receivedAt", 0)}
+        for r in records
+        if r.get("id") and r.get("receivedAt")
+    ]
+    _index_path(session_id).write_text(json.dumps(entries))
+
+
 def _read_session(session_id: str) -> dict | None:
     path = _session_path(session_id)
     if not path.exists():
@@ -36,6 +56,7 @@ def _read_session(session_id: str) -> dict | None:
 def _write_session(session_id: str, data: dict) -> None:
     ODLC_SESSIONS_DIR.mkdir(exist_ok=True)
     _session_path(session_id).write_text(json.dumps(data))
+    _write_index(session_id, data.get("records", []))
 
 
 def _empty_session(session_id: str) -> dict:
@@ -111,6 +132,38 @@ def get_odlc_session(request, session_id: str):
         return JsonResponse(data)
     except Exception as e:
         print(f"Error reading ODLC session: {e}")
+        return JsonResponse(
+            {"error": "Internal server error", "details": str(e)}, status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_odlc_session_index(request, session_id: str):
+    try:
+        with _SESSION_LOCK:
+            index = _read_index(session_id)
+            if index is None:
+                data = _read_session(session_id)
+                if data is None:
+                    return JsonResponse({"error": "Session not found"}, status=404)
+                records = data.get("records", [])
+                _write_index(session_id, records)
+                index = [
+                    {"id": r["id"], "receivedAt": r.get("receivedAt", 0)}
+                    for r in records
+                    if r.get("id") and r.get("receivedAt")
+                ]
+        since_raw = request.GET.get("since")
+        if since_raw is not None:
+            try:
+                since = int(since_raw)
+                index = [e for e in index if e.get("receivedAt", 0) > since]
+            except ValueError:
+                return JsonResponse({"error": "Invalid 'since' parameter"}, status=400)
+        return JsonResponse({"sessionId": session_id, "records": index})
+    except Exception as e:
+        print(f"Error reading ODLC session index: {e}")
         return JsonResponse(
             {"error": "Internal server error", "details": str(e)}, status=500
         )
@@ -247,8 +300,26 @@ def get_archive_object(request):
 
 
 @csrf_exempt
-@require_http_methods(["PATCH"])
-def patch_odlc_record(request, session_id: str, record_id: str):
+@require_http_methods(["GET", "PATCH"])
+def odlc_record(request, session_id: str, record_id: str):
+    if request.method == "GET":
+        try:
+            with _SESSION_LOCK:
+                data = _read_session(session_id)
+            if data is None:
+                return JsonResponse({"error": "Session not found"}, status=404)
+            record = next(
+                (r for r in data.get("records", []) if r.get("id") == record_id), None
+            )
+            if record is None:
+                return JsonResponse({"error": "Record not found"}, status=404)
+            return JsonResponse(record)
+        except Exception as e:
+            print(f"Error reading ODLC record: {e}")
+            return JsonResponse(
+                {"error": "Internal server error", "details": str(e)}, status=500
+            )
+
     try:
         updates = json.loads(request.body)
         if not isinstance(updates, dict):

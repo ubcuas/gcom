@@ -2,7 +2,7 @@ import { Waypoint } from "../types/Waypoint";
 import { Route } from "../types/Route";
 import api from "./api";
 import { WaypointSchema, RouteSchema, PartialWaypointSchema } from "../schemas/waypoint";
-import { OdlcSessionSchema } from "../schemas/odlc";
+import { OdlcSessionSchema, OdlcImageRecordSchema } from "../schemas/odlc";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import type { z } from "zod";
 
@@ -132,6 +132,25 @@ export const patchOdlcRecord = async (
     updates: Partial<Pick<OdlcImageRecord, "flagged" | "textInput" | "metadata" | "annotations">>,
 ): Promise<void> => {
     await api.patch(`/vision/odlc-session/${sessionId}/records/${recordId}/`, updates);
+};
+
+export const getNewOdlcRecordIds = async (sessionId: string, since: number): Promise<string[]> => {
+    const response = await api.get(`/vision/odlc-session/${sessionId}/index/`, { params: { since } });
+    const data = response.data as { records: { id: string }[] };
+    return data.records.map((r) => r.id);
+};
+
+export const getOdlcRecord = async (sessionId: string, recordId: string): Promise<OdlcImageRecord | null> => {
+    try {
+        const response = await api.get(`/vision/odlc-session/${sessionId}/records/${recordId}/`);
+        return OdlcImageRecordSchema.parse(response.data);
+    } catch (err: unknown) {
+        if (typeof err === "object" && err !== null && "response" in err) {
+            const status = (err as { response?: { status?: number } }).response?.status;
+            if (status === 404) return null;
+        }
+        throw err;
+    }
 };
 
 /**
