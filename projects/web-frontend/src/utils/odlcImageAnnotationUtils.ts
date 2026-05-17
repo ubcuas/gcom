@@ -125,9 +125,7 @@ export const calculateAnnotationDistance = async (
         const p1_3d: CameraPoint3D = [res1.point[0], res1.point[1], res1.point[2]];
         const p2_3d: CameraPoint3D = [res2.point[0], res2.point[1], res2.point[2]];
 
-        const dist = Math.sqrt(
-            (p2_3d[0] - p1_3d[0]) ** 2 + (p2_3d[1] - p1_3d[1]) ** 2 + (p2_3d[2] - p1_3d[2]) ** 2,
-        );
+        const dist = Math.sqrt((p2_3d[0] - p1_3d[0]) ** 2 + (p2_3d[1] - p1_3d[1]) ** 2 + (p2_3d[2] - p1_3d[2]) ** 2);
         console.log("Calculated distance (m):", dist);
         return { distance: dist, p1_3d, p2_3d };
     } catch (error) {
