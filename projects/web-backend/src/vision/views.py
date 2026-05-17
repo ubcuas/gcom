@@ -15,9 +15,6 @@ from .storage import (
     download_archive_object,
     list_archive_dates,
     list_archive_records,
-    upload_odlc_depth,
-    upload_odlc_image,
-    upload_odlc_metadata,
 )
 
 ODLC_SESSIONS_DIR = Path(__file__).resolve().parent.parent.parent / "odlc_sessions"
@@ -113,39 +110,39 @@ def post_odlc_record(request, session_id: str):
         if not isinstance(record, dict) or not record.get("id"):
             return JsonResponse({"error": "Invalid record"}, status=400)
 
-        image = record.get("image") or {}
-        received_at = record.get("receivedAt")
-        image_b64 = image.get("image_data")
-        depth_b64 = image.get("depth_data")
-        if image_b64 and not image.get("image_url"):
-            try:
-                record["image"]["image_url"] = upload_odlc_image(
-                    record["id"], image_b64, received_at
-                )
-            except Exception as e:
-                print(f"S3 image upload failed for record {record['id']}: {e}")
-        if depth_b64 and not image.get("depth_url"):
-            try:
-                record["image"]["depth_url"] = upload_odlc_depth(
-                    record["id"], depth_b64, received_at
-                )
-            except Exception as e:
-                print(f"S3 depth upload failed for record {record['id']}: {e}")
-        if image:
-            try:
-                upload_odlc_metadata(
-                    record["id"],
-                    received_at,
-                    {
-                        "boundingBox": image.get("bounding_box"),
-                        "confidenceLevel": image.get("confidence_level"),
-                        "yawDeg": image.get("yaw_deg"),
-                        "colorDetection": image.get("color_detection"),
-                        "heading": record.get("metadata"),
-                    },
-                )
-            except Exception as e:
-                print(f"S3 metadata upload failed for record {record['id']}: {e}")
+        # image = record.get("image") or {}
+        # received_at = record.get("receivedAt")
+        # image_b64 = image.get("image_data")
+        # depth_b64 = image.get("depth_data")
+        # if image_b64 and not image.get("image_url"):
+        #     try:
+        #         record["image"]["image_url"] = upload_odlc_image(
+        #             record["id"], image_b64, received_at
+        #         )
+        #     except Exception as e:
+        #         print(f"S3 image upload failed for record {record['id']}: {e}")
+        # if depth_b64 and not image.get("depth_url"):
+        #     try:
+        #         record["image"]["depth_url"] = upload_odlc_depth(
+        #             record["id"], depth_b64, received_at
+        #         )
+        #     except Exception as e:
+        #         print(f"S3 depth upload failed for record {record['id']}: {e}")
+        # if image:
+        #     try:
+        #         upload_odlc_metadata(
+        #             record["id"],
+        #             received_at,
+        #             {
+        #                 "boundingBox": image.get("bounding_box"),
+        #                 "confidenceLevel": image.get("confidence_level"),
+        #                 "yawDeg": image.get("yaw_deg"),
+        #                 "colorDetection": image.get("color_detection"),
+        #                 "heading": record.get("metadata"),
+        #             },
+        #         )
+        #     except Exception as e:
+        #         print(f"S3 metadata upload failed for record {record['id']}: {e}")
 
         with _SESSION_LOCK:
             data = _read_session(session_id) or _empty_session(session_id)
@@ -221,9 +218,7 @@ def get_archive_object(request):
     """
     key = (request.GET.get("key") or "").strip()
     if not key:
-        return JsonResponse(
-            {"error": "Missing 'key' query parameter"}, status=400
-        )
+        return JsonResponse({"error": "Missing 'key' query parameter"}, status=400)
     try:
         body, content_type = download_archive_object(key)
     except Exception as e:
