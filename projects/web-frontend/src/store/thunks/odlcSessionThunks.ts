@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getOdlcSession, patchOdlcRecord } from "../../api/endpoints";
-import { appendOdlcImage, clearOdlcImages, loadOdlcImageRecords } from "../slices/dataSlice";
+import { appendOdlcImage, clearOdlcImages, loadOdlcImageRecords, mergeOdlcImageRecords } from "../slices/dataSlice";
 import { setOdlcSessionId } from "../slices/appSlice";
 import { AppDispatch, RootState } from "../store";
 import type { OdlcImage } from "../../schemas/odlc";
@@ -37,6 +37,25 @@ export const newOdlcSession = createAsyncThunk<void, void, { state: RootState }>
         const newId = crypto.randomUUID();
         dispatch(setOdlcSessionId(newId));
         dispatch(clearOdlcImages());
+    },
+);
+
+export const pollOdlcSession = createAsyncThunk<void, void, { state: RootState }>(
+    "odlcSession/poll",
+    async (_, { dispatch, getState }) => {
+        const state = getState();
+        const sessionId = state.app.odlcSessionId;
+        if (!sessionId) return;
+        const records = state.data.odlcImageRecords;
+        const since = records.length > 0 ? Math.max(...records.map((r) => r.receivedAt)) : 0;
+        try {
+            const session = await getOdlcSession(sessionId, { since });
+            if (session && session.records.length > 0) {
+                dispatch(mergeOdlcImageRecords(session.records));
+            }
+        } catch (err) {
+            console.error("Failed to poll ODLC session:", err);
+        }
     },
 );
 

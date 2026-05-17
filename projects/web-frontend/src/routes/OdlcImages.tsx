@@ -37,7 +37,11 @@ import {
 } from "../store/slices/dataSlice";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
 import SessionIdDisplay from "../components/SessionIdDisplay";
-import { syncOdlcImageToBackend, appendOdlcImageFromAircraft } from "../store/thunks/odlcSessionThunks";
+import {
+    syncOdlcImageToBackend,
+    appendOdlcImageFromAircraft,
+    pollOdlcSession,
+} from "../store/thunks/odlcSessionThunks";
 import type { OdlcImageRecord } from "../store/slices/dataSlice";
 import { classifyOdlcColor, ODLC_COLORS, ODLC_COLOR_LABELS } from "../utils/odlcColorGroup";
 import type { OdlcColor, RGB } from "../utils/odlcColorGroup";
@@ -147,6 +151,7 @@ export default function OdlcImages() {
     const [flaggedOnly, setFlaggedOnly] = useState(false);
     const [sortBy, setSortBy] = useState<SortBy>("recency");
     const [colorFilter, setColorFilter] = useState<ColorFilter>("all");
+    const [autoRefresh, setAutoRefresh] = useState(false);
     const [highlightedAnnotationId, setHighlightedAnnotationId] = useState<string | null>(null);
 
     const dispatch = useAppDispatch();
@@ -164,6 +169,27 @@ export default function OdlcImages() {
     // Callback ref: fires on attach/detach so we measure correctly even when
     // the list container isn't in the DOM on first render (e.g. empty state
     // then session restore populates records and mounts the main layout).
+    const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    useEffect(() => {
+        if (autoRefresh) {
+            pollIntervalRef.current = setInterval(() => {
+                dispatch(pollOdlcSession());
+            }, 1000);
+        } else {
+            if (pollIntervalRef.current !== null) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+            }
+        }
+        return () => {
+            if (pollIntervalRef.current !== null) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+            }
+        };
+    }, [autoRefresh, dispatch]);
+
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const listContainerCallbackRef = useCallback((el: HTMLDivElement | null) => {
         resizeObserverRef.current?.disconnect();
@@ -341,6 +367,12 @@ export default function OdlcImages() {
                         Filters
                     </Typography>
                     <Stack spacing={1} sx={{ mb: 2 }}>
+                        <FormControlLabel
+                            control={
+                                <Switch size="small" checked={autoRefresh} onChange={(_, v) => setAutoRefresh(v)} />
+                            }
+                            label={<Typography variant="body2">Auto-refresh</Typography>}
+                        />
                         <FormControlLabel
                             control={
                                 <Switch size="small" checked={flaggedOnly} onChange={(_, v) => setFlaggedOnly(v)} />

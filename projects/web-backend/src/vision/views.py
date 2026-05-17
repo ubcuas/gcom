@@ -94,6 +94,20 @@ def get_odlc_session(request, session_id: str):
             data = _read_session(session_id)
         if data is None:
             return JsonResponse({"error": "Session not found"}, status=404)
+        since_raw = request.GET.get("since")
+        if since_raw is not None:
+            try:
+                since = int(since_raw)
+                data = {
+                    **data,
+                    "records": [
+                        r
+                        for r in data.get("records", [])
+                        if r.get("receivedAt", 0) > since
+                    ],
+                }
+            except ValueError:
+                return JsonResponse({"error": "Invalid 'since' parameter"}, status=400)
         return JsonResponse(data)
     except Exception as e:
         print(f"Error reading ODLC session: {e}")
