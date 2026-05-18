@@ -3,6 +3,7 @@ import {
     Box,
     Button,
     CircularProgress,
+    IconButton,
     MenuItem,
     Paper,
     Stack,
@@ -15,6 +16,8 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import ChevronLeft from "@mui/icons-material/ChevronLeft";
+import ChevronRight from "@mui/icons-material/ChevronRight";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import ImageAnnotationOverlay from "../components/ImageAnnotationOverlay";
@@ -52,6 +55,7 @@ const ArchiveRecordSchema = z.object({
     confidenceLevel: z.number().optional(),
     yawDeg: z.number().nullable().optional(),
     colorDetection: z.tuple([z.number().int(), z.number().int(), z.number().int()]).optional(),
+    heading: z.string().nullable().optional(),
 });
 
 const ArchiveRecordsSchema = z.array(ArchiveRecordSchema);
@@ -86,13 +90,34 @@ function getRecordTimestamp(receivedAt: string | number | undefined): number {
     return Date.now();
 }
 
-function buildArchiveMetadata(date: string, entryId: string, colorKey: string, depthKey: string | null): string {
-    return [
-        `Archive date: ${date}`,
-        `Archive entry: ${entryId}`,
-        `Color key: ${colorKey}`,
-        `Depth key: ${depthKey ?? "None"}`,
-    ].join("\n");
+function formatArchiveMetadata(record: OdlcImageRecord): string {
+    const { image, receivedAt } = record;
+    const [r, g, b] = image.color_detection;
+    const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
+    const directionLine =
+        image.yaw_deg != null
+            ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
+            : "Direction: N/A";
+
+    // Derive archive date / entry id from the composite record id ("date:uuid").
+    const colonIdx = record.id.indexOf(":");
+    const archiveDate = colonIdx >= 0 ? record.id.slice(0, colonIdx) : "";
+    const archiveEntry = colonIdx >= 0 ? record.id.slice(colonIdx + 1) : record.id;
+
+    const lines = [
+        `Received: ${new Date(receivedAt).toISOString()}`,
+        `Confidence: ${image.confidence_level}`,
+        `Color: ${colorName} (RGB: ${r}, ${g}, ${b})`,
+        directionLine,
+        `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
+        ...(archiveDate ? [`Archive date: ${archiveDate}`, `Archive entry: ${archiveEntry}`] : []),
+    ];
+
+    if (record.metadata.trim().length > 0) {
+        lines.push("", record.metadata.trim());
+    }
+
+    return lines.join("\n");
 }
 
 function createArchiveImage(entry: ArchiveRecord, colorBase64: string, depthBase64: string | null): OdlcImage {
@@ -106,28 +131,6 @@ function createArchiveImage(entry: ArchiveRecord, colorBase64: string, depthBase
     };
 }
 
-function formatArchiveMetadata(record: OdlcImageRecord): string {
-    const { image, receivedAt } = record;
-    const [r, g, b] = image.color_detection;
-    const colorName = ODLC_COLOR_LABELS[classifyOdlcColor(image.color_detection as RGB)];
-    const directionLine =
-        image.yaw_deg != null
-            ? `Direction: ${image.yaw_deg.toFixed(1)}° ${yawToCompass(image.yaw_deg)}`
-            : "Direction: N/A";
-    const lines = [
-        `Received: ${new Date(receivedAt).toISOString()}`,
-        `Confidence: ${image.confidence_level}`,
-        `Color: ${colorName} (RGB: ${r}, ${g}, ${b})`,
-        directionLine,
-        `Bounding box: ${image.bounding_box.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join(", ")}`,
-    ];
-
-    if (record.metadata.trim().length > 0) {
-        lines.push("", record.metadata.trim());
-    }
-
-    return lines.join("\n");
-}
 
 function getArchiveItemLabel(record: OdlcImageRecord): string {
     const entryId = record.id.split(":").slice(1).join(":") || record.id;
@@ -158,7 +161,7 @@ async function loadArchiveRecord(date: string, entry: ArchiveRecord): Promise<Od
         image: createArchiveImage(entry, imageData, depthData),
         flagged: false,
         textInput: "",
-        metadata: buildArchiveMetadata(date, entry.id, colorKey, depthKey),
+        metadata: entry.heading ?? "",
         annotations: [],
     };
 }
@@ -177,6 +180,26 @@ export default function DepthArchive() {
     const [isPolling, setIsPolling] = useState(false);
     const [lastPolledAt, setLastPolledAt] = useState<Date | null>(null);
 
+    // Thumbnail row: 40px img + 0.75*2 padding (12) + 1px border*2 + 0.25*8 spacing gap
+    const ROW_HEIGHT_PX = 56;
+    const [pageSize, setPageSize] = useState(1);
+    const [page, setPage] = useState(0);
+
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
+    const listContainerCallbackRef = useCallback((el: HTMLDivElement | null) => {
+        resizeObserverRef.current?.disconnect();
+        resizeObserverRef.current = null;
+        if (!el) return;
+        const recompute = () => {
+            const next = Math.max(1, Math.floor(el.clientHeight / ROW_HEIGHT_PX));
+            setPageSize((prev) => (prev === next ? prev : next));
+        };
+        recompute();
+        const ro = new ResizeObserver(recompute);
+        ro.observe(el);
+        resizeObserverRef.current = ro;
+    }, []);
+
     const recordsCacheRef = useRef(new Map<string, OdlcImageRecord[]>());
     const selectedDateRef = useRef(selectedDate);
     const recordsRef = useRef(records);
@@ -188,6 +211,18 @@ export default function DepthArchive() {
     useEffect(() => {
         recordsRef.current = records;
     }, [records]);
+
+    const totalPages = Math.max(1, Math.ceil(records.length / pageSize));
+    const clampedPage = Math.min(page, totalPages - 1);
+    const paginatedRecords = useMemo(
+        () => records.slice(clampedPage * pageSize, (clampedPage + 1) * pageSize),
+        [records, clampedPage, pageSize],
+    );
+
+    // Reset to first page when the record list or page size changes
+    useEffect(() => {
+        setPage(0);
+    }, [records, pageSize]);
 
     const selectedRecord = useMemo(
         () => records.find((record) => record.id === selectedRecordId) ?? null,
@@ -280,7 +315,7 @@ export default function DepthArchive() {
                                 .map((r) => r.value);
 
                             if (loadedRecords.length > 0) {
-                                applyRecordsUpdate(date, (current) => [...current, ...loadedRecords]);
+                                applyRecordsUpdate(date, (current) => [...loadedRecords, ...current]);
                             }
                         }
 
@@ -592,7 +627,7 @@ export default function DepthArchive() {
                         )}
                     </Box>
 
-                    <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+                    <Box ref={listContainerCallbackRef} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
                         {recordsLoading ? (
                             <Stack spacing={1} alignItems="center" justifyContent="center" sx={{ minHeight: 160 }}>
                                 <CircularProgress size={24} />
@@ -602,7 +637,7 @@ export default function DepthArchive() {
                             </Stack>
                         ) : records.length > 0 ? (
                             <Stack spacing={0.25}>
-                                {records.map((record) => (
+                                {paginatedRecords.map((record) => (
                                     <Box
                                         key={record.id}
                                         onClick={() => setSelectedRecordId(record.id)}
@@ -648,6 +683,40 @@ export default function DepthArchive() {
                             </Stack>
                         )}
                     </Box>
+
+                    {records.length > pageSize && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mt: 2,
+                                pt: 1,
+                                borderTop: 1,
+                                borderColor: "divider",
+                            }}
+                        >
+                            <IconButton
+                                size="small"
+                                disabled={clampedPage === 0}
+                                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                                aria-label="Previous page"
+                            >
+                                <ChevronLeft />
+                            </IconButton>
+                            <Typography variant="caption" color="text.secondary">
+                                {clampedPage + 1} / {totalPages}
+                            </Typography>
+                            <IconButton
+                                size="small"
+                                disabled={clampedPage >= totalPages - 1}
+                                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                                aria-label="Next page"
+                            >
+                                <ChevronRight />
+                            </IconButton>
+                        </Box>
+                    )}
                 </Paper>
 
                 <Paper sx={{ flex: 1, p: 2, display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -682,7 +751,7 @@ export default function DepthArchive() {
                                     onUndo={handleUndo}
                                     onDeleteAnnotation={handleDeleteAnnotation}
                                 />
-                                {selectedRecord.image.yaw_deg != null && (
+                                {(selectedRecord.metadata.trim() || selectedRecord.image.yaw_deg != null) && (
                                     <Box
                                         sx={{
                                             position: "absolute",
@@ -699,20 +768,22 @@ export default function DepthArchive() {
                                             pointerEvents: "none",
                                         }}
                                     >
-                                        <Box
-                                            component="span"
-                                            sx={{
-                                                display: "inline-block",
-                                                transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
-                                                fontSize: "1rem",
-                                                lineHeight: 1,
-                                            }}
-                                        >
-                                            ↑
-                                        </Box>
+                                        {selectedRecord.image.yaw_deg != null && (
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: "inline-block",
+                                                    transform: `rotate(${selectedRecord.image.yaw_deg}deg)`,
+                                                    fontSize: "1rem",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                ↑
+                                            </Box>
+                                        )}
                                         <Typography variant="caption" sx={{ color: "#fff", fontFamily: "monospace" }}>
-                                            {selectedRecord.image.yaw_deg.toFixed(1)}°{" "}
-                                            {yawToCompass(selectedRecord.image.yaw_deg)}
+                                            {selectedRecord.metadata.trim() ||
+                                                `${selectedRecord.image.yaw_deg!.toFixed(1)}° ${yawToCompass(selectedRecord.image.yaw_deg!)}`}
                                         </Typography>
                                     </Box>
                                 )}

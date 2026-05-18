@@ -218,10 +218,12 @@ export default function OdlcImages() {
         [filteredSorted, clampedPage, pageSize],
     );
 
-    // Reset to first page when filters or pageSize change
+    // Reset to first page when filters change. Do not reset when pageSize changes:
+    // pageSize is driven by ResizeObserver and can flicker across row-count thresholds
+    // (scrollbar, flex layout), which was sending users back to page 1 while paging.
     useEffect(() => {
         setPage(0);
-    }, [flaggedOnly, sortBy, colorFilter, pageSize]);
+    }, [flaggedOnly, sortBy, colorFilter]);
 
     /** Flagged records in current filter/sort order (export includes only these). */
     const flaggedForExport = useMemo(() => filteredSorted.filter((r) => r.flagged), [filteredSorted]);
