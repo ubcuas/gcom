@@ -1,5 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getOdlcSession, getNewOdlcRecordIds, getOdlcRecord, patchOdlcRecord } from "../../api/endpoints";
+import {
+    getLatestOdlcSessionId,
+    getOdlcSession,
+    getNewOdlcRecordIds,
+    getOdlcRecord,
+    patchOdlcRecord,
+} from "../../api/endpoints";
 import { appendOdlcImage, clearOdlcImages, loadOdlcImageRecords, mergeOdlcImageRecords } from "../slices/dataSlice";
 import { setOdlcSessionId } from "../slices/appSlice";
 import { AppDispatch, RootState } from "../store";
@@ -64,18 +70,19 @@ export const pollOdlcSession = createAsyncThunk<void, void, { state: RootState }
 
 export const restoreOdlcSession = createAsyncThunk<void, void, { state: RootState }>(
     "odlcSession/restore",
-    async (_, { dispatch, getState }) => {
-        const sessionId = getState().app.odlcSessionId;
-        if (!sessionId) {
-            dispatch(newOdlcSession());
-            return;
-        }
+    async (_, { dispatch }) => {
         try {
+            const sessionId = await getLatestOdlcSessionId();
+            if (sessionId === null) {
+                dispatch(newOdlcSession());
+                return;
+            }
             const session = await getOdlcSession(sessionId);
             if (session === null) {
                 dispatch(newOdlcSession());
                 return;
             }
+            dispatch(setOdlcSessionId(sessionId));
             dispatch(loadOdlcImageRecords(session.records));
         } catch (err) {
             console.error("Failed to restore ODLC session:", err);

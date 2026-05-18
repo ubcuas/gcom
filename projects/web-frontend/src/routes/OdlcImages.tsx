@@ -319,28 +319,6 @@ export default function OdlcImages() {
         });
     }, [selectedRecord]);
 
-    if (records.length === 0) {
-        return (
-            <Box sx={{ p: 3, width: "100%" }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                    <Typography variant="h5" fontWeight="bold">
-                        ODLC Images
-                    </Typography>
-                    <SessionIdDisplay />
-                </Stack>
-                <Paper sx={{ p: 4, textAlign: "center" }}>
-                    <Typography color="text.secondary">No ODLC images captured yet.</Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-                        Connect to a WebRTC stream to receive images.
-                    </Typography>
-                    <Button variant="contained" size="small" onClick={loadSampleImages}>
-                        Load sample images
-                    </Button>
-                </Paper>
-            </Box>
-        );
-    }
-
     return (
         <Box sx={{ p: 3, width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
@@ -525,7 +503,17 @@ export default function OdlcImages() {
                             position: "relative",
                         }}
                     >
-                        {selectedRecord ? (
+                        {records.length === 0 ? (
+                            <Stack alignItems="center" spacing={1}>
+                                <Typography color="text.secondary">No ODLC images captured yet.</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Connect to a WebRTC stream to receive images.
+                                </Typography>
+                                <Button variant="contained" size="small" onClick={loadSampleImages} sx={{ mt: 1 }}>
+                                    Load sample images
+                                </Button>
+                            </Stack>
+                        ) : selectedRecord ? (
                             <>
                                 <ImageAnnotationOverlay
                                     imageSrc={`data:image/jpeg;base64,${selectedRecord.image.image_data}`}

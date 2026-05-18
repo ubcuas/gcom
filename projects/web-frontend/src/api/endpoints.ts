@@ -105,6 +105,19 @@ export const getDroneParameter = async (
 
 export type OdlcSessionPayload = z.infer<typeof OdlcSessionSchema>;
 
+export const getLatestOdlcSessionId = async (): Promise<string | null> => {
+    try {
+        const response = await api.get("/vision/odlc-session/latest/");
+        return (response.data as { sessionId: string }).sessionId;
+    } catch (err: unknown) {
+        if (typeof err === "object" && err !== null && "response" in err) {
+            const status = (err as { response?: { status?: number } }).response?.status;
+            if (status === 404) return null;
+        }
+        throw err;
+    }
+};
+
 export const getOdlcSession = async (
     sessionId: string,
     options?: { since?: number },

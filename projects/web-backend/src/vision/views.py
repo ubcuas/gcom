@@ -109,6 +109,27 @@ def deproject_pixel(request):
 
 @csrf_exempt
 @require_http_methods(["GET"])
+def get_latest_odlc_session(request):
+    try:
+        session_files = [
+            p
+            for p in ODLC_SESSIONS_DIR.glob("*.json")
+            if not p.name.endswith(".index.json")
+        ]
+        if not session_files:
+            return JsonResponse({"error": "No sessions found"}, status=404)
+        latest = max(session_files, key=lambda p: p.stat().st_mtime)
+        session_id = latest.stem
+        return JsonResponse({"sessionId": session_id})
+    except Exception as e:
+        print(f"Error finding latest ODLC session: {e}")
+        return JsonResponse(
+            {"error": "Internal server error", "details": str(e)}, status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
 def get_odlc_session(request, session_id: str):
     try:
         with _SESSION_LOCK:

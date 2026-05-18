@@ -8,6 +8,7 @@ from .views import (
     get_archive_dates,
     get_archive_object,
     get_archive_records_for_date,
+    get_latest_odlc_session,
     get_odlc_session,
     get_odlc_session_index,
     odlc_record,
@@ -20,6 +21,9 @@ router.register(r"groundobject", GroundObjectViewset, basename="groundobject")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path(
+        "odlc-session/latest/", get_latest_odlc_session, name="get_latest_odlc_session"
+    ),
     path("odlc-session/<str:session_id>/", get_odlc_session, name="get_odlc_session"),
     path(
         "odlc-session/<str:session_id>/index/",
