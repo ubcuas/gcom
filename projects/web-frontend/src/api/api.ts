@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-    baseURL: "https://vittals-macbook-air.tail8164f3.ts.net/api",
+    baseURL: "http://localhost:8000/api/",
     headers: {
         "Content-Type": "application/json",
     },
