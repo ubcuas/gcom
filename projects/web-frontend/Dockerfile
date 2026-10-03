@@ -1,8 +1,13 @@
 FROM node:20-slim
+# RUN mkdir -p /frontend
 WORKDIR /frontend
-COPY package.json .
-COPY package-lock.json .
-COPY . .
+COPY package*.json .
 RUN npm install
-CMD ["npm", "run", "dev"]
+
+
+COPY . .
+RUN npm run build
+
 EXPOSE 1324
+CMD ["npm", "run", "dev"]
+

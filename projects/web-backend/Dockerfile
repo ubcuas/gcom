@@ -1,8 +1,12 @@
 FROM python:3.12-slim
 
-WORKDIR /web-backend
+# Prevent Python from buffering stdout/stderr and writing .pyc files
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
-COPY requirements.txt ./
+WORKDIR /backend
+
+COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 

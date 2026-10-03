@@ -45,7 +45,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mission-planner-mps
+    container_name: mission-planner
     depends_on:
       mavproxy:
         condition: service_healthy
@@ -56,10 +56,10 @@ services:
       - "8000:8000"
     environment:
       # Mavproxy configuration - connect to mavproxy container
-      - MAVLINK_MASTER=udp:mavproxy:14551
+      - MAVLINK_MASTER=udp:mavproxy:14550
       # These are internal to the container, not used when connecting to mavproxy
-      - MAVLINK_OUT_1=udp:127.0.0.1:14551
-      - MAVLINK_OUT_2=udp:127.0.0.1:14552
+      # - MAVLINK_OUT_1=udp:127.0.0.1:14551
+      # - MAVLINK_OUT_2=udp:127.0.0.1:14552
 
       # Mission Planner Server configuration
       - MPS_HOST=0.0.0.0
