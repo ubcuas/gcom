@@ -43,6 +43,7 @@ COPY src/ ./src/
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+    
 # Create entrypoint script
 # RUN mkdir -p /app/scripts && \
 #     cat > /app/scripts/entrypoint.sh << 'ENTRYPOINT_EOF' && 

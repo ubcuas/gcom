@@ -15,6 +15,7 @@ services:
     build: 
       context: ./projects/mavproxy
       dockerfile: Dockerfile
+    container_name: mavproxy
     tty: true
     stdin_open: true
     depends_on:
@@ -26,8 +27,8 @@ services:
     command: > 
       mavproxy.py 
       --master=tcp:sitl:5760 
-      --out=udp:mission-planner:14550 
-      --out=udp:mission-planner:14551
+      --out=udpin:0.0.0.0:14550 
+      --out=udpin:0.0.0.0:14551
       --default-modules=link,output,mode
       --nowait
       --daemon
@@ -38,7 +39,6 @@ services:
       retries: 5
       start_period: 5s
 
-
   mission-planner:
     build:
       context: ./projects/mission-planner
@@ -48,13 +48,11 @@ services:
       # future compatibility if main.py is parameterized later.
       - HOST=0.0.0.0
       - PORT=9000
-      - MAVLINK_CONNECTION_STRING=udpin:0.0.0.0:14550
+      - MAVLINK_CONNECTION_STRING=udpout:mavproxy:14550
       - STATUS_HOST=web-backend
       - STATUS_PORT=8000
     depends_on:
       mavproxy:
-        condition: service_healthy
-      web-backend:
         condition: service_healthy
     ports:
       - "9000:9000"
@@ -76,8 +74,8 @@ services:
       - SECRET_KEY="django-insecure-e27f6@t)*9q#vtf*v*hkl-2+86$&6ayj9fb+j+b-5_bjhne$h@"
       - DEBUG=True
       - MISSION_PLANNER_URL=http://mission-planner:9000
-    # depends_on:
-    #   - mission-planner
+    depends_on:
+      - mission-planner
     ports:
       - "8000:8000"
     volumes:
@@ -105,19 +103,3 @@ services:
       - VITE_MAPTILER_KEY=ioE7W2lCif3DO9oj1YJh
       - VITE_SIGNALING_SERVER_URL=ws://localhost:8081
 
-
-
-  # integration-tests:
-  #   build:
-  #     context: ./projects/integration-tests
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     - WEB_BACKEND_URL=http://web-backend:8000
-  #     - MISSION_PLANNER_URL=http://mission-planner:9000
-  #     - TEST_TIMEOUT=180
-  #   depends_on:
-  #     web-backend:
-  #       condition: service_healthy
-  #     mission-planner:
-  #       condition: service_healthy
-  #   command: ["pytest", "-v"]
