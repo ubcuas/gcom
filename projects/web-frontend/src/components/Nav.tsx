@@ -1,6 +1,7 @@
 import { CloudQueue, EditLocationAlt } from "@mui/icons-material";
 import Home from "@mui/icons-material/Home";
 import ImageSearchIcon from "@mui/icons-material/ImageSearch";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import MapIcon from "@mui/icons-material/Map";
 import Settings from "@mui/icons-material/Settings";
 import VideocamIcon from "@mui/icons-material/Videocam";
@@ -13,9 +14,10 @@ const linkMap: Record<string, number> = {
     map: 1,
     queue: 2,
     "webrtc-test": 3,
-    "odlc-images": 4,
-    "depth-archive": 5,
-    settings: 6,
+    "stream-annotation": 4,
+    "odlc-images": 5,
+    "depth-archive": 6,
+    settings: 7,
 };
 
 export default function Nav() {
@@ -98,6 +100,14 @@ export default function Nav() {
                     }}
                     label={<VideocamIcon />}
                     href="/webrtc-test"
+                    LinkComponent={Link}
+                />
+                <Tab
+                    sx={{
+                        minWidth: 0,
+                    }}
+                    label={<LocalOfferIcon />}
+                    href="/stream-annotation"
                     LinkComponent={Link}
                 />
                 <Tab

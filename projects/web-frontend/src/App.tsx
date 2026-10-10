@@ -10,6 +10,7 @@ import Settings from "./routes/Settings";
 import VideoFeed from "./routes/VideoFeed";
 import OdlcImages from "./routes/OdlcImages";
 import DepthArchive from "./routes/DepthArchive";
+import StreamAnnotation from "./routes/StreamAnnotation";
 import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "./store/store";
@@ -126,6 +127,7 @@ function App() {
                         {/* <Route path="/mps-queue" component={MPSQueue} /> */}
                         <Route path="/queue" component={Queue} />
                         <Route path="/webrtc-test" component={VideoFeed} />
+                        <Route path="/stream-annotation" component={StreamAnnotation} />
                         <Route path="/odlc-images" component={OdlcImages} />
                         <Route path="/depth-archive" component={DepthArchive} />
                     </Switch>
