@@ -86,7 +86,18 @@ services:
       timeout: 3s
       retries: 60
 
-    
+  signaling-server:
+    build:
+      context: ./projects/webrtc_signaling_server
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8081/', timeout=2).read();\""]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+
   web-frontend:
     build:
       context: ./projects/web-frontend

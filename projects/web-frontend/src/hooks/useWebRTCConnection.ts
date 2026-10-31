@@ -310,6 +310,7 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
 
         const socket = io(SIGNALING_SERVER_URL, {
             transports: ["websocket"],
+            auth: { role: "frontend" },
         });
 
         socket.on("connect", () => {
@@ -338,12 +339,21 @@ export function useWebRTCConnection(): UseWebRTCConnectionResult {
             console.error("Signaling server error:", error);
         });
 
-        socket.on("peer_joined", () => {
-            console.error("peer_joined event received - web-frontend connected before streaming node");
-            throw new Error(
-                "Connection order error: The streaming node must connect to the signaling server first. " +
-                    "The web-frontend should not receive a peer_joined event.",
-            );
+        socket.on("connect_error", (error: Error) => {
+            console.error("Signaling server rejected connection:", error.message);
+        });
+
+        socket.on("sfu_left", () => {
+            console.log("SFU disconnected, waiting for a new offer");
+            if (peerConnectionRef.current) {
+                peerConnectionRef.current.close();
+                peerConnectionRef.current = null;
+            }
+            dataChannelRef.current = null;
+            iceCandidateQueueRef.current = [];
+            remotePeerIdRef.current = null;
+            setRemoteStream(null);
+            setPeerStatus("disconnected");
         });
 
         socketRef.current = socket;
