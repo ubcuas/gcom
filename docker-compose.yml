@@ -1,7 +1,6 @@
 services:
   sitl:
     image: ${UASITL_IMAGE:-ubcuas/uasitl:copter-4.5.5}
-    platform: ${UASITL_PLATFORM:-linux/amd64}
     # Optional for local debugging; CI doesn't need ports published.
     ports:
       - "5760:5760"
