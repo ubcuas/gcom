@@ -77,7 +77,11 @@ async def disconnect(sid):
         await sio.emit("peer_left", {"peer_id": sid}, room=sfu_sid)
 
     if sid == sfu_sid:
+        for client_id in connected_clients:
+            if client_id != sid:
+                await sio.emit("sfu_left", {"peer_id": sid}, room=client_id)
         sfu_sid = None
+
 
     connected_clients.discard(sid)
     logger.info(f"Client disconnected: {sid}")
