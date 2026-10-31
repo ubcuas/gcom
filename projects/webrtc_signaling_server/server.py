@@ -51,10 +51,12 @@ async def connect(sid, environ, auth):
             return False
         sfu_sid = sid
 
-    # Notify existing clients about the new connection
-    for client_id in connected_clients:
-        logger.info(f"Notifying {client_id} about new peer {sid}")
-        await sio.emit("peer_joined", {"peer_id": sid}, room=client_id)
+    # Notify relevant peer(s) about the new connection
+    if role == "frontend" and sfu_sid is not None:
+        emit "peer_joined" {peer_id: sid} to room=sfu_sid
+    if role == "sfu":
+        for client_id in connected_clients:
+            emit "peer_joined" {peer_id: client_id} to room=sid   
 
     # Add the new client to the set
     connected_clients.add(sid)
