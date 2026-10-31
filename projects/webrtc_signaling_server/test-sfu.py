@@ -1,46 +1,29 @@
-"""
-Author: Nitish Joson Terance Joe Heston
-
-Description: This script is used to run a test of the server for debugging purposes.
-
-Instruction:
-in your terminal, make a virtual enviromemnt and download dependencies from requirement.txt
-Have one terminal running the server and other terminals running clients. 
---------
-
-cd path/to/webrtc_signaling_server    # the folder containing server.py
-
-python3 -m venv venv                  # create the virtual environment
-source venv/bin/activate              # activate it; your prompt should now start with (venv)
-
-pip install python-socketio aiohttp   # install only what server.py needsc
-
-# terminal 1
-python server.py
-
-# terminal 2
-python test_client.py client1
-
-# terminal 3
-python test_client.py client2
-"""
 
 
 import asyncio, sys
 import socketio
+from prompt_toolkit import PromptSession
+from prompt_toolkit.patch_stdout import patch_stdout
+
 
 peer_ids = []
 
 name = sys.argv[1] if len(sys.argv) > 1 else "sfu"
 sio = socketio.AsyncClient()
 
+
+
 @sio.on("peer_joined")
 async def on_peer_joined(data):
     global peer_ids
     peer_ids.append(data["peer_id"])
+    await sio.emit("signal", {"to": data["peer_id"], "type": "offer", "data": {"msg": "hello"}})
+
 
 
 @sio.on("signal")
+async def on_signal(data):
+    print(f"[{name}] got signal: {data}")
 
 @sio.event
 async def connect():
@@ -55,9 +38,18 @@ async def any_event(event, data):
     print(f"[{name}] got '{event}': {data}")
 
 async def main():
+    global peer_ids
     await sio.connect("http://localhost:8081", auth = {"role": "sfu"})   # use the port server.py listens on
-    while True:
-        text = await asyncio.to_thread(input, f"[{name}] > ")
-        await sio.emit("signal", {"to": peer_ids[0], "type": "offer", "data" : {"msg" : text}})
+    session = PromptSession()
+    with patch_stdout():
+        while True:
+            text = await session.prompt_async(f"[{name}] > ")
+            index = 0
+            if not peer_ids:
+                print("no peers to message to")
+                continue
+            for i in range(len(peer_ids)):
+                await sio.emit("signal", {"to": peer_ids[i], "type": "offer", "data" : {"msg" : text}})
+
 
 asyncio.run(main())

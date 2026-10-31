@@ -13,7 +13,7 @@ cd path/to/webrtc_signaling_server    # the folder containing server.py
 python3 -m venv venv                  # create the virtual environment
 source venv/bin/activate              # activate it; your prompt should now start with (venv)
 
-pip install python-socketio aiohttp   # install only what server.py needsc
+pip install python-socketio aiohttp prompt_toolkit   # install only what server.py needs
 
 # terminal 1
 python server.py
@@ -28,21 +28,23 @@ python test-client.py client2
 
 import asyncio, sys
 import socketio
+from prompt_toolkit import PromptSession
+from prompt_toolkit.patch_stdout import patch_stdout
 
 my_sfu = ""
 
 name = sys.argv[1] if len(sys.argv) > 1 else "client"
 sio = socketio.AsyncClient()
 
-@sio.on("peer_joined")
-async def on_peer_joined(data):
-    global peer_ids
-    my_sfu = data["peer_id"]
+
 
 
 @sio.on("signal")
 async def on_signal(data):
     print(f"[{name}] got signal: {data}")
+    global my_sfu
+    my_sfu = data["from"]
+    print(f"[{name}] learned sfu: {my_sfu}")
 
 
 
@@ -59,9 +61,15 @@ async def any_event(event, data):
     print(f"[{name}] got '{event}': {data}")
 
 async def main():
+    global my_sfu
     await sio.connect("http://localhost:8081", auth = {"role": "frontend"})   # use the port server.py listens on
-    while True:
-        text = await asyncio.to_thread(input, f"[{name}] > ")
-        await sio.emit("signal", {"to": my_sfu, "type": "offer", "data" : {"msg" : text}})
+    session = PromptSession()
+    with patch_stdout():
+        while True:
+            text = await session.prompt_async(f"[{name}] > ")
+            if my_sfu == "":
+                print("No SFU Yet")
+            else:
+                await sio.emit("signal", {"to": my_sfu, "type": "offer", "data" : {"msg" : text}})
 
 asyncio.run(main())
