@@ -42,7 +42,9 @@ async def connect(sid, environ, auth):
     role = auth.get("role") if auth else None
     logger.info(f"New {sid} has role {role}")
     # reject invalid roles
-    if role not in {"frontend", "sfu"}: return False
+    if role not in {"frontend", "sfu"}:
+        logger.warning(f"Rejecting {sid}: invalid role {role}")
+        return False
 
     global sfu_sid  # make sure there is only a singular sfu
     if role == "sfu":
@@ -53,10 +55,10 @@ async def connect(sid, environ, auth):
 
     # Notify relevant peer(s) about the new connection
     if role == "frontend" and sfu_sid is not None:
-        emit "peer_joined" {peer_id: sid} to room=sfu_sid
+        await sio.emit("peer_joined", {"peer_id": sid}, room=sfu_sid)
     if role == "sfu":
         for client_id in connected_clients:
-            emit "peer_joined" {peer_id: client_id} to room=sid   
+            await sio.emit("peer_joined", {"peer_id": client_id}, room=sid) 
 
     # Add the new client to the set
     connected_clients.add(sid)
@@ -70,6 +72,10 @@ async def connect(sid, environ, auth):
 async def disconnect(sid):
     """Handle client disconnection"""
     global sfu_sid
+
+    if sid != sfu_sid and sfu_sid is not None:
+        await sio.emit("peer_left", {"peer_id": sid}, room=sfu_sid)
+
     if sid == sfu_sid:
         sfu_sid = None
 
