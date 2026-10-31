@@ -19,18 +19,32 @@ pip install python-socketio aiohttp   # install only what server.py needsc
 python server.py
 
 # terminal 2
-python test_client.py client1
+python test-client.py client1
 
 # terminal 3
-python test_client.py client2
+python test-client.py client2
 """
 
 
 import asyncio, sys
 import socketio
 
+my_sfu = ""
+
 name = sys.argv[1] if len(sys.argv) > 1 else "client"
 sio = socketio.AsyncClient()
+
+@sio.on("peer_joined")
+async def on_peer_joined(data):
+    global peer_ids
+    my_sfu = data["peer_id"]
+
+
+@sio.on("signal")
+async def on_signal(data):
+    print(f"[{name}] got signal: {data}")
+
+
 
 @sio.event
 async def connect():
@@ -46,6 +60,8 @@ async def any_event(event, data):
 
 async def main():
     await sio.connect("http://localhost:8081", auth = {"role": "frontend"})   # use the port server.py listens on
-    await sio.wait()
+    while True:
+        text = await asyncio.to_thread(input, f"[{name}] > ")
+        await sio.emit("signal", {"to": my_sfu, "type": "offer", "data" : {"msg" : text}})
 
 asyncio.run(main())
