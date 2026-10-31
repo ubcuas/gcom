@@ -38,6 +38,58 @@ python server.py
 
 The server will start on port 8081 and accept WebSocket connections.
 
+## Testing
+
+Three helper scripts let you test the server without an SFU, frontend, or video streaming:
+
+| File | Role | What it does |
+|---|---|---|
+| `test-sfu.py` | `sfu` | This is the Mock SFU. It will Automatically send an `offer` to every frontend that joins, and sends anything typed in the terminal to all connected frontends. Tracks peers through `peer_joined` / `peer_left`. |
+| `test-client.py` | `frontend` | This is the Mock frontend. It will learn the SFU's sid from the `from` field of the first offer it receives, then sends anything typed in the terminal to the SFU. It will clear the SFU sid on `sfu_left`. |
+| `run-test.sh` | n/a | Opens a tmux session with the server, with one SFU and two frontends in a 2x2 grid.|
+
+### Setup (once)
+
+```bash
+cd projects/webrtc_signaling_server
+python3 -m venv venv
+source venv/bin/activate
+pip install python-socketio aiohttp prompt_toolkit
+chmod +x run-test.sh
+```
+
+### Run
+
+```bash
+./run-test.sh
+```
+
+Requires tmux (Linux, macOS or WSL). To run it without tmux, start each one in its own terminal, in this order:
+
+```bash
+python server.py
+python test-sfu.py sfu
+python test-client.py peer1
+python test-client.py peer2
+```
+
+### What you should see
+
+1. Each frontend prints `got signal ... 'type': 'offer'` and then `learned sfu: <sid>`.
+2. Typing in a frontend pane: the SFU pane prints the message with `from` set to that frontend.
+3. Typing in the SFU pane: every frontend receives it.
+4. Close a frontend: the SFU prints `peer left`.
+5. Close the SFU: the frontends print `sfu left` and show `No SFU Yet` until a new SFU connects.
+
+### tmux basics
+
+- `Ctrl+b` then an arrow key: switch pane (typing goes to the pane you're in)
+- `Ctrl+b` then `[`: scroll (press `q` to stop)
+- `Ctrl+b` then `d`: detach (everything keeps running); `tmux attach -t signaling` brings it back
+- `tmux kill-session -t signaling`: stop everything
+
+
+
 ## Events
 
 > NOTE:

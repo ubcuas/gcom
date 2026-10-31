@@ -1,75 +1,72 @@
 """
+Mock GCOM Frontend
+
+Connects to the signaling server as a "frontend". Learns the SFU's sid from
+the "from" field of the first offer it receives, then sends anything typed in the terminal
+to the SFU. Clears the SFU when it receives "sfu_left".
+
+Usage: python test-client.py <name>
+See the Testing section of README.md in this folder.
+
 Author: Nitish Joson Terance Joe Heston
-
-Description: This script is used to run a test of the server for debugging purposes.
-
-Instruction:
-in your terminal, make a virtual enviromemnt and download dependencies from requirement.txt
-Have one terminal running the server and other terminals running clients. 
---------
-
-cd path/to/webrtc_signaling_server    # the folder containing server.py
-
-python3 -m venv venv                  # create the virtual environment
-source venv/bin/activate              # activate it; your prompt should now start with (venv)
-
-pip install python-socketio aiohttp prompt_toolkit   # install only what server.py needs
-
-# terminal 1
-python server.py
-
-# terminal 2
-python test-client.py client1
-
-# terminal 3
-python test-client.py client2
 """
-
 
 import asyncio, sys
 import socketio
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 
-my_sfu = ""
+sfu_sid = ""
 
 name = sys.argv[1] if len(sys.argv) > 1 else "client"
 sio = socketio.AsyncClient()
 
 
-
-
 @sio.on("signal")
 async def on_signal(data):
+    global sfu_sid
     print(f"[{name}] got signal: {data}")
-    global my_sfu
-    my_sfu = data["from"]
-    print(f"[{name}] learned sfu: {my_sfu}")
 
+    #server will not tell the frontend who the sfu is,
+    #so the frontend will learn the sfu_sid from the SFU's first message. 
+    sfu_sid = data["from"]
+    print(f"[{name}] learned sfu: {sfu_sid}")
+
+
+@sio.on("sfu_left")
+async def on_sfu_left(data):
+    global sfu_sid
+    sfu_sid = ""
+    print(f"[{name}] sfu left: {data['peer_id']}") 
 
 
 @sio.event
 async def connect():
     print(f"[{name}] connected, sid={sio.sid}")
 
+
 @sio.event
 async def disconnect():
     print(f"[{name}] disconnected")
 
-@sio.on("*")                       # catch-all: prints every event the server sends
+
+@sio.on("*") 
 async def any_event(event, data):
+    #catch-all: prints every event the server sends, 
+    #only fires if the event does not have its own handler
     print(f"[{name}] got '{event}': {data}")
 
+
 async def main():
-    global my_sfu
     await sio.connect("http://localhost:8081", auth = {"role": "frontend"})   # use the port server.py listens on
-    session = PromptSession()
-    with patch_stdout():
+    session = PromptSession() 
+    with patch_stdout(): # keeps incoming messages printing above prompt instead of on top of prompt
         while True:
             text = await session.prompt_async(f"[{name}] > ")
-            if my_sfu == "":
+            if sfu_sid == "":
                 print("No SFU Yet")
             else:
-                await sio.emit("signal", {"to": my_sfu, "type": "offer", "data" : {"msg" : text}})
+                await sio.emit("signal", {"to": sfu_sid, "type": "offer", "data" : {"msg" : text}})
+
 
 asyncio.run(main())
