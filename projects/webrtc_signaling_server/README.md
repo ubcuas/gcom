@@ -64,7 +64,6 @@ The server refuses the connection (the client receives `connect_error`) if the r
 | client → server | `connect` (Socket.IO built-in) | `auth: {"role": "frontend" \| "sfu"}` | Opening the connection. The role is sent in the `auth` payload; see above. |
 | server → sfu | `peer_joined` | `{"peer_id": "<sid>"}` | A frontend has connected. The SFU should create a peer connection and send it an offer. When the SFU connects, it receives one `peer_joined` for every frontend already connected. |
 | server → sfu | `peer_left` | `{"peer_id": "<sid>"}` | A frontend disconnected. The SFU should close that peer connection. |
-| server → frontend | `sfu_status` | `{"available": true \| false}` | Sent when a frontend connects, and to all frontends when the SFU connects or disconnects. |
 | client → server → client | `signal` | `{"to": "<sid>", "type": ..., "data": {...}}` | An offer, answer or ICE candidate (see [Message Format](#message-format)). `to` is required. The server adds `"from": "<sender sid>"` and forwards it to that one peer only. |
 | server → client | `error` | `{"message": "..."}` | The client's last message was rejected. |
 
