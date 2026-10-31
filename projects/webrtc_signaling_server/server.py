@@ -38,11 +38,13 @@ sio.attach(app)
 async def connect(sid, environ, auth):
     """Handle client connection"""
   
-    #Find the role of the connected Client
+    # Find the role of the connected Client
     role = auth.get("role") if auth else None
     logger.info(f"New {sid} has role {role}")
+    # reject invalid roles
+    if role not in {"frontend", "sfu"}: return False
 
-    global sfu_sid
+    global sfu_sid  # make sure there is only a singular sfu
     if role == "sfu":
         if sfu_sid is not None:
             logger.warning(f"Rejecting {sid}: an SFU is already connected ({sfu_sid})")
@@ -58,12 +60,6 @@ async def connect(sid, environ, auth):
     connected_clients.add(sid)
     logger.info(f"Client connected: {sid}")
     logger.info(f"Total connected clients: {len(connected_clients)}")
-
-    if len(connected_clients) > 2:
-        logger.warning(
-            f"More than 2 clients connected ({len(connected_clients)}). "
-            f"Expected only 2 peers (Streaming Node and GCOM)."
-        )
 
     return True
 
