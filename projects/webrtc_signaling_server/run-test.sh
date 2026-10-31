@@ -1,4 +1,6 @@
 """
+run chmod +x run-test.sh once 
+start it with ./run-test.sh
 
 Using tmux:
 
