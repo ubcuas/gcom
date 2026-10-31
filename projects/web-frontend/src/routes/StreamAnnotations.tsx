@@ -9,53 +9,51 @@ import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import RadioButtonUnchecked from "@mui/icons-material/RadioButtonUnchecked";
 import Undo from "@mui/icons-material/Undo";
 import { Delete } from "@mui/icons-material";
-
-const streamImages = [
-    {
-        id: "IMG_0428",
-        time: "14:32:08",
-        location: "North field · 42.3618, −71.0572",
-        image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=85",
-        status: "Needs review",
-    },
-    {
-        id: "IMG_0427",
-        time: "14:31:54",
-        location: "North field · 42.3615, −71.0570",
-        image: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1800&q=85",
-        status: "Annotated",
-    },
-    {
-        id: "IMG_0426",
-        time: "14:31:40",
-        location: "North field · 42.3611, −71.0568",
-        image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=85",
-        status: "Annotated",
-    },
-    {
-        id: "IMG_0425",
-        time: "14:31:26",
-        location: "North field · 42.3609, −71.0565",
-        image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1800&q=85",
-        status: "Annotated",
-    },
-];
+import { getAnnotationImages, type AnnotationBox, type AnnotationImage } from "../api/endpoints";
+import { socket } from "../api/socket";
 
 export default function StreamAnnotations() {
-    type Annotation = { x: number; y: number; width: number; height: number };
     type ImageBounds = { left: number; top: number; width: number; height: number };
 
+    const [streamImages, setStreamImages] = useState<AnnotationImage[]>([]);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const [tool, setTool] = useState<"select" | "box">("select");
     const [annotated, setAnnotated] = useState(false);
-    const [annotationsByImage, setAnnotationsByImage] = useState<Record<string, Annotation[]>>({});
+    const [annotationsByImage, setAnnotationsByImage] = useState<Record<string, AnnotationBox[]>>({});
     const [imageBounds, setImageBounds] = useState<ImageBounds>({ left: 0, top: 0, width: 100, height: 100 });
-    const [draftAnnotation, setDraftAnnotation] = useState<Annotation | null>(null);
+    const [draftAnnotation, setDraftAnnotation] = useState<AnnotationBox | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
     const dragStart = useRef<{ x: number; y: number } | null>(null);
     const activeImage = streamImages[activeIndex];
-    const annotations = annotationsByImage[activeImage.id] ?? [];
+    const annotations = activeImage ? annotationsByImage[activeImage.id] ?? activeImage.annotations : [];
+
+    useEffect(() => {
+        getAnnotationImages()
+            .then((images) => {
+                setStreamImages(images);
+                setAnnotationsByImage(Object.fromEntries(images.map((image) => [image.id, image.annotations])));
+            })
+            .catch((error: unknown) => {
+                console.error("Unable to load annotation images", error);
+                setLoadError("Unable to load annotation images.");
+            });
+
+        const handleAnnotationUpdate = (update: { imageId: string; annotations: AnnotationBox[] }) => {
+            setAnnotationsByImage((current) => ({ ...current, [update.imageId]: update.annotations }));
+        };
+        const handleAnnotationError = (error: { error?: string }) => {
+            console.error("Annotation synchronization failed", error);
+            setLoadError(error.error ?? "Annotation synchronization failed.");
+        };
+        socket.on("annotation_update", handleAnnotationUpdate);
+        socket.on("annotation_error", handleAnnotationError);
+        return () => {
+            socket.off("annotation_update", handleAnnotationUpdate);
+            socket.off("annotation_error", handleAnnotationError);
+        };
+    }, []);
 
     const updateImageBounds = () => {
         const canvas = canvasRef.current;
@@ -85,6 +83,15 @@ export default function StreamAnnotations() {
         updateImageBounds();
         return () => observer.disconnect();
     }, [activeIndex]);
+
+    if (!activeImage) {
+        return <Box sx={{ display: "grid", placeItems: "center", height: "100vh", bgcolor: "#0b1118" }}>{loadError ?? "Loading annotation images…"}</Box>;
+    }
+
+    const publishAnnotations = (nextAnnotations: AnnotationBox[]) => {
+        setAnnotationsByImage((current) => ({ ...current, [activeImage.id]: nextAnnotations }));
+        socket.emit("annotation_update", { imageId: activeImage.id, annotations: nextAnnotations });
+    };
 
     const goToImage = (index: number) => {
         setActiveIndex((index + streamImages.length) % streamImages.length);
@@ -123,17 +130,14 @@ export default function StreamAnnotations() {
         const point = getImagePoint(event);
         const start = dragStart.current;
         if (point) {
-            const annotation = {
+            const annotation: AnnotationBox = {
                 x: Math.min(start.x, point.x),
                 y: Math.min(start.y, point.y),
                 width: Math.abs(point.x - start.x),
                 height: Math.abs(point.y - start.y),
             };
             if (annotation.width > 0.005 && annotation.height > 0.005) {
-                setAnnotationsByImage((current) => ({
-                    ...current,
-                    [activeImage.id]: [...(current[activeImage.id] ?? []), annotation],
-                }));
+                publishAnnotations([...annotations, annotation]);
             }
         }
         dragStart.current = null;
@@ -222,10 +226,7 @@ export default function StreamAnnotations() {
                                         size="small"
                                         disabled={!annotations.length}
                                         onClick={() =>
-                                            setAnnotationsByImage((current) => ({
-                                                ...current,
-                                                [activeImage.id]: annotations.slice(0, -1),
-                                            }))
+                                            publishAnnotations(annotations.slice(0, -1))
                                         }
                                     >
                                         <Undo fontSize="small" />
@@ -261,10 +262,7 @@ export default function StreamAnnotations() {
                                 <IconButton
                                     size="small"
                                     onClick={() =>
-                                        setAnnotationsByImage((current) => ({
-                                            ...current,
-                                            [activeImage.id]: annotations.slice(0, -1),
-                                        }))
+                                        publishAnnotations(annotations.slice(0, -1))
                                     }
                                 >
                                     <Delete fontSize="small" />
