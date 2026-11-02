@@ -10,6 +10,7 @@ import Settings from "./routes/Settings";
 import VideoFeed from "./routes/VideoFeed";
 import OdlcImages from "./routes/OdlcImages";
 import DepthArchive from "./routes/DepthArchive";
+import FlightCommands from "./routes/FlightCommands";
 import { selectPreferredTheme } from "./store/slices/appSlice";
 import { updateAircraftStatus } from "./store/slices/dataSlice";
 import { useAppDispatch, useAppSelector } from "./store/store";
@@ -128,6 +129,7 @@ function App() {
                         <Route path="/webrtc-test" component={VideoFeed} />
                         <Route path="/odlc-images" component={OdlcImages} />
                         <Route path="/depth-archive" component={DepthArchive} />
+                        <Route path="/flight-commands" component={FlightCommands} />
                     </Switch>
                 </Box>
                 <ErrorSnackbar />

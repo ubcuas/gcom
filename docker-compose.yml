@@ -74,6 +74,11 @@ services:
       - SECRET_KEY="django-insecure-e27f6@t)*9q#vtf*v*hkl-2+86$&6ayj9fb+j+b-5_bjhne$h@"
       - DEBUG=True
       - MISSION_PLANNER_URL=http://mission-planner:9000
+      # ACMS rosbridge (its dev container publishes 9091 on the host)
+      - ROSBRIDGE_URL=${ROSBRIDGE_URL:-ws://host.docker.internal:9091}
+    # Linux: lets the container reach the host as host.docker.internal (Docker Desktop has it already)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - mission-planner
     ports:

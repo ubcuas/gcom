@@ -1,4 +1,4 @@
-import { CloudQueue, EditLocationAlt } from "@mui/icons-material";
+import { CloudQueue, EditLocationAlt, FlightTakeoff } from "@mui/icons-material";
 import Home from "@mui/icons-material/Home";
 import ImageSearchIcon from "@mui/icons-material/ImageSearch";
 import MapIcon from "@mui/icons-material/Map";
@@ -15,7 +15,8 @@ const linkMap: Record<string, number> = {
     "webrtc-test": 3,
     "odlc-images": 4,
     "depth-archive": 5,
-    settings: 6,
+    "flight-commands": 6,
+    settings: 7,
 };
 
 export default function Nav() {
@@ -114,6 +115,14 @@ export default function Nav() {
                     }}
                     label={<CloudQueue />}
                     href="/depth-archive"
+                    LinkComponent={Link}
+                />
+                <Tab
+                    sx={{
+                        minWidth: 0,
+                    }}
+                    label={<FlightTakeoff />}
+                    href="/flight-commands"
                     LinkComponent={Link}
                 />
                 <Tab

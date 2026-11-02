@@ -178,3 +178,21 @@ export const getArchiveObjectFetchUrl = (key: string): string => {
     const normalizedBase = base.endsWith("/") ? base : `${base}/`;
     return `${normalizedBase}vision/archive/object/?key=${encodeURIComponent(key)}`;
 };
+
+// Flight commands sent to ACMS through the backend's rosbridge client (/api/rosbridge/*).
+// Every endpoint answers { success, message }; non-2xx responses still carry a message.
+export type RosbridgeResult = { success: boolean; message: string };
+
+export const rosbridgePrepareTakeoff = async (altitude: number): Promise<RosbridgeResult> =>
+    (await api.post("/rosbridge/prepare_takeoff", { altitude })).data;
+
+export const rosbridgeSetMode = async (mode: string): Promise<RosbridgeResult> =>
+    (await api.post("/rosbridge/set_mode", { mode })).data;
+
+export const rosbridgeArm = async (arm: boolean): Promise<RosbridgeResult> =>
+    (await api.post("/rosbridge/arm", { arm })).data;
+
+export const rosbridgeStartMission = async (): Promise<RosbridgeResult> =>
+    (await api.post("/rosbridge/start_mission")).data;
+
+export const rosbridgeRtl = async (): Promise<RosbridgeResult> => (await api.post("/rosbridge/rtl")).data;
