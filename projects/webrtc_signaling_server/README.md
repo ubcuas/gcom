@@ -6,6 +6,8 @@ A lightweight Socket.IO-based signaling server that coordinates WebRTC connectio
 
 This server facilitates the exchange of WebRTC session descriptions (SDP) and ICE candidates between peers. It does not handle media or data transmission itself - only the signaling handshake required to establish a direct peer-to-peer connection.
 
+For the overall streaming design, current tasks and WebRTC reading material, see the [Video Streaming Prototype Setup](https://docs.google.com/document/d/1ylTDTS70TpU-JMkbgAyR9Vlb4LoIdt7-BBO7r3wqGHU/edit?usp=sharing) doc.
+
 ## Requirements
 
 - Python 3.8+
@@ -40,13 +42,15 @@ The server will start on port 8081 and accept WebSocket connections.
 
 ## Testing
 
-Three helper scripts let you test the server without an SFU, frontend, or video streaming:
+The `tests/` folder has helper scripts that let you test the server without a real SFU, frontend, or video streaming:
 
 | File | Role | What it does |
 |---|---|---|
 | `test-sfu.py` | `sfu` | This is the Mock SFU. It will Automatically send an `offer` to every frontend that joins, and sends anything typed in the terminal to all connected frontends. Tracks peers through `peer_joined` / `peer_left`. |
 | `test-client.py` | `frontend` | This is the Mock frontend. It will learn the SFU's sid from the `from` field of the first offer it receives, then sends anything typed in the terminal to the SFU. It will clear the SFU sid on `sfu_left`. |
 | `run-test.sh` | n/a | Opens a tmux session with the server, with one SFU and two frontends in a 2x2 grid.|
+| `test-video.mp4` | n/a | Test video (with a running timer) streamed by `video-streaming-sfu.py`. |
+| `test-website.html` | `frontend` | Browser test page for the video stream. Work in progress, still an empty template. |
 
 ### Setup (once)
 
@@ -54,23 +58,23 @@ Three helper scripts let you test the server without an SFU, frontend, or video 
 cd projects/webrtc_signaling_server
 python3 -m venv venv
 source venv/bin/activate
-pip install python-socketio aiohttp prompt_toolkit
-chmod +x run-test.sh
+pip install python-socketio aiohttp prompt_toolkit aiortc
+chmod +x tests/run-test.sh
 ```
 
 ### Run
 
 ```bash
-./run-test.sh
+./tests/run-test.sh
 ```
 
-Requires tmux (Linux, macOS or WSL). To run it without tmux, start each one in its own terminal, in this order:
+Requires tmux (Linux, macOS or WSL). To run it without tmux, start each one in its own terminal from `projects/webrtc_signaling_server`, in this order:
 
 ```bash
 python server.py
-python test-sfu.py sfu
-python test-client.py peer1
-python test-client.py peer2
+python tests/test-sfu.py sfu
+python tests/test-client.py peer1
+python tests/test-client.py peer2
 ```
 
 ### What you should see
@@ -81,6 +85,22 @@ python test-client.py peer2
 4. Close a frontend: the SFU prints `peer left`.
 5. Close the SFU: the frontends print `sfu left` and show `No SFU Yet` until a new SFU connects.
 
+### Video streaming SFU
+
+`video-streaming-sfu.py` (in this folder, not `tests/`) is a prototype SFU that sends video over WebRTC. For now it streams a local test video instead of the live stream. It connects with role `sfu`, and for every frontend that joins it creates a peer connection, adds the video from `tests/test-video.mp4` (looped), and sends the offer. It applies each frontend's answer, and closes the connection when that frontend leaves.
+
+For now, until the test-website is completed, run it instead of `test-sfu.py` in order to test its functionality (not both, since only one SFU can connect at a time):
+
+```bash
+python server.py
+python video-streaming-sfu.py
+```
+
+> NOTE:
+> Testing is incomplete. The next step is to test the video in a browser using `tests/test-website.html`, which is still being written.
+
+Until then, `test-client.py` can connect as a frontend, but it can't answer a WebRTC offer, so it only shows that the offer arrives.
+
 ### tmux basics
 
 - `Ctrl+b` then an arrow key: switch pane (typing goes to the pane you're in)
@@ -88,12 +108,15 @@ python test-client.py peer2
 - `Ctrl+b` then `d`: detach (everything keeps running); `tmux attach -t signaling` brings it back
 - `tmux kill-session -t signaling`: stop everything
 
+### Stopping a server that's already running
 
+If starting the server fails because port 8081 is already in use, an older server is still running:
+
+- Started by `run-test.sh`: `tmux kill-session -t signaling` (or `Ctrl+b`, then `:kill-session`, then Enter, from inside tmux)
+- Started in a normal terminal: press `Ctrl+C` in that terminal
+- Not sure where it's running: `ss -ltnp | grep 8081` shows the process using the port and its `pid`; stop it with `kill <pid>`
 
 ## Events
-
-> NOTE:
-> This is the planned protocol for supporting multiple frontends connected to one SFU. `server.py` does not implement all of it yet.
 
 There are two client roles:
 - **`sfu`**: the video source (the SFU, or a mock/streaming node). Only one at a time.
@@ -184,10 +207,10 @@ Clients should send signaling messages in the following format:
 
 ## Client Connection
 
-Clients connect using Socket.IO protocol. Example using JavaScript:
+Clients connect using Socket.IO protocol and must declare a role. Example of a frontend using JavaScript:
 
 ```javascript
-const socket = io('http://localhost:8081');
+const socket = io('http://localhost:8081', { auth: { role: 'frontend' } });
 
 socket.on('connect', () => {
   console.log('Connected to signaling server');
@@ -195,24 +218,24 @@ socket.on('connect', () => {
 
 socket.on('signal', (data) => {
   console.log('Received signal:', data);
-  // Handle incoming WebRTC signaling message
+  // data.from is the sender's sid (the SFU); reply to it with an answer
 });
 
-// Send signaling message
+// Send signaling message (after receiving the SFU's offer)
 socket.emit('signal', {
-  type: 'offer',
-  data: { /* offer data */ }
+  to: sfuSid,  // the "from" of the offer
+  type: 'answer',
+  data: { /* answer data */ }
 });
 ```
 
-## Behavior
-> NOTE:
-> undergoing changes
+For a full browser implementation, see `projects/web-frontend/src/hooks/useWebRTCConnection.ts`.
 
-- **Expected Clients**: 2 (Streaming Node and GCOM), should change to be more 
-- **Connection Limit**: No hard limit, but warns when more than 2 clients connect
-- **Message Routing**: Forwards all messages from a sender to all other connected clients
-- **Validation**: Validates message types and rejects invalid messages
+## Behavior
+
+- **Clients**: one `sfu` at a time and any number of `frontend`s. Connections with a missing or invalid role, or a second `sfu`, are refused.
+- **Message Routing**: `signal` messages go only to the client named in `to`, and only between a frontend and the SFU.
+- **Validation**: Validates message format, message types and the `to` field, and replies with `error` when a message is rejected
 - **Logging**: Logs all connections, disconnections, and messages
 
 ## Health Check

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-cd "$(dirname "$0")"          # run from this folder no matter where it's called from
-PY=venv/bin/python            # use the venv's python directly, no need to activate
+cd "$(dirname "$0")"          # run from tests/ no matter where it's called from
+PY=../venv/bin/python            # use the venv's python directly, no need to activate
 S=signaling
 
 tmux kill-session -t $S 2>/dev/null   # clean up a previous run
 
-tmux new-session -d -s $S "$PY server.py; exec bash"
+tmux new-session -d -s $S "$PY ../server.py; exec bash"
 tmux split-window -t $S "sleep 2; $PY test-sfu.py sfu; exec bash"
 tmux split-window -t $S "sleep 3; $PY test-client.py peer1; exec bash"
 tmux split-window -t $S "sleep 3; $PY test-client.py peer2; exec bash"
@@ -13,11 +13,11 @@ tmux select-layout -t $S tiled        # arrange as a 2x2 grid
 tmux attach -t $S
 
 
-# make sure to set up a virtual enviroment from instructions located in test-client.py
+# make sure to set up the virtual environment first (see the Testing section of ../README.md)
 
 #cd projects/webrtc_signaling_server
-#run chmod +x run-test.sh ONCE 
-#start it with ./run-test.sh
+#run chmod +x tests/run-test.sh ONCE
+#start it with ./tests/run-test.sh
 
 #Using tmux:
 

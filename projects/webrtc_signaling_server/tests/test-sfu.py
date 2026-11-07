@@ -5,8 +5,8 @@ Connects to the signaling server as the "sfu". Sends an offer to every
 frontend that joins, sends anything typed in the terminal to all connected frontends,
 and can drop frontends that leave.
 
-Usage: python test-sfu.py [name]
-See the Testing section of README.md in this folder.
+Usage: python tests/test-sfu.py [name]
+See the Testing section of README.md in the folder above (webrtc_signaling_server).
 
 Author: Nitish Joson Terance Joe Heston
 """

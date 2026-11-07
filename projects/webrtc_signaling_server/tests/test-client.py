@@ -5,8 +5,8 @@ Connects to the signaling server as a "frontend". Learns the SFU's sid from
 the "from" field of the first offer it receives, then sends anything typed in the terminal
 to the SFU. Clears the SFU when it receives "sfu_left".
 
-Usage: python test-client.py <name>
-See the Testing section of README.md in this folder.
+Usage: python tests/test-client.py <name>
+See the Testing section of README.md in the folder above (webrtc_signaling_server).
 
 Author: Nitish Joson Terance Joe Heston
 """
