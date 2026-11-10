@@ -20,14 +20,37 @@ import socketio
 # RTCSessionDescription -> wraps an offer or answer, meaning the SDP text + its type
 # MediaPlayer -> reads the video file and turns it into a video track
 # MediaRelay -> lets several connections share one track
-from aiortc import RTCPeerConnection, RTCSessionDescription
+# VideoStreamTrack -> base class for a video source, handles frame timestamps
+# MediaStreamError -> raised by a track when it has ended
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 from aiortc.contrib.media import MediaPlayer, MediaRelay
+from aiortc.mediastreams import MediaStreamError
 
 # found relative to this script, so it runs from any folder
 VIDEO_FILE = Path(__file__).parent / "tests" / "test-video.mp4"
 
+# FOR MOCK STREAM: loop video so that it doesn't freeze after 30s
+class LoopingVideoTrack(VideoStreamTrack):
+    # MediaPlayer(loop=True) ends the track at the end of the file, so reopen the file instead
+
+    def __init__(self, path):
+        super().__init__()
+        self.path = path
+        self.player = MediaPlayer(path)
+
+    async def recv(self):
+        try:
+            frame = await self.player.video.recv()
+        except MediaStreamError:
+            self.player = MediaPlayer(self.path)
+            frame = await self.player.video.recv()
+        # timestamps must keep increasing across restarts of the file
+        frame.pts, frame.time_base = await self.next_timestamp()
+        return frame
+
+
 peer_connections = {}  # frontend sid -> RTCPeerConnection
-player = MediaPlayer(str(VIDEO_FILE), loop=True)
+video_source = LoopingVideoTrack(str(VIDEO_FILE))
 relay = MediaRelay()
 
 name = sys.argv[1] if len(sys.argv) > 1 else "sfu"
@@ -40,7 +63,7 @@ async def on_peer_joined(data):
     peer_id = data["peer_id"]
     pc = RTCPeerConnection()
     peer_connections[peer_id] = pc
-    pc.addTrack(relay.subscribe(player.video))
+    pc.addTrack(relay.subscribe(video_source))
     offer = await pc.createOffer()
     # setLocalDescription gathers the ICE candidates, so send localDescription (not offer) to include them
     await pc.setLocalDescription(offer)
