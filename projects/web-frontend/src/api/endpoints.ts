@@ -24,6 +24,20 @@ export const getAnnotationImages = async (): Promise<AnnotationImage[]> => {
     return response.data;
 };
 
+export type NoFlyZone = {
+    id: string;
+    latitude: number;
+    longitude: number;
+    radius_m: number;
+};
+
+export const getNoFlyZones = async (latitude: number, longitude: number): Promise<NoFlyZone[]> => {
+    const response = await api.get<NoFlyZone[]>("/mapping/no-fly-zones", {
+        params: { latitude, longitude },
+    });
+    return response.data;
+};
+
 export const armDrone = async (arm: boolean) => {
     return await api.put("/drone/arm", { arm });
 };
