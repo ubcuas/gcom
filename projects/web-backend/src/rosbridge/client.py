@@ -1,5 +1,8 @@
 """Persistent rosbridge WebSocket client for calling ROS services on the aircraft (ACMS).
 
+Not used by any endpoint yet: flight commands go over HTTP (see acms_commands). Kept for
+future topic/service access.
+
 rosbridge speaks JSON over a WebSocket. A service call is one `call_service` message tagged
 with an `id`; rosbridge answers with a `service_response` carrying the same `id`. One
 connection is shared by the whole process, opened on the first call and reopened on the

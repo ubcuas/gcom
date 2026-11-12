@@ -179,20 +179,20 @@ export const getArchiveObjectFetchUrl = (key: string): string => {
     return `${normalizedBase}vision/archive/object/?key=${encodeURIComponent(key)}`;
 };
 
-// Flight commands sent to ACMS through the backend's rosbridge client (/api/rosbridge/*).
+// Flight commands sent to ACMS's GCSCommandsServer through the backend (/api/acms/*).
 // Every endpoint answers { success, message }; non-2xx responses still carry a message.
-export type RosbridgeResult = { success: boolean; message: string };
+export type AcmsCommandResult = { success: boolean; message: string };
 
-export const rosbridgePrepareTakeoff = async (altitude: number): Promise<RosbridgeResult> =>
-    (await api.post("/rosbridge/prepare_takeoff", { altitude })).data;
+export const acmsPrepareTakeoff = async (altitude: number): Promise<AcmsCommandResult> =>
+    (await api.post("/acms/prepare_takeoff", { altitude })).data;
 
-export const rosbridgeSetMode = async (mode: string): Promise<RosbridgeResult> =>
-    (await api.post("/rosbridge/set_mode", { mode })).data;
+export const acmsSetMode = async (mode: string): Promise<AcmsCommandResult> =>
+    (await api.post("/acms/set_mode", { mode })).data;
 
-export const rosbridgeArm = async (arm: boolean): Promise<RosbridgeResult> =>
-    (await api.post("/rosbridge/arm", { arm })).data;
+export const acmsArm = async (arm: boolean): Promise<AcmsCommandResult> =>
+    (await api.post("/acms/arm", { arm })).data;
 
-export const rosbridgeStartMission = async (): Promise<RosbridgeResult> =>
-    (await api.post("/rosbridge/start_mission")).data;
+export const acmsStartMission = async (): Promise<AcmsCommandResult> =>
+    (await api.post("/acms/start_mission")).data;
 
-export const rosbridgeRtl = async (): Promise<RosbridgeResult> => (await api.post("/rosbridge/rtl")).data;
+export const acmsRtl = async (): Promise<AcmsCommandResult> => (await api.post("/acms/rtl")).data;

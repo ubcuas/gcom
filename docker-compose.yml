@@ -76,6 +76,8 @@ services:
       - MISSION_PLANNER_URL=http://mission-planner:9000
       # ACMS rosbridge (its dev container publishes 9091 on the host)
       - ROSBRIDGE_URL=${ROSBRIDGE_URL:-ws://host.docker.internal:9091}
+      # ACMS GCSCommandsServer HTTP flight commands (its dev container publishes 8091 on the host)
+      - ACMS_COMMANDS_URL=${ACMS_COMMANDS_URL:-http://host.docker.internal:8091}
     # Linux: lets the container reach the host as host.docker.internal (Docker Desktop has it already)
     extra_hosts:
       - "host.docker.internal:host-gateway"

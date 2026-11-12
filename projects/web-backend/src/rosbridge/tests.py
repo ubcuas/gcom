@@ -1,8 +1,7 @@
 import asyncio
 import json
-from unittest.mock import patch
 
-from django.test import AsyncClient, SimpleTestCase
+from django.test import SimpleTestCase
 from websockets.asyncio.server import serve
 
 from .client import RosbridgeClient, RosbridgeError, RosbridgeTimeout
@@ -83,47 +82,3 @@ class RosbridgeClientTest(SimpleTestCase):
             client.url = server2.url
             self.assertEqual((await client.call_service("/a"))["message"], "again")
 
-
-class RosbridgeEndpointTest(SimpleTestCase):
-    async def _post(self, server, path, body=None):
-        with patch("rosbridge.views.get_client", return_value=RosbridgeClient(server.url)):
-            return await AsyncClient().post(
-                f"/api/rosbridge/{path}", json.dumps(body or {}), content_type="application/json"
-            )
-
-    async def test_endpoints_map_to_services(self):
-        cases = [
-            ("prepare_takeoff", {"altitude": 10}, "takeoff", {"takeoff_altitude": 10.0, "waypoints": []}),
-            ("set_mode", {"mode": "guided"}, "set_mode", {"mode": "GUIDED"}),
-            ("arm", {"arm": True}, "arm", {"data": True}),
-            ("start_mission", None, "start_mission", {}),
-            ("rtl", None, "land", {}),
-        ]
-        for path, body, service, args in cases:
-            async with FakeRosbridge(ok()) as server:
-                response = await self._post(server, path, body)
-            with self.subTest(path=path):
-                self.assertEqual(response.status_code, 200)
-                self.assertEqual(response.json(), {"success": True, "message": "done"})
-                self.assertEqual(server.calls[0]["service"], f"/flight_commander/{service}")
-                self.assertEqual(server.calls[0]["args"], args)
-
-    async def test_service_reported_failure_is_502(self):
-        async with FakeRosbridge(
-            lambda _m: {"result": True, "values": {"success": False, "message": "not armed"}}
-        ) as server:
-            response = await self._post(server, "start_mission")
-        self.assertEqual(response.status_code, 502)
-        self.assertEqual(response.json()["message"], "not armed")
-
-    async def test_invalid_input_is_400(self):
-        async with FakeRosbridge(ok()) as server:
-            for path, body in [("prepare_takeoff", {"altitude": 0}), ("set_mode", {}), ("arm", {"arm": "yes"})]:
-                with self.subTest(path=path):
-                    self.assertEqual((await self._post(server, path, body)).status_code, 400)
-        self.assertEqual(server.calls, [])
-
-    async def test_unreachable_is_503(self):
-        with patch("rosbridge.views.get_client", return_value=RosbridgeClient("ws://127.0.0.1:1")):
-            response = await AsyncClient().post("/api/rosbridge/rtl")
-        self.assertEqual(response.status_code, 503)

@@ -43,7 +43,7 @@ urlpatterns = [
     path("api/mapping/", include("mapping.urls")),
     path("api/vision/", include("vision.urls")),
     path("api/map-tiles/", include("map_tiles.urls")),
-    path("api/rosbridge/", include("rosbridge.urls")),
+    path("api/acms/", include("acms_commands.urls")),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "map_tiles.apps.MapTilesConfig",
     "vision.apps.VisionConfig",
     "rosbridge.apps.RosbridgeConfig",
+    "acms_commands.apps.AcmsCommandsConfig",
 ]
 
 MIDDLEWARE = [
@@ -96,6 +97,10 @@ ASGI_APPLICATION = "gcom.asgi.application"
 # rosbridge WebSocket on the aircraft (ACMS). Local ACMS dev container: ws://localhost:9091;
 # from GCOM's docker compose: ws://host.docker.internal:9091; real aircraft: ws://<jetson-ip>:9091.
 ROSBRIDGE_URL = os.getenv("ROSBRIDGE_URL", "ws://localhost:9091")
+
+# GCSCommandsServer HTTP flight commands on the aircraft (ACMS), used by acms_commands.
+# Same hosts as above on port 8091, e.g. http://host.docker.internal:8091 from docker compose.
+ACMS_COMMANDS_URL = os.getenv("ACMS_COMMANDS_URL", "http://localhost:8091")
 
 
 # Database

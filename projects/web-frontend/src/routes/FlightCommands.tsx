@@ -1,12 +1,12 @@
 import { Box, Button, Divider, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import {
-    RosbridgeResult,
-    rosbridgeArm,
-    rosbridgePrepareTakeoff,
-    rosbridgeRtl,
-    rosbridgeSetMode,
-    rosbridgeStartMission,
+    AcmsCommandResult,
+    acmsArm,
+    acmsPrepareTakeoff,
+    acmsRtl,
+    acmsSetMode,
+    acmsStartMission,
 } from "../api/endpoints";
 import { openSnackbar } from "../store/slices/appSlice";
 import { useAppDispatch } from "../store/store";
@@ -19,7 +19,7 @@ type LogEntry = { time: string; command: string; success: boolean; message: stri
 
 /**
  * Prototype page: each button calls a flight_commander ROS service on the aircraft (ACMS)
- * through the backend's rosbridge client. Typical sequence:
+ * through the backend and the aircraft's GCSCommandsServer (HTTP). Typical sequence:
  * Prepare takeoff -> GUIDED -> Arm -> AUTO -> Start mission -> (later) RTL
  */
 export default function FlightCommands() {
@@ -29,7 +29,7 @@ export default function FlightCommands() {
     const [busy, setBusy] = useState<string | null>(null);
     const [log, setLog] = useState<LogEntry[]>([]);
 
-    const run = async (command: string, call: () => Promise<RosbridgeResult>) => {
+    const run = async (command: string, call: () => Promise<AcmsCommandResult>) => {
         setBusy(command);
         let entry: LogEntry;
         try {
@@ -61,7 +61,7 @@ export default function FlightCommands() {
         <Box sx={{ p: 8, width: "100%" }}>
             <Stack spacing={3} sx={{ maxWidth: 720 }}>
                 <Box>
-                    <Typography variant="h5">Flight Commands (rosbridge)</Typography>
+                    <Typography variant="h5">Flight Commands (ACMS)</Typography>
                     <Typography variant="body2" color="text.secondary">
                         Sequence: Prepare takeoff → GUIDED → Arm → AUTO → Start mission → (later) RTL
                     </Typography>
@@ -81,7 +81,7 @@ export default function FlightCommands() {
                             <Button
                                 variant="contained"
                                 disabled={disabled || !(altitudeValue > 0)}
-                                onClick={() => run("Prepare takeoff", () => rosbridgePrepareTakeoff(altitudeValue))}
+                                onClick={() => run("Prepare takeoff", () => acmsPrepareTakeoff(altitudeValue))}
                             >
                                 Prepare takeoff
                             </Button>
@@ -110,7 +110,7 @@ export default function FlightCommands() {
                             <Button
                                 variant="contained"
                                 disabled={disabled}
-                                onClick={() => run(`Set mode ${mode}`, () => rosbridgeSetMode(mode))}
+                                onClick={() => run(`Set mode ${mode}`, () => acmsSetMode(mode))}
                             >
                                 Set mode
                             </Button>
@@ -123,14 +123,14 @@ export default function FlightCommands() {
                                 variant="contained"
                                 color="error"
                                 disabled={disabled}
-                                onClick={() => run("Arm", () => rosbridgeArm(true))}
+                                onClick={() => run("Arm", () => acmsArm(true))}
                             >
                                 Arm
                             </Button>
                             <Button
                                 variant="outlined"
                                 disabled={disabled}
-                                onClick={() => run("Disarm", () => rosbridgeArm(false))}
+                                onClick={() => run("Disarm", () => acmsArm(false))}
                             >
                                 Disarm
                             </Button>
@@ -138,7 +138,7 @@ export default function FlightCommands() {
                                 variant="contained"
                                 color="success"
                                 disabled={disabled}
-                                onClick={() => run("Start mission", rosbridgeStartMission)}
+                                onClick={() => run("Start mission", acmsStartMission)}
                             >
                                 Start mission
                             </Button>
@@ -146,7 +146,7 @@ export default function FlightCommands() {
                                 variant="contained"
                                 color="warning"
                                 disabled={disabled}
-                                onClick={() => run("RTL", rosbridgeRtl)}
+                                onClick={() => run("RTL", acmsRtl)}
                             >
                                 Return to launch
                             </Button>
