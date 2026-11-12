@@ -8,6 +8,7 @@ import {
     acmsSetMode,
     acmsStartMission,
 } from "../api/endpoints";
+import DroneStatusCard from "../components/DroneStatusCard";
 import { openSnackbar } from "../store/slices/appSlice";
 import { useAppDispatch } from "../store/store";
 import { extractAxiosError } from "../utils/errorHandling";
@@ -18,9 +19,10 @@ const FLIGHT_MODES = ["GUIDED", "AUTO", "LOITER", "STABILIZE", "ALT_HOLD", "RTL"
 type LogEntry = { time: string; command: string; success: boolean; message: string };
 
 /**
- * Prototype page: each button calls a flight_commander ROS service on the aircraft (ACMS)
- * through the backend and the aircraft's GCSCommandsServer (HTTP). Typical sequence:
- * Prepare takeoff -> GUIDED -> Arm -> AUTO -> Start mission -> (later) RTL
+ * Primary flight control page: each button calls a flight_commander ROS service on the aircraft
+ * (ACMS) through the backend and the aircraft's GCSCommandsServer (HTTP). Routes are uploaded from
+ * the Queue page (Replace / Append Route on Drone). Typical sequence:
+ * Prepare takeoff -> Append route -> GUIDED -> Arm -> AUTO -> Start mission -> (later) RTL
  */
 export default function FlightCommands() {
     const dispatch = useAppDispatch();
@@ -58,12 +60,13 @@ export default function FlightCommands() {
     const disabled = busy !== null;
 
     return (
-        <Box sx={{ p: 8, width: "100%" }}>
-            <Stack spacing={3} sx={{ maxWidth: 720 }}>
+        <Box sx={{ p: 8, width: "100%", display: "flex", gap: 4, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <Stack spacing={3} sx={{ maxWidth: 720, flex: "1 1 480px" }}>
                 <Box>
                     <Typography variant="h5">Flight Commands (ACMS)</Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Sequence: Prepare takeoff → GUIDED → Arm → AUTO → Start mission → (later) RTL
+                        Sequence: Prepare takeoff → Append route (Queue page) → GUIDED → Arm → AUTO → Start mission →
+                        (later) RTL
                     </Typography>
                 </Box>
 
@@ -178,6 +181,7 @@ export default function FlightCommands() {
                     )}
                 </Paper>
             </Stack>
+            <DroneStatusCard />
         </Box>
     );
 }

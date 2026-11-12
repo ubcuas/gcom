@@ -12,19 +12,6 @@ export const armDrone = async (arm: boolean) => {
     return await api.put("/drone/arm", { arm });
 };
 
-export const prepareTakeoffDrone = async (altitude: number) => {
-    return await api.post("/drone/prepare_takeoff", { altitude });
-};
-
-export const returnToLaunch = async () => {
-    return await api.post("/drone/rtl");
-};
-
-export const postWaypointsToDrone = async (waypoints: Waypoint[]) => {
-    console.log("Preparing to post waypoints to drone via API", waypoints);
-    return await api.post("/drone/queue", waypoints);
-};
-
 // not to be confused with the current route
 // these are the waypoints currently loaded in the drone's mission queue
 // not the ones stored in the backend which may or may not have been posted to the drone
@@ -186,13 +173,22 @@ export type AcmsCommandResult = { success: boolean; message: string };
 export const acmsPrepareTakeoff = async (altitude: number): Promise<AcmsCommandResult> =>
     (await api.post("/acms/prepare_takeoff", { altitude })).data;
 
+// append=false replaces the aircraft's mission; append=true adds after it (e.g. after Prepare takeoff).
+// Only position and altitude are sent: ACMS flies every point as a plain waypoint, and a missing
+// altitude repeats the previous one.
+export const acmsAddRoute = async (waypoints: Waypoint[], append: boolean): Promise<AcmsCommandResult> =>
+    (
+        await api.post("/acms/add_route", {
+            append,
+            waypoints: waypoints.map(({ latitude, longitude, altitude }) => ({ latitude, longitude, altitude })),
+        })
+    ).data;
+
 export const acmsSetMode = async (mode: string): Promise<AcmsCommandResult> =>
     (await api.post("/acms/set_mode", { mode })).data;
 
-export const acmsArm = async (arm: boolean): Promise<AcmsCommandResult> =>
-    (await api.post("/acms/arm", { arm })).data;
+export const acmsArm = async (arm: boolean): Promise<AcmsCommandResult> => (await api.post("/acms/arm", { arm })).data;
 
-export const acmsStartMission = async (): Promise<AcmsCommandResult> =>
-    (await api.post("/acms/start_mission")).data;
+export const acmsStartMission = async (): Promise<AcmsCommandResult> => (await api.post("/acms/start_mission")).data;
 
 export const acmsRtl = async (): Promise<AcmsCommandResult> => (await api.post("/acms/rtl")).data;

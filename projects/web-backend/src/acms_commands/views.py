@@ -52,6 +52,17 @@ def prepare_takeoff(request):
 
 @csrf_exempt
 @require_POST
+def add_route(request):
+    """{"waypoints": [{"latitude", "longitude", "altitude"?}, ...], "append": bool}: upload a route.
+
+    append=false replaces the mission; append=true adds it after the current one (e.g. a takeoff).
+    A missing altitude repeats the previous one. Other waypoint fields are ignored by ACMS.
+    """
+    return _forward(request, "add_route")
+
+
+@csrf_exempt
+@require_POST
 def set_mode(request):
     """{"mode": "GUIDED" | "AUTO" | ...}: switch flight mode."""
     return _forward(request, "set_mode")

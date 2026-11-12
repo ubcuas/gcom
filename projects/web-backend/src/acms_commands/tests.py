@@ -25,6 +25,7 @@ class AcmsCommandsTest(SimpleTestCase):
     def test_endpoints_forward_body_to_acms(self):
         cases = [
             ("prepare_takeoff", {"altitude": 10}),
+            ("add_route", {"waypoints": [{"latitude": 49.1, "longitude": -123.1, "altitude": 30}], "append": True}),
             ("set_mode", {"mode": "guided"}),
             ("arm", {"arm": True}),
             ("start_mission", None),

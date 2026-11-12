@@ -1,6 +1,6 @@
 import { Box, Button, Grid, Modal, Paper, Stack, Typography } from "@mui/material";
 import { useRef, useState } from "react";
-import { postWaypointsToDrone } from "../api/endpoints";
+import { acmsAddRoute } from "../api/endpoints";
 import { openSnackbar, selectMapViewOpen, setMapViewOpen } from "../store/slices/appSlice";
 import {
     addWaypointToCurrentRoute,
@@ -12,7 +12,7 @@ import {
 import { saveCurrentRouteToBackend } from "../store/thunks/dataThunks";
 import { useAppDispatch, useAppSelector } from "../store/store";
 import { WaypointEditState } from "../types/Waypoint";
-import { createErrorMessage } from "../utils/errorHandling";
+import { createErrorMessage, extractAxiosError } from "../utils/errorHandling";
 import InfoCard from "./InfoCard";
 import WaypointCreationMap from "./Map/WaypointCreationMap";
 import WaypointItem from "./WaypointItem";
@@ -29,18 +29,23 @@ export default function WaypointStatusCard() {
         waypoint: undefined,
     });
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [uploading, setUploading] = useState(false);
 
-    const handlePost = async () => {
+    // Sends the route to ACMS. Replace overwrites the aircraft's mission; Append adds after it,
+    // so Prepare takeoff (Flight Commands page) followed by Append gives takeoff + route.
+    const handleUpload = async (append: boolean) => {
         if (waypointQueue.length === 0) {
+            dispatch(openSnackbar({ message: "No waypoints to upload" }));
             return;
         }
+        setUploading(true);
         try {
-            await postWaypointsToDrone(waypointQueue);
-            const message = `Posted ${waypointQueue.length} waypoints to drone`;
-            dispatch(openSnackbar({ message, severity: "success" }));
+            const result = await acmsAddRoute(waypointQueue, append);
+            dispatch(openSnackbar({ message: result.message, severity: result.success ? "success" : "error" }));
         } catch (error) {
-            const message = createErrorMessage(error);
-            dispatch(openSnackbar({ message }));
+            dispatch(openSnackbar({ message: extractAxiosError(error).message }));
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -168,8 +173,21 @@ export default function WaypointStatusCard() {
             >
                 {mapViewOpen ? "List View" : "Map View"}
             </Button>
-            <Button sx={{ fontSize: 16, fontWeight: "bold", px: 4 }} variant="outlined" onClick={handlePost}>
-                Post Route to Drone
+            <Button
+                sx={{ fontSize: 16, fontWeight: "bold", px: 4 }}
+                variant="outlined"
+                disabled={uploading}
+                onClick={() => handleUpload(false)}
+            >
+                Replace Route on Drone
+            </Button>
+            <Button
+                sx={{ fontSize: 16, fontWeight: "bold", px: 4 }}
+                variant="outlined"
+                disabled={uploading}
+                onClick={() => handleUpload(true)}
+            >
+                Append Route on Drone
             </Button>
             <Button sx={{ fontSize: 16, fontWeight: "bold", px: 4 }} variant="outlined" onClick={handleExportWaypoints}>
                 Export Waypoints
