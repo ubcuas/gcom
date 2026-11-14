@@ -1,32 +1,17 @@
 import { Box, Button, Paper, Stack, Typography, Chip, Grid, IconButton, Tooltip } from "@mui/material";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useWebRTCContext } from "../context/WebRTCContext";
-import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import DroneStatusCard from "../components/DroneStatusCard";
 import SessionIdDisplay from "../components/SessionIdDisplay";
 
-type DepthSampleMarker = { x: number; y: number };
-
 export default function VideoFeed() {
-    const {
-        signalingStatus,
-        peerStatus,
-        remoteStream,
-        connect,
-        disconnect,
-        isConnecting,
-        sendCommand,
-        lastDepthResult,
-    } = useWebRTCContext();
+    const { peerStatus, remoteStream, connect, disconnect, isConnecting } = useWebRTCContext();
 
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [capturing, setCapturing] = useState(false);
     const [statusCardVisible, setStatusCardVisible] = useState(true);
-    const [depthMarker, setDepthMarker] = useState<DepthSampleMarker | null>(null);
-    const depthMarkerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (videoRef.current && remoteStream) {
@@ -46,75 +31,7 @@ export default function VideoFeed() {
         }
     }, [remoteStream]);
 
-    useEffect(() => {
-        return () => {
-            if (depthMarkerTimerRef.current !== null) {
-                clearTimeout(depthMarkerTimerRef.current);
-            }
-        };
-    }, []);
-
-    const handleVideoClick = useCallback(
-        (event: React.MouseEvent<HTMLVideoElement>) => {
-            if (peerStatus !== "connected" || !videoRef.current) return;
-
-            const video = videoRef.current;
-            const rect = video.getBoundingClientRect();
-            const videoWidth = video.videoWidth;
-            const videoHeight = video.videoHeight;
-
-            if (videoWidth === 0 || videoHeight === 0) return;
-
-            const containerWidth = rect.width;
-            const containerHeight = rect.height;
-            const containerAspect = containerWidth / containerHeight;
-            const videoAspect = videoWidth / videoHeight;
-
-            let renderedWidth: number;
-            let renderedHeight: number;
-            let offsetX: number;
-            let offsetY: number;
-
-            if (videoAspect > containerAspect) {
-                renderedWidth = containerWidth;
-                renderedHeight = containerWidth / videoAspect;
-                offsetX = 0;
-                offsetY = (containerHeight - renderedHeight) / 2;
-            } else {
-                renderedHeight = containerHeight;
-                renderedWidth = containerHeight * videoAspect;
-                offsetX = (containerWidth - renderedWidth) / 2;
-                offsetY = 0;
-            }
-
-            const clickX = event.clientX - rect.left - offsetX;
-            const clickY = event.clientY - rect.top - offsetY;
-
-            if (clickX < 0 || clickY < 0 || clickX > renderedWidth || clickY > renderedHeight) return;
-
-            const u = parseFloat((clickX / renderedWidth).toFixed(4));
-            const v = parseFloat((clickY / renderedHeight).toFixed(4));
-
-            sendCommand({ action: "SAMPLE_DEPTH", u, v });
-
-            const markerX = ((offsetX + clickX) / containerWidth) * 100;
-            const markerY = ((offsetY + clickY) / containerHeight) * 100;
-            setDepthMarker({ x: markerX, y: markerY });
-
-            if (depthMarkerTimerRef.current !== null) {
-                clearTimeout(depthMarkerTimerRef.current);
-            }
-            depthMarkerTimerRef.current = setTimeout(() => {
-                setDepthMarker(null);
-                depthMarkerTimerRef.current = null;
-            }, 1500);
-        },
-        [peerStatus, sendCommand],
-    );
-
-    const getStatusColor = (
-        status: typeof signalingStatus | typeof peerStatus,
-    ): "default" | "success" | "warning" | "error" => {
+    const getStatusColor = (status: typeof peerStatus): "default" | "success" | "warning" | "error" => {
         switch (status) {
             case "connected":
                 return "success";
@@ -127,7 +44,7 @@ export default function VideoFeed() {
         }
     };
 
-    const getStatusLabel = (status: typeof signalingStatus | typeof peerStatus): string => {
+    const getStatusLabel = (status: typeof peerStatus): string => {
         return status.charAt(0).toUpperCase() + status.slice(1);
     };
 
@@ -186,7 +103,6 @@ export default function VideoFeed() {
                                         autoPlay
                                         playsInline
                                         muted
-                                        onClick={handleVideoClick}
                                         style={{
                                             position: "absolute",
                                             top: 0,
@@ -194,31 +110,8 @@ export default function VideoFeed() {
                                             width: "100%",
                                             height: "100%",
                                             objectFit: "contain",
-                                            cursor: peerStatus === "connected" ? "crosshair" : "default",
                                         }}
                                     />
-                                    {depthMarker && (
-                                        <Box
-                                            sx={{
-                                                position: "absolute",
-                                                top: `${depthMarker.y}%`,
-                                                left: `${depthMarker.x}%`,
-                                                transform: "translate(-50%, -50%)",
-                                                pointerEvents: "none",
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    width: 16,
-                                                    height: 16,
-                                                    borderRadius: "50%",
-                                                    border: "2px solid #fff",
-                                                    bgcolor: "rgba(33, 150, 243, 0.7)",
-                                                    boxShadow: "0 0 4px rgba(0,0,0,0.6)",
-                                                }}
-                                            />
-                                        </Box>
-                                    )}
                                     {!remoteStream && (
                                         <Box
                                             sx={{
@@ -237,7 +130,7 @@ export default function VideoFeed() {
                                         >
                                             <VideocamIcon sx={{ fontSize: 64, opacity: 0.3 }} />
                                             <Typography variant="body1">
-                                                {signalingStatus === "connected"
+                                                {peerStatus === "connecting" || peerStatus === "connected"
                                                     ? "Waiting for video stream..."
                                                     : "Connect to start streaming"}
                                             </Typography>
@@ -254,19 +147,7 @@ export default function VideoFeed() {
                                             <Stack direction="row" spacing={2}>
                                                 <Box sx={{ flex: 1 }}>
                                                     <Typography variant="caption" color="text.secondary">
-                                                        Signaling Server
-                                                    </Typography>
-                                                    <Box sx={{ mt: 0.5 }}>
-                                                        <Chip
-                                                            label={getStatusLabel(signalingStatus)}
-                                                            color={getStatusColor(signalingStatus)}
-                                                            size="small"
-                                                        />
-                                                    </Box>
-                                                </Box>
-                                                <Box sx={{ flex: 1 }}>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        WebRTC Peer
+                                                        Video Stream
                                                     </Typography>
                                                     <Box sx={{ mt: 0.5 }}>
                                                         <Chip
@@ -279,75 +160,11 @@ export default function VideoFeed() {
                                             </Stack>
                                         </Box>
 
-                                        {lastDepthResult && (
-                                            <Box>
-                                                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
-                                                    Last Depth Sample
-                                                </Typography>
-                                                <Box
-                                                    sx={{
-                                                        p: 1.5,
-                                                        borderRadius: 1,
-                                                        bgcolor: "action.hover",
-                                                        fontFamily: "monospace",
-                                                        fontSize: "0.8rem",
-                                                        display: "grid",
-                                                        gridTemplateColumns: "auto 1fr",
-                                                        columnGap: 2,
-                                                        rowGap: 0.5,
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="text.secondary"
-                                                        fontFamily="monospace"
-                                                    >
-                                                        u
-                                                    </Typography>
-                                                    <Typography variant="caption" fontFamily="monospace">
-                                                        {lastDepthResult.u.toFixed(4)}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="text.secondary"
-                                                        fontFamily="monospace"
-                                                    >
-                                                        v
-                                                    </Typography>
-                                                    <Typography variant="caption" fontFamily="monospace">
-                                                        {lastDepthResult.v.toFixed(4)}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="text.secondary"
-                                                        fontFamily="monospace"
-                                                    >
-                                                        depth
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="caption"
-                                                        fontFamily="monospace"
-                                                        color={
-                                                            lastDepthResult.depth_m === null
-                                                                ? "text.secondary"
-                                                                : "text.primary"
-                                                        }
-                                                    >
-                                                        {lastDepthResult.depth_m === null
-                                                            ? "N/A"
-                                                            : `${lastDepthResult.depth_m.toFixed(3)} m`}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        )}
-
                                         <Stack direction="row" spacing={2}>
                                             <Button
                                                 variant="contained"
                                                 onClick={connect}
-                                                disabled={
-                                                    signalingStatus === "connected" || signalingStatus === "connecting"
-                                                }
+                                                disabled={peerStatus === "connected" || peerStatus === "connecting"}
                                                 fullWidth
                                             >
                                                 {isConnecting ? "Connecting..." : "Connect"}
@@ -355,23 +172,10 @@ export default function VideoFeed() {
                                             <Button
                                                 variant="outlined"
                                                 onClick={disconnect}
-                                                disabled={signalingStatus === "disconnected"}
+                                                disabled={peerStatus === "disconnected"}
                                                 fullWidth
                                             >
                                                 Disconnect
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                startIcon={<PhotoCamera />}
-                                                disabled={capturing || peerStatus !== "connected"}
-                                                onClick={() => {
-                                                    setCapturing(true);
-                                                    sendCommand({ action: "TAKE_PHOTO" });
-                                                    setCapturing(false);
-                                                }}
-                                                fullWidth
-                                            >
-                                                {capturing ? "Capturing..." : "Capture"}
                                             </Button>
                                         </Stack>
                                     </Stack>
