@@ -1,6 +1,5 @@
-import { CloudQueue, EditLocationAlt, FlightTakeoff } from "@mui/icons-material";
+import { EditLocationAlt, FlightTakeoff } from "@mui/icons-material";
 import Home from "@mui/icons-material/Home";
-import ImageSearchIcon from "@mui/icons-material/ImageSearch";
 import MapIcon from "@mui/icons-material/Map";
 import Settings from "@mui/icons-material/Settings";
 import VideocamIcon from "@mui/icons-material/Videocam";
@@ -11,12 +10,10 @@ import { Link, useRoute } from "wouter";
 const linkMap: Record<string, number> = {
     "": 0,
     map: 1,
-    queue: 2,
-    "webrtc-test": 3,
-    "odlc-images": 4,
-    "depth-archive": 5,
-    "flight-commands": 6,
-    settings: 7,
+    "flight-commands": 2,
+    queue: 3,
+    "webrtc-test": 4,
+    settings: 5,
 };
 
 export default function Nav() {
@@ -77,6 +74,14 @@ export default function Nav() {
                     href="/map"
                     LinkComponent={Link}
                 />
+                <Tab
+                    sx={{
+                        minWidth: 0,
+                    }}
+                    label={<FlightTakeoff />}
+                    href="/flight-commands"
+                    LinkComponent={Link}
+                />
                 {/* <Tab
                     sx={{
                         minWidth: 0,
@@ -101,6 +106,7 @@ export default function Nav() {
                     href="/webrtc-test"
                     LinkComponent={Link}
                 />
+                {/* Hidden for now: ODLC images & depth archive (routes still exist)
                 <Tab
                     sx={{
                         minWidth: 0,
@@ -117,14 +123,7 @@ export default function Nav() {
                     href="/depth-archive"
                     LinkComponent={Link}
                 />
-                <Tab
-                    sx={{
-                        minWidth: 0,
-                    }}
-                    label={<FlightTakeoff />}
-                    href="/flight-commands"
-                    LinkComponent={Link}
-                />
+                */}
                 <Tab
                     sx={{
                         minWidth: 0,
