@@ -22,6 +22,27 @@ This repository uses pre-commit hooks to automatically lint and format code befo
 
 ## Initial Setup
 
+From the repository root, run:
+
+```bash
+bash setup-dev.sh
+```
+
+The script uses the repository's `.venv`, creating it if needed, then installs
+pre-commit and the Git hooks. Activation is not required.
+
+On Windows, use Git Bash. From PowerShell with Git installed in its default location:
+
+```powershell
+& 'C:\Program Files\Git\bin\bash.exe' setup-dev.sh
+```
+
+Windows' `bash` command may launch WSL instead. Use the same Windows or Linux
+environment for setup and commits; virtual environments are platform-specific.
+Linux installations may need the `python3-venv` package to create `.venv`.
+
+Alternatively, install manually in an activated virtual environment:
+
 ### 1. Install pre-commit
 
 ```bash
