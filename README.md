@@ -46,7 +46,7 @@ to an IP address or hostname reachable by viewers, then restart MediaMTX.
 
 ### Starting a stream
 
-Make sure that there is an active camera connection to the Jetson, or use a mock stream. To get a successful video stream on the browser, the stream names should match the RTSP stream path as specified in `/docker/mediamtx.yml`. 
+Make sure that there is an active camera connection to the Jetson, or use a mock stream. To get a successful video stream on the browser, find the `<stream-name>` and associated RTSP stream path specified in `/docker/mediamtx.yml`. 
 
 ### Start a test stream (without any camera connection)
 
