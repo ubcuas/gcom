@@ -1,0 +1,26 @@
+# Runs gcom against the ACMS Gazebo SITL (aircraft_central_management_system/src/simulation)
+# instead of gcom's own SITL. ACMS's MAVROS owns SITL's TCP 5760 (one client per port) and its
+# SITL already binds 5760 on the host, so gcom's sitl service is disabled and MAVProxy attaches
+# to the spare SERIAL1 port 5762 on the host.
+#   docker compose -f docker-compose-sim.yml up
+include:
+  - docker-compose.yml
+
+services:
+  sitl:
+    # Only starts if this profile is requested, so it never clashes with the ACMS SITL on 5760
+    profiles: [gcom-sitl]
+
+  mavproxy:
+    depends_on: !reset {}
+    # Lets the container reach the host as host.docker.internal on Linux
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: >
+      mavproxy.py
+      --master=tcp:host.docker.internal:5762
+      --out=udpin:0.0.0.0:14550
+      --out=udpin:0.0.0.0:14551
+      --default-modules=link,output,mode
+      --nowait
+      --daemon
