@@ -87,14 +87,31 @@ python tests/test-client.py peer2
 
 ### Video streaming SFU
 
-`video-streaming-sfu.py` (in this folder, not `tests/`) is a prototype SFU that sends video over WebRTC. For now it streams a local test video instead of the live stream. It connects with role `sfu`, and for every frontend that joins it creates a peer connection, adds the video from `tests/test-video.mp4` (looped), and sends the offer. It applies each frontend's answer, and closes the connection when that frontend leaves.
+`video-streaming-sfu.py` (in this folder, not `tests/`) is a prototype SFU that sends video over WebRTC. It connects with role `sfu`, and for every frontend that joins it creates a peer connection, adds the video, and sends the offer. It applies each frontend's answer, and closes the connection when that frontend leaves.
 
-For now, until the test-website is completed, run it instead of `test-sfu.py` in order to test its functionality (not both, since only one SFU can connect at a time):
+By default it reads the `test` stream from MediaMTX over RTSP (`rtsp://localhost:8556/test`), so the pipeline is:
+
+```
+camera / ffmpeg --RTSP--> MediaMTX --RTSP--> video-streaming-sfu.py --WebRTC--> frontends
+```
+
+This is a temporary setup for the design review: MediaMTX can serve WebRTC to browsers itself, but it uses WHEP rather than this signaling server, so for now the SFU re-reads the stream over RTSP and re-encodes it for each frontend.
+
+Run it instead of `test-sfu.py` (not both, since only one SFU can connect at a time). Start MediaMTX and something publishing to the `test` path first, because the SFU fails on startup if the stream doesn't exist yet:
 
 ```bash
+# from the repo root
+docker compose up -d mediamtx
+ffmpeg -re -stream_loop -1 -i projects/webrtc_signaling_server/tests/test-video.mp4 -c copy -rtsp_transport tcp -f rtsp rtsp://localhost:8556/test
+
+# from this folder, in separate terminals
 python server.py
 python video-streaming-sfu.py
 ```
+
+Any other MediaMTX path can be passed as the second argument, e.g. `python video-streaming-sfu.py sfu rtsp://localhost:8556/cam_front`. To stream the local test video without MediaMTX, use `python video-streaming-sfu.py sfu file`.
+
+Then open `/webrtc-test` in the web frontend in one or more tabs and click **Connect**.
 
 > NOTE:
 > Testing is incomplete. The next step is to test the video in a browser using `tests/test-website.html`, which is still being written.

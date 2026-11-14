@@ -1,15 +1,18 @@
 """
 Prototype Video Streaming SFU
 
-Connects to the signaling server as the "sfu" and streams tests/test-video.mp4
-(on a loop) to every frontend that joins, over WebRTC. Each frontend gets its own
+Connects to the signaling server as the "sfu" and streams video to every frontend
+that joins, over WebRTC. The video is read from a MediaMTX RTSP stream
+(rtsp://localhost:8556/test by default), or from tests/test-video.mp4 on a loop
+when run with "file". Each frontend gets its own
 peer connection; all of them share the same video source. A frontend's connection
 is closed when it leaves.
 
-Usage: python video-streaming-sfu.py [name]
+Usage: python video-streaming-sfu.py [name] [rtsp-url | file]
 See the Testing section of README.md in this folder.
 
 Author: Nitish Joson Terance Joe Heston
+Contributors: Lana Nakai
 """
 
 import asyncio, sys
@@ -28,6 +31,10 @@ from aiortc.mediastreams import MediaStreamError
 
 # found relative to this script, so it runs from any folder
 VIDEO_FILE = Path(__file__).parent / "tests" / "test-video.mp4"
+
+# Where the video comes from: an RTSP stream re-served by MediaMTX (default),
+# or "file" to stream VIDEO_FILE without MediaMTX
+VIDEO_SOURCE = sys.argv[2] if len(sys.argv) > 2 else "rtsp://localhost:8556/test"
 
 # FOR MOCK STREAM: loop video so that it doesn't freeze after 30s
 class LoopingVideoTrack(VideoStreamTrack):
@@ -50,7 +57,11 @@ class LoopingVideoTrack(VideoStreamTrack):
 
 
 peer_connections = {}  # frontend sid -> RTCPeerConnection
-video_source = LoopingVideoTrack(str(VIDEO_FILE))
+if VIDEO_SOURCE == "file":
+    video_source = LoopingVideoTrack(str(VIDEO_FILE))
+else:
+    # fails right away if nothing is publishing to that MediaMTX path yet
+    video_source = MediaPlayer(VIDEO_SOURCE, options={"rtsp_transport": "tcp"}).video
 relay = MediaRelay()
 
 name = sys.argv[1] if len(sys.argv) > 1 else "sfu"
