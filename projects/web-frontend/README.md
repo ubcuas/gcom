@@ -20,6 +20,14 @@ npm i
 ```
 npm run dev
 ```
+### Video stream
+The `/webrtc-test` page shows a camera stream from MediaMTX. It uses two optional settings in `.env`:
+
+- `VITE_MEDIAMTX_URL`: where MediaMTX is running (default `http://localhost:8889`)
+- `VITE_MEDIAMTX_STREAM`: which stream to show, as named in `docker/mediamtx.yml` (default `test`)
+
+See the [MediaMTX README](../../docker/README.md) for starting MediaMTX and publishing a test stream.
+
 ## Useful Links
 - MUI Component Reference - https://mui.com/material-ui/getting-started/
 - Socket.io Reference - https://socket.io/docs/v4/

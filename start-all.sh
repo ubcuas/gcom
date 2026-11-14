@@ -10,7 +10,7 @@ OS_NAME=$(uname -s)
 NETWORK_NAME="gcom-x_uasnet"
 SKIP_MISSION=false
 RUN_TARGET=""
-SIGNALING_SERVER_URL=""
+MEDIAMTX_URL=""
 
 usage() {
     echo "Usage: $0 [--skip-mission]"
@@ -59,7 +59,7 @@ venv_activate_path() {
 }
 
 prompt_inputs() {
-    read -r -p "Signaling server URL (blank to use projects/web-frontend/.env): " SIGNALING_SERVER_URL
+    read -r -p "MediaMTX URL (blank to use projects/web-frontend/.env): " MEDIAMTX_URL
 
     if [ "$SKIP_MISSION" = true ]; then
         return
@@ -208,8 +208,8 @@ setup_web_frontend() {
     local pane=$1
     local env_prefix=""
 
-    if [ -n "$SIGNALING_SERVER_URL" ]; then
-        printf -v env_prefix "VITE_SIGNALING_SERVER_URL=%q " "$SIGNALING_SERVER_URL"
+    if [ -n "$MEDIAMTX_URL" ]; then
+        printf -v env_prefix "VITE_MEDIAMTX_URL=%q " "$MEDIAMTX_URL"
     fi
 
     tmux send-keys -t "$SESSION_NAME:0.$pane" "echo 'Starting web frontend'; cd '$PROJECTS_DIR/web-frontend' && ${env_prefix}npm run dev" C-m

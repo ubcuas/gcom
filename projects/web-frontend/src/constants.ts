@@ -13,13 +13,8 @@ export const MAP_STYLE_ONLINE = `https://api.maptiler.com/maps/hybrid/style.json
 export const MAP_STYLE_OFFLINE = "http://localhost:8000/api/map-tiles/osmbright";
 export const MAP_STYLE = window.navigator.onLine ? MAP_STYLE_ONLINE : MAP_STYLE_OFFLINE;
 
-const VITE_SIGNALING_SERVER_URL = import.meta.env.VITE_SIGNALING_SERVER_URL;
+// MediaMTX serves the camera streams to the browser over WebRTC
+export const MEDIAMTX_URL = (import.meta.env.VITE_MEDIAMTX_URL as string | undefined) ?? "http://localhost:8889";
 
-if (!VITE_SIGNALING_SERVER_URL && window.navigator.onLine) {
-    throw new Error(
-        "VITE_SIGNALING_SERVER_URL environment variable is not set. " +
-            "Please copy .env.example to .env and configure it with your signaling server URL.",
-    );
-}
-
-export const SIGNALING_SERVER_URL = VITE_SIGNALING_SERVER_URL as string;
+// Which MediaMTX stream to show; stream names are listed in docker/mediamtx.yml
+export const MEDIAMTX_STREAM = (import.meta.env.VITE_MEDIAMTX_STREAM as string | undefined) ?? "test";

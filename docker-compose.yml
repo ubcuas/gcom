@@ -85,18 +85,6 @@ services:
       timeout: 3s
       retries: 60
 
-  signaling-server:
-    build:
-      context: ./projects/webrtc_signaling_server
-      dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8081/', timeout=2).read();\""]
-      interval: 5s
-      timeout: 3s
-      retries: 60
-
   web-frontend:
     build:
       context: ./projects/web-frontend
@@ -111,7 +99,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true # Ensures HMR triggers across virtualized filesystems
       - VITE_MAPTILER_KEY=ioE7W2lCif3DO9oj1YJh
-      - VITE_SIGNALING_SERVER_URL=ws://localhost:8081
+      - VITE_MEDIAMTX_URL=http://localhost:8889
 
   mediamtx:
     image: bluenviron/mediamtx:1
