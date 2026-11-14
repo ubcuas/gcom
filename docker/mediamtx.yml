@@ -1,0 +1,24 @@
+paths:
+  # Synthetic publisher path for testing without a physical camera.
+  test:
+    source: publisher
+
+
+
+  # These names should match camera_names in camera_streaming/config/cameras.yaml.
+  cam_front:
+    source: rtsp://host.docker.internal:8554/cam_front
+    sourceOnDemand: yes
+
+  cam_back:
+    source: rtsp://host.docker.internal:8554/cam_back
+    sourceOnDemand: yes
+
+  cam_probe:
+    source: rtsp://host.docker.internal:8554/cam_probe
+    sourceOnDemand: yes
+
+  realsense:
+    source: rtsp://host.docker.internal:8554/realsense
+    sourceOnDemand: yes
+
