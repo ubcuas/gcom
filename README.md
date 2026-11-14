@@ -26,3 +26,39 @@ Learn more about each project from their individual readmes:
 - **[web-frontend](projects/web-frontend/README.md)** - User interface for operators
 - **[web-backend](projects/web-backend/README.md)** - Central server coordinating data flow and business logic
 - **[mission-planner](projects/mission-planner/README.md)** - Low-level drone communication and flight operations
+
+## WebRTC Video Streaming in browser
+
+The `mediamtx` service in `docker-compose.yml` serves WebRTC streams. Start it with:
+
+```bash
+docker compose up -d mediamtx
+```
+or start the entirety of gcom (and mediamtx service is included):
+```bash
+docker compose up -d
+```
+
+Open a stream in a browser at `http://localhost:8889/<stream-name>`. For example, the
+test stream below is available at `http://localhost:8889/test`. WebRTC media uses UDP
+port `8189`; when viewing from another machine, set `MEDIAMTX_WEBRTC_HOST` in `.env`
+to an IP address or hostname reachable by viewers, then restart MediaMTX.
+
+### Starting a stream
+
+Make sure that there is an active camera connection to the Jetson, or use a mock stream. To get a successful video stream on the browser, the stream names should match the RTSP stream path as specified in `/docker/mediamtx.yml`. 
+
+### Start a test stream (without any camera connection)
+
+Install [FFmpeg](https://ffmpeg.org/) on the machine running the publisher, then publish
+a generated video pattern to the configured `test` path:
+
+```bash
+ffmpeg -re -f lavfi -i testsrc=size=1280x720:rate=30 \
+  -f lavfi -i sine=frequency=1000:sample_rate=44100 \
+  -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p \
+  -c:a aac -f rtsp rtsp://localhost:8556/test
+```
+
+Leave FFmpeg running while viewing the stream. Press `Ctrl+C` to stop publishing, and
+stop MediaMTX when finished with `docker compose stop mediamtx`.
