@@ -101,3 +101,20 @@ services:
       - CHOKIDAR_USEPOLLING=true # Ensures HMR triggers across virtualized filesystems
       - VITE_MAPTILER_KEY=ioE7W2lCif3DO9oj1YJh
       - VITE_SIGNALING_SERVER_URL=ws://localhost:8081
+
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    restart: unless-stopped
+    # depends_on:
+    #   - dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Set MEDIAMTX_WEBRTC_HOST in .env to the address viewers can reach.
+      MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_HOST:-localhost}
+    ports:
+      - "127.0.0.1:8556:8554/tcp" # Local RTSP publishing for the synthetic test stream
+      - "8889:8889/tcp"           # WebRTC HTTP/WHEP
+      - "8189:8189/udp"           # WebRTC media (ICE)
+    volumes:
+      - ./docker/mediamtx.yml:/mediamtx.yml:ro
