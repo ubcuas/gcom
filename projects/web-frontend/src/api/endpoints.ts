@@ -8,6 +8,36 @@ import type { z } from "zod";
 
 // TODO: Implement new endpoint logic
 
+export type AnnotationBox = { x: number; y: number; width: number; height: number };
+
+export type AnnotationImage = {
+    id: string;
+    time: string;
+    location: string;
+    image: string;
+    status: string;
+    annotations: AnnotationBox[];
+};
+
+export const getAnnotationImages = async (): Promise<AnnotationImage[]> => {
+    const response = await api.get<AnnotationImage[]>("/annotations/images/");
+    return response.data;
+};
+
+export type NoFlyZone = {
+    id: string;
+    latitude: number;
+    longitude: number;
+    radius_m: number;
+};
+
+export const getNoFlyZones = async (latitude: number, longitude: number): Promise<NoFlyZone[]> => {
+    const response = await api.get<NoFlyZone[]>("/mapping/no-fly-zones", {
+        params: { latitude, longitude },
+    });
+    return response.data;
+};
+
 export const armDrone = async (arm: boolean) => {
     return await api.put("/drone/arm", { arm });
 };

@@ -1,6 +1,6 @@
 import { Flight, Place, Home, MyLocation, CropFree } from "@mui/icons-material";
 import { Box, IconButton, Tooltip } from "@mui/material";
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Map, { Layer, LayerProps, MapRef, Marker, Source } from "react-map-gl/maplibre";
 import {
     initializeMpsWaypointMapState,
@@ -11,18 +11,27 @@ import { selectAircraftStatus, selectCurrentRouteWaypoints, selectTakeoffWaypoin
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import WaypointItem from "../WaypointItem";
 import { MAP_STYLE } from "../../constants";
+import { getNoFlyZones, type NoFlyZone } from "../../api/endpoints";
+import { createCircleCoordinates } from "../../utils/geo";
 
 export default function MapView() {
     const mpsWaypoints = useAppSelector(selectCurrentRouteWaypoints);
     const mpsWaypointMapState = useAppSelector(selectMpsWaypointMapState);
     const aircraftStatus = useAppSelector(selectAircraftStatus);
     const takeoffWaypoint = useAppSelector(selectTakeoffWaypoint);
+    const [noFlyZones, setNoFlyZones] = useState<NoFlyZone[]>([]);
     const dispatch = useAppDispatch();
     const mapRef = useRef<MapRef>(null);
 
     useEffect(() => {
         dispatch(initializeMpsWaypointMapState(mpsWaypoints.length));
     }, []);
+
+    useEffect(() => {
+        getNoFlyZones(aircraftStatus.latitude, aircraftStatus.longitude)
+            .then(setNoFlyZones)
+            .catch((error: unknown) => console.error("Unable to load no-fly zones", error));
+    }, [aircraftStatus.latitude, aircraftStatus.longitude]);
 
     const fitToWaypoints = () => {
         if (mpsWaypoints.length === 0) return;
@@ -59,6 +68,33 @@ export default function MapView() {
         type: "line",
         paint: {
             "line-color": "#ee4455",
+            "line-width": 3,
+        },
+    };
+    const noFlyZoneData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+        type: "FeatureCollection",
+        features: noFlyZones.map((zone) => ({
+            type: "Feature",
+            properties: { id: zone.id },
+            geometry: {
+                type: "Polygon",
+                coordinates: [createCircleCoordinates(zone)],
+            },
+        })),
+    };
+    const noFlyZoneFillStyle: LayerProps = {
+        id: "no-fly-zone-fill",
+        type: "fill",
+        paint: {
+            "fill-color": "#e31b23",
+            "fill-opacity": 0.2,
+        },
+    };
+    const noFlyZoneLineStyle: LayerProps = {
+        id: "no-fly-zone-outline",
+        type: "line",
+        paint: {
+            "line-color": "#e31b23",
             "line-width": 3,
         },
     };
@@ -207,6 +243,10 @@ export default function MapView() {
 
                 <Source type="geojson" data={routeData}>
                     <Layer {...routeStyle} />
+                </Source>
+                <Source id="no-fly-zones" type="geojson" data={noFlyZoneData}>
+                    <Layer {...noFlyZoneFillStyle} />
+                    <Layer {...noFlyZoneLineStyle} />
                 </Source>
             </Map>
         </Box>

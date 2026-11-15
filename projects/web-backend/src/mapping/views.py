@@ -2,11 +2,46 @@ import json
 
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 from .models import AreaOfInterest
 from .serializers import AreaOfInterestSerializer
 
 # pylint: disable=no-member
+
+
+@require_http_methods(["GET"])
+def get_no_fly_zones(request):
+    """Return temporary no-fly-zone data for the map UI.
+
+    The query parameters mirror the future backend contract while keeping the
+    mock zones close to the currently displayed drone.
+    """
+    try:
+        latitude = float(request.GET.get("latitude", 49.2606))
+        longitude = float(request.GET.get("longitude", -123.246))
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"error": "latitude and longitude must be numbers"}, status=400
+        )
+
+    return JsonResponse(
+        [
+            {
+                "id": "mock-no-fly-zone-1",
+                "latitude": latitude + 0.0012,
+                "longitude": longitude + 0.0015,
+                "radius_m": 75,
+            },
+            {
+                "id": "mock-no-fly-zone-2",
+                "latitude": latitude - 0.0014,
+                "longitude": longitude - 0.0011,
+                "radius_m": 110,
+            },
+        ],
+        safe=False,
+    )
 
 
 @csrf_exempt
@@ -41,3 +76,24 @@ def process_area_of_interest(request):
             return HttpResponse("Correct Address, Incorrect Method", status=405)
     except (KeyError, ValueError, TypeError) as e:
         return HttpResponse("Server Error\n" + str(e), status=500)
+
+
+@require_http_methods(["GET"])
+def get_aeac_status(request):
+    """Connection health and latest traffic, for debugging."""
+    from .aeac_forwarder import get_forwarder
+
+    forwarder = get_forwarder()
+    if forwarder is None:
+        return JsonResponse({"enabled": False})
+
+    return JsonResponse(
+        {
+            "enabled": True,
+            "connected": forwarder.ws is not None,
+            "sent": forwarder.sent,
+            "acked": forwarder.acked,
+            "traffic": forwarder.latest_traffic,
+            "traffic_received_at": forwarder.latest_traffic_at,
+        }
+    )

@@ -3,6 +3,7 @@ import Home from "@mui/icons-material/Home";
 import ImageSearchIcon from "@mui/icons-material/ImageSearch";
 import MapIcon from "@mui/icons-material/Map";
 import Settings from "@mui/icons-material/Settings";
+import StreamIcon from "@mui/icons-material/Stream";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import { Paper, Tab, Tabs } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -13,9 +14,10 @@ const linkMap: Record<string, number> = {
     map: 1,
     queue: 2,
     "webrtc-test": 3,
-    "odlc-images": 4,
-    "depth-archive": 5,
-    settings: 6,
+    "stream-annotations": 4,
+    "odlc-images": 5,
+    "depth-archive": 6,
+    settings: 7,
 };
 
 export default function Nav() {
@@ -98,6 +100,12 @@ export default function Nav() {
                     }}
                     label={<VideocamIcon />}
                     href="/webrtc-test"
+                    LinkComponent={Link}
+                />
+                <Tab
+                    sx={{ minWidth: 0 }}
+                    label={<StreamIcon />}
+                    href="/stream-annotations"
                     LinkComponent={Link}
                 />
                 <Tab

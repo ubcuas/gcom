@@ -2,7 +2,7 @@
 
 import { CropFree, Flight, MyLocation, Place } from "@mui/icons-material";
 import { Box, IconButton, Tooltip } from "@mui/material";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Layer, LayerProps, Map, MapRef, MapLayerMouseEvent, Marker, Source } from "react-map-gl/maplibre";
 import {
     addWaypointToCurrentRoute,
@@ -18,6 +18,8 @@ import { roundTo } from "../../utils/routeTo";
 import { MAP_STYLE } from "../../constants";
 import { saveCurrentRouteToBackend } from "../../store/thunks/dataThunks";
 import { WaypointEditState } from "../../types/Waypoint";
+import { getNoFlyZones, type NoFlyZone } from "../../api/endpoints";
+import { createCircleCoordinates } from "../../utils/geo";
 
 type DraggedMarker = {
     long: number;
@@ -39,6 +41,13 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
     const mapRef = useRef<MapRef>(null);
     const [selectedWaypoints, setSelectedWaypoints] = useState<boolean[]>(clientWPQueue.map(() => false));
     const [draggedMarkerData, setDraggedMarkerData] = useState<DraggedMarker | null>(null);
+    const [noFlyZones, setNoFlyZones] = useState<NoFlyZone[]>([]);
+
+    useEffect(() => {
+        getNoFlyZones(aircraftStatus.latitude, aircraftStatus.longitude)
+            .then(setNoFlyZones)
+            .catch((error: unknown) => console.error("Unable to load no-fly zones", error));
+    }, [aircraftStatus.latitude, aircraftStatus.longitude]);
 
     const fitToWaypoints = () => {
         if (clientWPQueue.length === 0) return;
@@ -75,6 +84,33 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
         type: "line",
         paint: {
             "line-color": "#ee4455",
+            "line-width": 3,
+        },
+    };
+    const noFlyZoneData: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+        type: "FeatureCollection",
+        features: noFlyZones.map((zone) => ({
+            type: "Feature",
+            properties: { id: zone.id },
+            geometry: {
+                type: "Polygon",
+                coordinates: [createCircleCoordinates(zone)],
+            },
+        })),
+    };
+    const noFlyZoneFillStyle: LayerProps = {
+        id: "waypoint-map-no-fly-zone-fill",
+        type: "fill",
+        paint: {
+            "fill-color": "#e31b23",
+            "fill-opacity": 0.2,
+        },
+    };
+    const noFlyZoneLineStyle: LayerProps = {
+        id: "waypoint-map-no-fly-zone-outline",
+        type: "line",
+        paint: {
+            "line-color": "#e31b23",
             "line-width": 3,
         },
     };
@@ -169,6 +205,10 @@ export default function WaypointCreationMap({ handleDelete, handleEdit, editStat
                     }}
                 />
             </Marker>
+            <Source id="waypoint-map-no-fly-zones" type="geojson" data={noFlyZoneData}>
+                <Layer {...noFlyZoneFillStyle} />
+                <Layer {...noFlyZoneLineStyle} />
+            </Source>
             {clientWPQueue.map((waypoint, i) => {
                 return (
                     <Fragment key={i}>

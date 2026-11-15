@@ -51,6 +51,33 @@ async def ping(sid: str, _: dict = {}) -> None:
     await sio.emit("pong", room=sid)
 
 
+@sio.on("annotation_update")
+async def annotation_update(sid: str, data: dict) -> None:
+    """Validate, retain, and broadcast an annotation update to every client."""
+    from annotation_stream.views import (
+        annotation_update_response,
+        parse_annotation_update,
+    )
+
+    parsed = parse_annotation_update(data)
+    if parsed is None:
+        await sio.emit(
+            "annotation_error", {"error": "Invalid annotation update"}, room=sid
+        )
+        return
+
+    image_id, annotations = parsed
+    response = await sync_to_async(annotation_update_response)(image_id, annotations)
+    if response.status_code != 200:
+        await sio.emit("annotation_error", {"error": "Unknown image"}, room=sid)
+        return
+
+    await sio.emit(
+        "annotation_update",
+        {"imageId": image_id, "annotations": annotations},
+    )
+
+
 @sio.on("drone_update")
 async def drone_update(sid: str, data: dict) -> None:
     """
@@ -84,3 +111,18 @@ def process_drone_update(data: dict) -> None:
     cutoff_time = (datetime.now() - timedelta(minutes=5)).timestamp()
     old_records = DroneTelemetry.objects.filter(timestamp__lt=int(cutoff_time))
     old_records.delete()
+
+
+async def broadcast_traffic(payload) -> None:
+    """Push AEAC traffic to every connected frontend."""
+    await sio.emit("aeac_traffic", payload)
+
+
+@sio.on("aeac_telemetry")
+async def aeac_telemetry(sid: str, data: dict) -> None:
+    """Forward MPS-built telemetry to the AEAC competition server."""
+    from mapping.aeac_forwarder import ensure_started
+
+    forwarder = ensure_started(on_traffic=broadcast_traffic)
+    if forwarder is not None:
+        await forwarder.send_telemetry(data)
