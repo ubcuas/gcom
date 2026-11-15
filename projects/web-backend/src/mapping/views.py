@@ -1,5 +1,4 @@
 import json
-import math
 
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -22,7 +21,9 @@ def get_no_fly_zones(request):
         latitude = float(request.GET.get("latitude", 49.2606))
         longitude = float(request.GET.get("longitude", -123.246))
     except (TypeError, ValueError):
-        return JsonResponse({"error": "latitude and longitude must be numbers"}, status=400)
+        return JsonResponse(
+            {"error": "latitude and longitude must be numbers"}, status=400
+        )
 
     return JsonResponse(
         [
@@ -75,3 +76,24 @@ def process_area_of_interest(request):
             return HttpResponse("Correct Address, Incorrect Method", status=405)
     except (KeyError, ValueError, TypeError) as e:
         return HttpResponse("Server Error\n" + str(e), status=500)
+
+
+@require_http_methods(["GET"])
+def get_aeac_status(request):
+    """Connection health and latest traffic, for debugging."""
+    from .aeac_forwarder import get_forwarder
+
+    forwarder = get_forwarder()
+    if forwarder is None:
+        return JsonResponse({"enabled": False})
+
+    return JsonResponse(
+        {
+            "enabled": True,
+            "connected": forwarder.ws is not None,
+            "sent": forwarder.sent,
+            "acked": forwarder.acked,
+            "traffic": forwarder.latest_traffic,
+            "traffic_received_at": forwarder.latest_traffic_at,
+        }
+    )

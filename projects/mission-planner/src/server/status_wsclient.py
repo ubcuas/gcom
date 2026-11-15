@@ -4,11 +4,15 @@ import socketio
 
 from server.logging_config import logger
 from server.operations.get_info import get_status
+from server.operations.aeac_telemetry import build_telemetry
 from server.services.status_cache import StatusCache
 
 DELAY = 1
 # DELAY = 2
 RECONNECT = 15
+
+AEAC_PERIOD = 0.6
+STATUS_PERIOD = 1.0
 
 
 class Status_Client:
@@ -45,17 +49,28 @@ class Status_Client:
                     return
                 time.sleep(RECONNECT)
 
+        next_tick = time.monotonic()
+        next_status = next_tick
+
         while self._running:
             try:
-                self.sio.emit(
-                    "drone_update", get_status(self.status_cache).as_reduced_status()
-                )
-                if not self._running:
-                    return
-                time.sleep(DELAY)
+                telemetry = build_telemetry(self.status_cache)
+                if telemetry is not None:
+                    self.sio.emit("aeac_telemetry", telemetry)
+
+                if time.monotonic() >= next_status:
+                    self.sio.emit(
+                        "drone_update",
+                        get_status(self.status_cache).as_reduced_status(),
+                    )
+                    next_status += STATUS_PERIOD
+
+                next_tick += AEAC_PERIOD
+                time.sleep(max(0.0, next_tick - time.monotonic()))
 
             except Exception as e:
                 logger.warning(f"Emit failed: {e}. Waiting {RECONNECT} second(s)")
                 if not self._running:
                     return
                 time.sleep(RECONNECT)
+                next_tick = next_status = time.monotonic()

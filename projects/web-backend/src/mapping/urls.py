@@ -9,4 +9,5 @@ urlpatterns = [
         views.process_area_of_interest,
         name="process_area_of_interest",
     ),
+    path("aeac", views.get_aeac_status, name="get_aeac_status"),
 ]

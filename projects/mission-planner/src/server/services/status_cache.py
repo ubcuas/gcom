@@ -19,6 +19,8 @@ class StatusCache:
         "VFR_HUD",
         "SYS_STATUS",
         "MISSION_CURRENT",
+        "GPS_RAW_INT",
+        "RC_CHANNELS",
         "WIND_COV",
         "HEARTBEAT",
     ]

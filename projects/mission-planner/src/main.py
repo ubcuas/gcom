@@ -5,6 +5,7 @@ from server.logging_config import logger
 from server.services import MavlinkHandler, StatusCache
 from server.status_wsclient import Status_Client
 from server.utilities.connect_to_sysid import connect_to_sysid
+from server.operations.aeac_telemetry import request_streams
 
 import os
 
@@ -55,6 +56,8 @@ if __name__ == "__main__":
     handler = MavlinkHandler(mav_connection, status_cache)
     handler.start()
     logger.info("MAVLink handler started")
+
+    request_streams(mav_connection)
 
     # Create server instances
     http_server = HTTP_Server(mav_connection, status_cache, handler)
